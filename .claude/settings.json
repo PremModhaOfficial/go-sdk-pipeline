@@ -89,19 +89,10 @@
     "never_commit": true,
     "never_push": true
   },
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Write",
-        "action": "verify path within SDK_TARGET_DIR or runs/ or pipeline repo"
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Bash",
-        "action": "append to runs/<run-id>/decision-log.jsonl as event entry"
-      }
-    ]
+  "advisory_hooks": {
+    "note": "Advisory only — these are conceptual invariants enforced by agent prompts + guardrails (G07, G01), NOT Claude Code runtime hooks. Real Claude Code hooks (matcher+hooks array schema) can be added later if needed.",
+    "pre_write": "verify path within SDK_TARGET_DIR or runs/ or pipeline repo",
+    "post_bash": "append to runs/<run-id>/decision-log.jsonl as event entry"
   },
   "license_allowlist": [
     "MIT",
