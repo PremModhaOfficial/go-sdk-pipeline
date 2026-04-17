@@ -1,0 +1,6 @@
+{
+  "schema_version": "1.0.0",
+  "pipeline_version": "sdk-pipeline@0.1.0",
+  "note": "Populated after first successful run. Never lowered except via explicit learning-engine signoff (resets every 5 runs).",
+  "agents": {}
+}

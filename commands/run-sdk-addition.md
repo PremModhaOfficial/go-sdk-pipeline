@@ -1,0 +1,87 @@
+---
+name: run-sdk-addition
+description: Launch the SDK-addition pipeline. Accepts a TPRD path or an NL request; intake asks clarifying questions when ambiguous. Writes to $SDK_TARGET_DIR on a dedicated branch. Never commits to main, never pushes.
+user-invocable: true
+---
+
+# /run-sdk-addition
+
+Launches the SDK-addition pipeline against `$SDK_TARGET_DIR` (Go SDK repo).
+
+## Arguments
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--target <path>` | `$SDK_TARGET_DIR` env | Target Go SDK dir (must be git repo) |
+| `--spec <file>` | — | Path to pre-written TPRD; skips intake if complete |
+| `--phases <list>` | `bootstrap,intake,design,impl,testing,feedback` | Comma-separated subset to run |
+| `--dry-run` | false | Don't write to target; produce `preview.md` |
+| `--accept-perf-regression <n>` | — | Override `sdk-benchmark-devil` for n% regression |
+| `--auto-approve-bootstrap` | false | Skip H2 gate on new skills (agents still gated) |
+| `--auto-approve-tprd` | false | Skip H1 gate on TPRD acceptance (CI only) |
+| `--skip-design-gate` | false | Skip H5 (risky; logged) |
+| `--skip-impl-gate` | false | Skip H7 (CI only) |
+| `--budget-tokens <n>` | per settings.json | Override per-phase token budget |
+| `--seed <int>` | — | Determinism verification seed |
+| `--golden-only` | false | Re-run golden-corpus regression only, skip real work |
+
+## Positional arg
+
+`<request-or-spec-path>` — one of:
+- NL string (`"add S3 client"`)
+- TPRD file path (`runs/my-tprd.md`)
+- Omitted when `--golden-only`
+
+## Examples
+
+```
+/run-sdk-addition --target ~/projects/nextgen/motadata-go-sdk/src/motadatagosdk "add Redis streams consumer client"
+
+/run-sdk-addition --spec runs/s3-tprd.md
+
+/run-sdk-addition --dry-run "add Kafka consumer wrapper"
+
+/run-sdk-addition --golden-only
+
+/run-sdk-addition --phases bootstrap,design "tighten dragonfly retry defaults"
+```
+
+## Execution flow
+
+1. Parse flags; resolve `$SDK_TARGET_DIR` (prompt if unset)
+2. Generate `run_id` (UUID v4); create `runs/<run-id>/`
+3. Load `settings.json`; stamp `pipeline_version`, budgets
+4. **H0 gate** (first-time only): confirm archive path exists and is read-only
+5. Run phases in order (respecting `--phases` subset):
+   - Bootstrap (conditional on skill gaps)
+   - Intake (TPRD canonicalization)
+   - Mode detection → if B/C, run Phase 0.5 Extension-analyze
+   - Design
+   - Implementation (on `sdk-pipeline/<run-id>` branch)
+   - Testing
+   - Feedback (+ golden regression)
+6. Emit `runs/<run-id>/run-summary.md` with metrics, decisions, branch name, next steps
+7. H10: user decides merge / keep branch / delete branch
+
+## Safety rails (enforced)
+
+- Never commits to `main` or pushes
+- Writes ONLY to `$SDK_TARGET_DIR/<new-pkg>/` and `runs/<run-id>/`
+- `--dry-run` blocks all target writes
+- Every HITL gate respects timeout (conservative default: reject / revise / keep branch)
+- Marker protocol (CLAUDE.md rule #29) enforced at impl phase
+
+## Delegates to
+
+`sdk-bootstrap-lead` → `sdk-intake-agent` → (if B/C) `sdk-existing-api-analyzer` + `sdk-marker-scanner` → `sdk-design-lead` → `sdk-impl-lead` → `sdk-testing-lead` → `learning-engine`
+
+Each lead orchestrates its phase per the phase doc in `phases/<PHASE>-PHASE.md`.
+
+## Exit codes (conceptual)
+
+- 0: all phases PASS, branch created, ready for user review
+- 1: HITL gate declined
+- 2: guardrail BLOCKER unresolved after review-fix loop
+- 3: golden regression FAIL (learning-engine halted auto-apply)
+- 4: supply-chain REJECT (govulncheck/osv-scanner or license violation)
+- 5: target dir invalid or not a git repo

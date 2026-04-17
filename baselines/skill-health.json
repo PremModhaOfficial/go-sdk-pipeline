@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0.0",
+  "pipeline_version": "sdk-pipeline@0.1.0",
+  "note": "Tracks skill-evolution stability across runs.",
+  "metrics": {
+    "skill_stability": null,
+    "bootstrap_success_rate": null,
+    "golden_regression_rate": null,
+    "mean_time_to_green_sec": null,
+    "user_intervention_rate": null
+  },
+  "per_skill": {}
+}

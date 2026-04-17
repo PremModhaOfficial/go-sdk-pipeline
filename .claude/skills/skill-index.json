@@ -1,0 +1,65 @@
+{
+  "schema_version": "1.0.0",
+  "pipeline_version": "0.1.0",
+  "generated_by": "manual-seed",
+  "note": "Auto-rebuilt on every bootstrap phase. Sourced from frontmatter of every SKILL.md under .claude/skills/. Seed below represents target skill set for MVP.",
+  "skills": {
+    "ported_verbatim": [
+      { "name": "go-concurrency-patterns", "version": "1.0.0", "status": "stable", "archive_source": ".claude/skills/go-concurrency-patterns/SKILL.md" },
+      { "name": "go-error-handling-patterns", "version": "1.0.0", "status": "stable", "archive_source": ".claude/skills/go-error-handling-patterns/SKILL.md" },
+      { "name": "go-struct-interface-design", "version": "1.0.0", "status": "stable", "archive_source": ".claude/skills/go-struct-interface-design/SKILL.md" },
+      { "name": "mock-patterns", "version": "1.0.0", "status": "stable", "archive_source": ".claude/skills/mock-patterns/SKILL.md" },
+      { "name": "otel-instrumentation", "version": "1.0.0", "status": "stable", "archive_source": ".claude/skills/otel-instrumentation/SKILL.md" },
+      { "name": "testcontainers-setup", "version": "1.0.0", "status": "stable", "archive_source": ".claude/skills/testcontainers-setup/SKILL.md" },
+      { "name": "testing-patterns", "version": "1.0.0", "status": "stable", "archive_source": ".claude/skills/testing-patterns/SKILL.md" },
+      { "name": "table-driven-tests", "version": "1.0.0", "status": "stable", "archive_source": ".claude/skills/table-driven-tests/SKILL.md" },
+      { "name": "tdd-patterns", "version": "1.0.0", "status": "stable", "archive_source": ".claude/skills/tdd-patterns/SKILL.md" },
+      { "name": "fuzz-patterns", "version": "1.0.0", "status": "stable", "archive_source": ".claude/skills/fuzz-patterns/SKILL.md" },
+      { "name": "go-hexagonal-architecture", "version": "1.0.0", "status": "stable", "archive_source": ".claude/skills/go-hexagonal-architecture/SKILL.md" },
+      { "name": "go-module-paths", "version": "1.0.0", "status": "stable", "archive_source": ".claude/skills/go-module-paths/SKILL.md" },
+      { "name": "review-fix-protocol", "version": "1.0.0", "status": "stable", "archive_source": ".claude/skills/review-fix-protocol/SKILL.md" },
+      { "name": "lifecycle-events", "version": "1.0.0", "status": "stable", "archive_source": ".claude/skills/lifecycle-events/SKILL.md" },
+      { "name": "context-summary-writing", "version": "1.0.0", "status": "stable", "archive_source": ".claude/skills/context-summary-writing/SKILL.md" },
+      { "name": "conflict-resolution", "version": "1.0.0", "status": "stable", "archive_source": ".claude/skills/conflict-resolution/SKILL.md" },
+      { "name": "feedback-analysis", "version": "1.0.0", "status": "stable", "archive_source": ".claude/skills/feedback-analysis/SKILL.md" },
+      { "name": "environment-prerequisites-check", "version": "1.0.0", "status": "stable", "archive_source": ".claude/skills/environment-prerequisites-check/SKILL.md" },
+      { "name": "spec-driven-development", "version": "1.0.0", "status": "stable", "archive_source": ".claude/skills/spec-driven-development/SKILL.md" }
+    ],
+    "ported_with_delta": [
+      { "name": "sdk-library-design", "version": "1.1.0", "status": "stable", "archive_source": ".claude/skills/sdk-library-design/SKILL.md", "delta": "expanded to cover both Config+New pattern AND functional options with target-SDK-convention guidance" },
+      { "name": "decision-logging", "version": "1.1.0", "status": "stable", "archive_source": ".claude/skills/decision-logging/SKILL.md", "delta": "added skill-evolution + budget entry types" },
+      { "name": "guardrail-validation", "version": "1.1.0", "status": "stable", "archive_source": ".claude/skills/guardrail-validation/SKILL.md", "delta": "extended 28-check catalog to G01-G103 (adds marker guardrails G96-G103)" }
+    ],
+    "to_synthesize_on_first_use": [
+      { "name": "go-dependency-vetting", "priority": "MUST" },
+      { "name": "sdk-semver-governance", "priority": "MUST" },
+      { "name": "network-error-classification", "priority": "MUST" },
+      { "name": "context-deadline-patterns", "priority": "MUST" },
+      { "name": "connection-pool-tuning", "priority": "MUST" },
+      { "name": "goroutine-leak-prevention", "priority": "MUST" },
+      { "name": "client-shutdown-lifecycle", "priority": "MUST" },
+      { "name": "sdk-config-struct-pattern", "priority": "MUST" },
+      { "name": "sdk-otel-hook-integration", "priority": "MUST" },
+      { "name": "sdk-marker-protocol", "priority": "MUST (Mode B/C only)" },
+      { "name": "idempotent-retry-safety", "priority": "SHOULD" },
+      { "name": "client-tls-configuration", "priority": "SHOULD" },
+      { "name": "credential-provider-pattern", "priority": "SHOULD" },
+      { "name": "backpressure-flow-control", "priority": "SHOULD" },
+      { "name": "client-rate-limiting", "priority": "SHOULD" },
+      { "name": "api-ergonomics-audit", "priority": "SHOULD" },
+      { "name": "client-mock-strategy", "priority": "SHOULD" },
+      { "name": "go-example-function-patterns", "priority": "SHOULD" },
+      { "name": "circuit-breaker-policy", "priority": "SHOULD" }
+    ]
+  },
+  "tags_index": {
+    "sdk": ["sdk-library-design", "sdk-config-struct-pattern", "sdk-otel-hook-integration", "sdk-semver-governance"],
+    "go": ["go-concurrency-patterns", "go-error-handling-patterns", "go-struct-interface-design", "go-hexagonal-architecture", "go-module-paths"],
+    "testing": ["testing-patterns", "table-driven-tests", "tdd-patterns", "fuzz-patterns", "mock-patterns", "testcontainers-setup"],
+    "client": ["network-error-classification", "client-shutdown-lifecycle", "client-tls-configuration", "credential-provider-pattern", "client-rate-limiting"],
+    "resilience": ["circuit-breaker-policy", "idempotent-retry-safety", "backpressure-flow-control", "context-deadline-patterns"],
+    "observability": ["otel-instrumentation", "sdk-otel-hook-integration"],
+    "markers": ["sdk-marker-protocol"],
+    "meta": ["decision-logging", "review-fix-protocol", "lifecycle-events", "context-summary-writing", "conflict-resolution", "feedback-analysis"]
+  }
+}

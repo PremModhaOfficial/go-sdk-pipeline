@@ -1,0 +1,6 @@
+{
+  "schema_version": "1.0.0",
+  "pipeline_version": "sdk-pipeline@0.1.0",
+  "note": "Per-package branch coverage targets. New packages default to 90%.",
+  "packages": {}
+}

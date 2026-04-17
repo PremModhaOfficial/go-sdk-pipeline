@@ -1,0 +1,117 @@
+{
+  "pipeline_version": "0.1.0",
+  "target_sdk_dir_env": "SDK_TARGET_DIR",
+  "phase_budgets": {
+    "bootstrap": {
+      "tokens": 200000,
+      "wall_clock_sec": 1800
+    },
+    "intake": {
+      "tokens": 100000,
+      "wall_clock_sec": 900
+    },
+    "design": {
+      "tokens": 500000,
+      "wall_clock_sec": 3600
+    },
+    "implementation": {
+      "tokens": 1000000,
+      "wall_clock_sec": 7200
+    },
+    "testing": {
+      "tokens": 500000,
+      "wall_clock_sec": 3600
+    },
+    "feedback": {
+      "tokens": 200000,
+      "wall_clock_sec": 1800
+    }
+  },
+  "safety_caps": {
+    "prompt_patches_per_run": 10,
+    "new_skills_per_run": 5,
+    "new_guardrails_per_run": 3,
+    "new_agents_per_run": 2,
+    "per_issue_max_retries": 5,
+    "global_max_iterations": 10,
+    "stuck_threshold": 2,
+    "baseline_reset_every_n_runs": 5
+  },
+  "hitl_gate_timeouts_hours": {
+    "H0_archive": 0,
+    "H1_tprd": 24,
+    "H2_skills": 24,
+    "H3_agents": 48,
+    "H4_breaking": 48,
+    "H5_design": 24,
+    "H6_dep_vet": 12,
+    "H7_impl_diff": 24,
+    "H7b_mode_c_diff": 48,
+    "H8_bench": 12,
+    "H9_skill_major": 48,
+    "H10_merge": 72
+  },
+  "regression_gates": {
+    "bench_hot_path_pct": 5,
+    "bench_shared_pct": 10,
+    "coverage_min_new_pkg": 90,
+    "coverage_min_existing_pkg_delta": 0
+  },
+  "permissions": {
+    "allow": [
+      "Bash(go build:*)",
+      "Bash(go test:*)",
+      "Bash(go vet:*)",
+      "Bash(gofmt:*)",
+      "Bash(staticcheck:*)",
+      "Bash(govulncheck:*)",
+      "Bash(osv-scanner:*)",
+      "Bash(benchstat:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git branch:*)",
+      "Bash(git checkout:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(git merge-base:*)",
+      "Bash(jq:*)",
+      "Bash(sha256sum:*)",
+      "Bash(find:*)",
+      "Read(*)",
+      "Write(runs/**)",
+      "Write(.claude/**)",
+      "Write(baselines/**)",
+      "Write(evolution/**)",
+      "Write(golden-corpus/**)",
+      "Write(state/**)"
+    ],
+    "deny_write_outside_target_or_runs": true,
+    "never_commit": true,
+    "never_push": true
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write",
+        "action": "verify path within SDK_TARGET_DIR or runs/ or pipeline repo"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "action": "append to runs/<run-id>/decision-log.jsonl as event entry"
+      }
+    ]
+  },
+  "license_allowlist": [
+    "MIT",
+    "Apache-2.0",
+    "BSD-3-Clause",
+    "BSD-2-Clause",
+    "ISC",
+    "0BSD",
+    "MPL-2.0"
+  ],
+  "golden_corpus_refresh_every_n_runs": 25,
+  "skill_audit_every_n_runs": 10
+}
