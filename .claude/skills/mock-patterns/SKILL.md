@@ -1,14 +1,12 @@
 ---
 name: mock-patterns
-description: gomock usage — mockgen, controller lifecycle, EXPECT chaining, custom matchers, ordered expectations. When to use mock vs fake vs stub. Ported verbatim.
+description: gomock usage — mockgen, controller lifecycle, EXPECT chaining, custom matchers, ordered expectations. When to use mock vs fake vs stub.
 version: 1.0.0
 created-in-run: bootstrap-seed
 status: stable
-source-pattern: ported-from-archive@b2453098:.claude/skills/mock-patterns/SKILL.md
 tags: [go, testing, mock, gomock, stub, fake]
 ---
 
-<!-- ported-from: motadata-ai-pipeline-ARCHIVE/.claude/skills/mock-patterns/SKILL.md @ b2453098 -->
 
 
 # Mock Patterns

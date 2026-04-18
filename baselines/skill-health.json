@@ -1,13 +1,14 @@
 {
-  "schema_version": "1.0.0",
-  "pipeline_version": "sdk-pipeline@0.1.0",
-  "note": "Tracks skill-evolution stability across runs.",
+  "schema_version": "1.1.0",
+  "pipeline_version": "sdk-pipeline@0.2.0",
+  "note": "Tracks stability of human-authored skills under learning-engine body-patch regime (no runtime skill synthesis).",
   "metrics": {
     "skill_stability": null,
-    "bootstrap_success_rate": null,
+    "existing_skill_patch_accept_rate": null,
     "golden_regression_rate": null,
     "mean_time_to_green_sec": null,
-    "user_intervention_rate": null
+    "user_intervention_rate": null,
+    "manifest_miss_rate": null
   },
   "per_skill": {}
 }

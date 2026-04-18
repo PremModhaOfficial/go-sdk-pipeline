@@ -1,6 +1,6 @@
 ---
 name: conflict-resolution
-description: Ownership-matrix lookup, escalation message format, assumption marking, phase-lead resolution procedure, conflict-resolution decision log tagging. Ported verbatim — archive references CLAUDE.md rules on ownership and conflict (rules 7 and 8).
+description: Ownership-matrix lookup, escalation message format, assumption marking, phase-lead resolution procedure, conflict-resolution decision log tagging. See CLAUDE.md rules 7 and 8 on ownership and conflict.
 version: 1.0.0
 created-in-run: bootstrap-seed
 status: stable
@@ -12,7 +12,6 @@ tags: [meta, conflict, ownership, escalation]
 
 ---
 
-## Archive canonical body (ported verbatim from motadata-ai-pipeline-ARCHIVE @ b2453098)
 
 
 # Conflict Resolution

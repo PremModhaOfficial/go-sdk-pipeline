@@ -59,13 +59,13 @@ For each `[constraint]` with named bench in touched files:
 - FAIL = BLOCKER; halt, surface to user
 
 ### Wave M5 — Refactor
-**Agent**: `refactoring-agent` (ported)
+**Agent**: `refactoring-agent`
 - Remove duplication
 - Apply `simplify` skill patterns
 - Maintain test green
 
 ### Wave M6 — Docs
-**Agent**: `documentation-agent` (ported)
+**Agent**: `documentation-agent`
 - Godoc on every exported symbol (first word = symbol name)
 - Add `Example_*` functions where applicable
 - Write / update `<pkg>/README.md`
@@ -78,7 +78,7 @@ For each `[constraint]` with named bench in touched files:
 | `sdk-leak-hunter` | Run `go test -race -count=5` + `goleak.VerifyTestMain`; report leaks as BLOCKER |
 | `sdk-overengineering-critic` | Reject unused options, speculative interfaces, dead abstractions |
 | `sdk-marker-hygiene-devil` | Every pipeline-authored symbol has `[traces-to: TPRD-*]`; every preserved MANUAL symbol retained its marker byte-identical; no forged MANUAL markers |
-| `code-reviewer` (ported) | Go idioms, error wrapping, naming, package structure |
+| `code-reviewer` | Go idioms, error wrapping, naming, package structure |
 
 ### Wave M8 — Review-Fix Loop
 Same protocol as Design. Route fixes to implementer; re-run devils after each batch.

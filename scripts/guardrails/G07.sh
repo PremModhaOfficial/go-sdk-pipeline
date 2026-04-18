@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# phases: bootstrap intake design impl testing feedback
+# phases: intake design impl testing feedback
 # severity: BLOCKER
 # no writes outside SDK_TARGET_DIR + runs/
 set -uo pipefail

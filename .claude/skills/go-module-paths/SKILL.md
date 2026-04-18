@@ -1,14 +1,12 @@
 ---
 name: go-module-paths
-description: Go module import path derivation, monorepo layouts, Dockerfile COPY context, common mistakes. Ported verbatim.
+description: Go module import path derivation, monorepo layouts, Dockerfile COPY context, common mistakes.
 version: 1.0.0
 created-in-run: bootstrap-seed
 status: stable
-source-pattern: ported-from-archive@b2453098:.claude/skills/go-module-paths/SKILL.md
 tags: [go, module, import, monorepo]
 ---
 
-<!-- ported-from: motadata-ai-pipeline-ARCHIVE/.claude/skills/go-module-paths/SKILL.md @ b2453098 -->
 
 
 # Go Module Import Paths

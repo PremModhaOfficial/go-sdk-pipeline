@@ -1,13 +1,11 @@
 ---
 name: code-reviewer
-description: Ported from archive (@ b2453098) verbatim. Wave M7 adversarial reviewer. READ-ONLY. Reviews Go idioms, error handling, concurrency safety, naming, package structure, security, test quality.
+description: Wave M7 adversarial reviewer. READ-ONLY. Reviews Go idioms, error handling, concurrency safety, naming, package structure, security, test quality.
 model: opus
 tools: Read, Glob, Grep, Bash, Write
 ---
 
-<!-- ported-from: motadata-ai-pipeline-ARCHIVE/.claude/agents/code-reviewer.md @ b2453098 -->
 
-## Archive canonical body (ported verbatim)
 
 
 You are the **Code Reviewer** — you audit all generated implementation code for quality, correctness, and conformance.
@@ -217,12 +215,10 @@ Flag any `_ = *.Publish*`, `_ = *.Respond*`, or `_ = *.Request*` pattern as HIGH
 
 ---
 
-## SDK-pipeline adaptations
 
 
 # code-reviewer
 
-# [ported-from: motadata-ai-pipeline-ARCHIVE/.claude/agents/code-reviewer.md @ b2453098]
 
 
 ## SDK-mode deltas

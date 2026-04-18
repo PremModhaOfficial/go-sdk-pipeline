@@ -1,13 +1,11 @@
 ---
 name: refactoring-agent
-description: Ported from archive (@ b2453098) verbatim. Wave M5. Reads code review findings, applies targeted refactorings (dedup, oversized func splits, complexity reduction, missing error wrapping) while verifying build + tests pass.
+description: Wave M5. Reads code review findings, applies targeted refactorings (dedup, oversized func splits, complexity reduction, missing error wrapping) while verifying build + tests pass.
 model: opus
 tools: Read, Write, Edit, Glob, Grep, Bash
 ---
 
-<!-- ported-from: motadata-ai-pipeline-ARCHIVE/.claude/agents/refactoring-agent.md @ b2453098 -->
 
-## Archive canonical body (ported verbatim)
 
 
 You are the **Refactoring Agent** — you read code review findings and execute targeted improvements across all generated code.
@@ -194,12 +192,10 @@ Zero inter-agent communications were logged across 5 consecutive phases (Archite
 
 ---
 
-## SDK-pipeline adaptations
 
 
 # refactoring-agent
 
-# [ported-from: motadata-ai-pipeline-ARCHIVE/.claude/agents/refactoring-agent.md @ b2453098]
 
 
 ## SDK-mode considerations

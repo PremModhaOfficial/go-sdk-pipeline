@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# phases: bootstrap intake design impl testing feedback meta
+# phases: intake design impl testing feedback meta
 # severity: BLOCKER
 # decision-log.jsonl valid JSONL
 set -uo pipefail

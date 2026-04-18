@@ -2,6 +2,8 @@
 
 Persistent state maintained by `learning-engine` across runs.
 
+**Scope (post-Phase-1-removal)**: `learning-engine` patches **existing** skills and agent prompts based on defect signals. It does **not** create new skills or new agents at runtime. New skills and agents arrive only via human-authored PRs.
+
 ## Layout
 
 ```
@@ -15,19 +17,31 @@ evolution/
 │   ├── skill-effectiveness.jsonl     — Which skills helped / hurt
 │   └── prompt-evolution-log.jsonl    — Every agent-prompt patch applied
 ├── prompt-patches/<agent>.md         — Applied prompt patches (append-only)
-├── skill-candidates/<name>.json      — Drafts waiting for next run's bootstrap phase
-├── guardrail-candidates/<name>.json  — Proposed new guardrails
+├── skill-candidates/<name>/          — Human-review drafts (see below)
 └── evolution-reports/<run-id>.md     — Per-run evolution summary
 ```
 
-## Safety gates (preserved from archive learning-engine)
+## skill-candidates/ semantics
 
-- confidence=high required for auto-apply
-- 2+ run recurrence (except CRITICAL)
-- never deletes (append-only; use `status: deprecated`)
-- resets baselines every 5 runs
-- caps per run: ≤10 prompt patches, ≤3 new skills (non-bootstrap), ≤2 new guardrails, ≤2 new agents
+This directory is **a human-review inbox, not a runtime promotion target.** Drafts that appear here must be audited, edited, and PR-merged into `.claude/skills/<name>/` by a human. The pipeline never auto-promotes from this directory.
 
-## Paths ported from archive
+Current contents (8 drafts from prior Dragonfly-class runs): see `docs/PROPOSED-SKILLS.md` for the human-review backlog view.
 
-`motadata-ai-pipeline-ARCHIVE/.feedback/learning/*` — same filenames, rebased under `evolution/`.
+## Safety gates (kept from archive, narrowed to skills-are-human-only)
+
+| Gate | Before | After |
+|---|---|---|
+| Auto-apply confidence | `high` required | unchanged |
+| Recurrence requirement | 2+ runs (except CRITICAL) | unchanged |
+| Deletion | never (append-only; `status: deprecated`) | unchanged |
+| Baseline reset | every 5 runs | unchanged |
+| Per-run cap — prompt patches | ≤10 | unchanged |
+| Per-run cap — **new skills** | ≤3 (bootstrap synthesis) | **0 (removed)** |
+| Per-run cap — **new guardrails** | ≤2 | **0 (now human-only; propose via `docs/PROPOSED-GUARDRAILS.md`)** |
+| Per-run cap — **new agents** | ≤2 | **0 (removed)** |
+| Per-run cap — existing-skill body patches | — | ≤3 (minor-version-bump only) |
+| Golden regression gate | required before auto-apply | unchanged |
+
+## skill-candidates directory — transition note
+
+The `evolution/skill-candidates/` directory (8 existing drafts from prior Dragonfly-class runs) is retained as a human-review inbox only. The pipeline does not auto-promote. A human must audit, revise if needed, move to `.claude/skills/<name>/`, and update `skill-index.json` via PR.

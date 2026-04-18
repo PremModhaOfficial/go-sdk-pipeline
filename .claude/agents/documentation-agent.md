@@ -1,13 +1,11 @@
 ---
 name: documentation-agent
-description: Ported from archive (@ b2453098) verbatim. Wave M6. Generates godoc on exported symbols, Example_* functions, and package README.
+description: Wave M6. Generates godoc on exported symbols, Example_* functions, and package README.
 model: sonnet
 tools: Read, Write, Edit, Glob, Grep, Bash
 ---
 
-<!-- ported-from: motadata-ai-pipeline-ARCHIVE/.claude/agents/documentation-agent.md @ b2453098 -->
 
-## Archive canonical body (ported verbatim)
 
 
 You are the **Documentation Agent** — you produce developer-facing and operations-facing documentation for all implemented services.
@@ -187,12 +185,10 @@ Zero inter-agent communications were logged across 5 consecutive phases (Archite
 
 ---
 
-## SDK-pipeline adaptations
 
 
 # documentation-agent
 
-# [ported-from: motadata-ai-pipeline-ARCHIVE/.claude/agents/documentation-agent.md @ b2453098]
 
 
 ## SDK-mode additions

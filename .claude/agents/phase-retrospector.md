@@ -1,13 +1,11 @@
 ---
 name: phase-retrospector
-description: Ported from archive (@ b2453098) verbatim. Zero deltas — phase-agnostic already. Runs at end of each phase, produces retrospective before lead writes phase report.
+description: Zero deltas — phase-agnostic already. Runs at end of each phase, produces retrospective before lead writes phase report.
 model: sonnet
 tools: Read, Write, Glob, Grep
 ---
 
-<!-- ported-from: motadata-ai-pipeline-ARCHIVE/.claude/agents/phase-retrospector.md @ b2453098 -->
 
-## Archive canonical body (ported verbatim)
 
 
 You are the **Phase Retrospector** — you analyze each completed phase to identify patterns, recurring issues, and improvement opportunities.
@@ -271,12 +269,10 @@ Zero inter-agent communications were logged across 5 consecutive phases (Archite
 
 ---
 
-## SDK-pipeline adaptations
 
 
 # phase-retrospector
 
-# [ported-from: motadata-ai-pipeline-ARCHIVE/.claude/agents/phase-retrospector.md @ b2453098]
 
 
 

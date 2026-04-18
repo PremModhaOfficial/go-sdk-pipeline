@@ -6,10 +6,9 @@ This file is the single source of truth for every agent in this pipeline. Canoni
 
 | Domain | Owner agent | Consulted |
 |---|---|---|
-| Skill bootstrap decisions | `sdk-bootstrap-lead` | `sdk-skill-devil`, `sdk-skill-convention-aligner` |
-| Canonical skill content | `sdk-skill-synthesizer` | `sdk-skill-devil` |
-| Agent prompt creation | `sdk-agent-bootstrapper` | `sdk-agent-devil` |
-| TPRD canonicalization | `sdk-intake-agent` | — |
+| TPRD canonicalization + manifest validation | `sdk-intake-agent` | — |
+| New skill authorship | **human only** (PR merge) | — |
+| Existing skill body patches | `learning-engine` (Phase 4) | `sdk-golden-regression-runner`, `baseline-manager` |
 | Extension pre-design snapshot | `sdk-existing-api-analyzer` | — |
 | Target-SDK marker ownership map | `sdk-marker-scanner` | — |
 | API design | `sdk-design-lead` | `pattern-advisor`, `sdk-designer` |
@@ -44,28 +43,26 @@ This file is the single source of truth for every agent in this pipeline. Canoni
 ## Agent Groups
 
 ### Leads (orchestrators)
-- `sdk-bootstrap-lead` — Phase -1
 - `sdk-intake-agent` — Phase 0 (also acts as its own lead)
+- `sdk-existing-api-analyzer` — Phase 0.5 (Mode B/C only)
 - `sdk-design-lead` — Phase 1
 - `sdk-impl-lead` — Phase 2
 - `sdk-testing-lead` — Phase 3
-- `learning-engine` — Phase 4 (ported)
+- `learning-engine` — Phase 4 (skill-patch scope narrowed)
 
-### Design agents (from archive, adapted)
+### Design agents (SDK-specific)
 - `sdk-designer`, `interface-designer`, `algorithm-designer`, `concurrency-designer`, `pattern-advisor`
 
 ### Implementation agents
-- `sdk-implementor` (ported), `code-generator` (adapted scope), `test-spec-generator` (adapted), `refactoring-agent` (ported), `documentation-agent` (ported)
+- `sdk-implementor`, `code-generator` (adapted scope), `test-spec-generator` (adapted), `refactoring-agent`, `documentation-agent`
 
 ### Testing agents
-- `unit-test-agent` (ported), `integration-test-agent` (ported), `performance-test-agent` (ported), `mutation-test-agent` (ported), `observability-test-agent` (ported), `fuzz-agent` (new minimal)
+- `unit-test-agent`, `integration-test-agent`, `performance-test-agent`, `mutation-test-agent`, `observability-test-agent`, `fuzz-agent` (new minimal)
 
-### Feedback agents (all ported from archive)
+### Feedback agents (feedback-track)
 - `metrics-collector`, `phase-retrospector`, `root-cause-tracer`, `defect-analyzer`, `improvement-planner`, `baseline-manager`, `learning-engine`
 
-### Devil / adversarial agents (new SDK-specific unless noted)
-- `sdk-skill-devil` (D1)
-- `sdk-agent-devil` (D2)
+### Devil / adversarial agents (SDK-specific)
 - `sdk-design-devil` (D3)
 - `sdk-dep-vet-devil` (D4)
 - `sdk-semver-devil` (D5)
@@ -83,11 +80,7 @@ This file is the single source of truth for every agent in this pipeline. Canoni
 - `sdk-constraint-devil` (D17)
 - `sdk-marker-hygiene-devil` (D18)
 
-### Bootstrap helpers (new)
-- `sdk-skill-auditor`
-- `sdk-skill-synthesizer`
-- `sdk-skill-convention-aligner`
-- `sdk-agent-bootstrapper`
+D1 (`sdk-skill-devil`) and D2 (`sdk-agent-devil`) REMOVED with Phase -1.
 
 ### Mode B/C helpers (new)
 - `sdk-existing-api-analyzer`
@@ -98,7 +91,3 @@ This file is the single source of truth for every agent in this pipeline. Canoni
 ## Review-only guarantee
 
 Every agent whose name contains `devil`, `critic`, `reviewer`, or `validator` is READ-ONLY on source code. They write only to `runs/<run-id>/<phase>/reviews/`.
-
-## Provenance
-
-See `PROVENANCE.md` for which agents were ported verbatim from `motadata-ai-pipeline-ARCHIVE/` and what deltas were applied.

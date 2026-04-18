@@ -1,8 +1,8 @@
 {
-  "schema_version": "1.0.0",
-  "pipeline_version": "0.1.0",
-  "generated_by": "manual-seed",
-  "note": "Auto-rebuilt on every bootstrap phase. Sourced from frontmatter of every SKILL.md under .claude/skills/. Seed below represents target skill set for MVP.",
+  "schema_version": "1.1.0",
+  "pipeline_version": "0.2.0",
+  "generated_by": "manual-authorship",
+  "note": "Static, human-curated catalog. Updated manually in the same PR that adds/removes a SKILL.md. No runtime synthesis; no auto-rebuild.",
   "skills": {
     "ported_verbatim": [
       { "name": "go-concurrency-patterns", "version": "1.0.0", "status": "stable", "archive_source": ".claude/skills/go-concurrency-patterns/SKILL.md" },
@@ -26,40 +26,39 @@
       { "name": "spec-driven-development", "version": "1.0.0", "status": "stable", "archive_source": ".claude/skills/spec-driven-development/SKILL.md" }
     ],
     "ported_with_delta": [
-      { "name": "sdk-library-design", "version": "1.1.0", "status": "stable", "archive_source": ".claude/skills/sdk-library-design/SKILL.md", "delta": "expanded to cover both Config+New pattern AND functional options with target-SDK-convention guidance" },
       { "name": "decision-logging", "version": "1.1.0", "status": "stable", "archive_source": ".claude/skills/decision-logging/SKILL.md", "delta": "added skill-evolution + budget entry types" },
       { "name": "guardrail-validation", "version": "1.1.0", "status": "stable", "archive_source": ".claude/skills/guardrail-validation/SKILL.md", "delta": "extended 28-check catalog to G01-G103 (adds marker guardrails G96-G103)" }
     ],
-    "to_synthesize_on_first_use": [
-      { "name": "go-dependency-vetting", "priority": "MUST" },
-      { "name": "sdk-semver-governance", "priority": "MUST" },
-      { "name": "network-error-classification", "priority": "MUST" },
-      { "name": "context-deadline-patterns", "priority": "MUST" },
-      { "name": "connection-pool-tuning", "priority": "MUST" },
-      { "name": "goroutine-leak-prevention", "priority": "MUST" },
-      { "name": "client-shutdown-lifecycle", "priority": "MUST" },
-      { "name": "sdk-config-struct-pattern", "priority": "MUST" },
-      { "name": "sdk-otel-hook-integration", "priority": "MUST" },
-      { "name": "sdk-marker-protocol", "priority": "MUST (Mode B/C only)" },
-      { "name": "idempotent-retry-safety", "priority": "SHOULD" },
-      { "name": "client-tls-configuration", "priority": "SHOULD" },
-      { "name": "credential-provider-pattern", "priority": "SHOULD" },
-      { "name": "backpressure-flow-control", "priority": "SHOULD" },
-      { "name": "client-rate-limiting", "priority": "SHOULD" },
-      { "name": "api-ergonomics-audit", "priority": "SHOULD" },
-      { "name": "client-mock-strategy", "priority": "SHOULD" },
-      { "name": "go-example-function-patterns", "priority": "SHOULD" },
-      { "name": "circuit-breaker-policy", "priority": "SHOULD" }
+    "sdk_native": [
+      { "name": "go-dependency-vetting", "version": "1.0.0", "status": "stable" },
+      { "name": "sdk-semver-governance", "version": "1.0.0", "status": "stable" },
+      { "name": "network-error-classification", "version": "1.0.0", "status": "stable" },
+      { "name": "context-deadline-patterns", "version": "1.0.0", "status": "stable" },
+      { "name": "connection-pool-tuning", "version": "1.0.0", "status": "stable" },
+      { "name": "goroutine-leak-prevention", "version": "1.0.0", "status": "stable" },
+      { "name": "client-shutdown-lifecycle", "version": "1.0.0", "status": "stable" },
+      { "name": "sdk-config-struct-pattern", "version": "1.0.0", "status": "stable" },
+      { "name": "sdk-otel-hook-integration", "version": "1.0.0", "status": "stable" },
+      { "name": "sdk-marker-protocol", "version": "1.0.0", "status": "stable" },
+      { "name": "idempotent-retry-safety", "version": "1.0.0", "status": "stable" },
+      { "name": "client-tls-configuration", "version": "1.0.0", "status": "stable" },
+      { "name": "credential-provider-pattern", "version": "1.0.0", "status": "stable" },
+      { "name": "backpressure-flow-control", "version": "1.0.0", "status": "stable" },
+      { "name": "client-rate-limiting", "version": "1.0.0", "status": "stable" },
+      { "name": "api-ergonomics-audit", "version": "1.0.0", "status": "stable" },
+      { "name": "client-mock-strategy", "version": "1.0.0", "status": "stable" },
+      { "name": "go-example-function-patterns", "version": "1.0.0", "status": "stable" },
+      { "name": "circuit-breaker-policy", "version": "1.0.0", "status": "stable" }
     ]
   },
   "tags_index": {
-    "sdk": ["sdk-library-design", "sdk-config-struct-pattern", "sdk-otel-hook-integration", "sdk-semver-governance"],
-    "go": ["go-concurrency-patterns", "go-error-handling-patterns", "go-struct-interface-design", "go-hexagonal-architecture", "go-module-paths"],
-    "testing": ["testing-patterns", "table-driven-tests", "tdd-patterns", "fuzz-patterns", "mock-patterns", "testcontainers-setup"],
-    "client": ["network-error-classification", "client-shutdown-lifecycle", "client-tls-configuration", "credential-provider-pattern", "client-rate-limiting"],
+    "sdk": ["sdk-config-struct-pattern", "sdk-otel-hook-integration", "sdk-semver-governance", "sdk-marker-protocol"],
+    "go": ["go-concurrency-patterns", "go-error-handling-patterns", "go-struct-interface-design", "go-hexagonal-architecture", "go-module-paths", "go-dependency-vetting", "go-example-function-patterns"],
+    "testing": ["testing-patterns", "table-driven-tests", "tdd-patterns", "fuzz-patterns", "mock-patterns", "testcontainers-setup", "client-mock-strategy"],
+    "client": ["network-error-classification", "client-shutdown-lifecycle", "client-tls-configuration", "credential-provider-pattern", "client-rate-limiting", "client-mock-strategy"],
     "resilience": ["circuit-breaker-policy", "idempotent-retry-safety", "backpressure-flow-control", "context-deadline-patterns"],
     "observability": ["otel-instrumentation", "sdk-otel-hook-integration"],
     "markers": ["sdk-marker-protocol"],
-    "meta": ["decision-logging", "review-fix-protocol", "lifecycle-events", "context-summary-writing", "conflict-resolution", "feedback-analysis"]
+    "meta": ["decision-logging", "review-fix-protocol", "lifecycle-events", "context-summary-writing", "conflict-resolution", "feedback-analysis", "guardrail-validation", "spec-driven-development", "environment-prerequisites-check", "api-ergonomics-audit"]
   }
 }

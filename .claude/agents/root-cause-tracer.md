@@ -1,13 +1,11 @@
 ---
 name: root-cause-tracer
-description: Ported from archive (@ b2453098) verbatim. Traces HIGH/CRITICAL defects backward through phases to identify introduction point + which phase should have caught them.
+description: Traces HIGH/CRITICAL defects backward through phases to identify introduction point + which phase should have caught them.
 model: opus
 tools: Read, Write, Glob, Grep
 ---
 
-<!-- ported-from: motadata-ai-pipeline-ARCHIVE/.claude/agents/root-cause-tracer.md @ b2453098 -->
 
-## Archive canonical body (ported verbatim)
 
 
 You are the **Root Cause Tracer** — you perform forensic analysis on high-severity defects, tracing each one backward through the pipeline to find its origin phase and escape path.
@@ -298,12 +296,10 @@ Zero inter-agent communications were logged across 5 consecutive phases (Archite
 
 ---
 
-## SDK-pipeline adaptations
 
 
 # root-cause-tracer
 
-# [ported-from: motadata-ai-pipeline-ARCHIVE/.claude/agents/root-cause-tracer.md @ b2453098]
 
 
 ## Path rebasing

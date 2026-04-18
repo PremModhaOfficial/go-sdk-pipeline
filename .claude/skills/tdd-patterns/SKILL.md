@@ -1,14 +1,12 @@
 ---
 name: tdd-patterns
-description: Go TDD skeleton→failing-test→impl→verify cycle, interface-driven test design, mock-based TDD, RED/GREEN/REFACTOR. Ported verbatim.
+description: Go TDD skeleton→failing-test→impl→verify cycle, interface-driven test design, mock-based TDD, RED/GREEN/REFACTOR.
 version: 1.0.0
 created-in-run: bootstrap-seed
 status: stable
-source-pattern: ported-from-archive@b2453098:.claude/skills/tdd-patterns/SKILL.md
 tags: [go, testing, tdd, red-green-refactor]
 ---
 
-<!-- ported-from: motadata-ai-pipeline-ARCHIVE/.claude/skills/tdd-patterns/SKILL.md @ b2453098 -->
 
 
 # Go TDD Patterns for Multi-Agent Implementation

@@ -4,11 +4,9 @@ description: testcontainers-go patterns — PostgreSQL, NATS, Redis containers, 
 version: 1.0.0
 created-in-run: bootstrap-seed
 status: stable
-source-pattern: ported-from-archive@b2453098:.claude/skills/testcontainers-setup/SKILL.md
 tags: [testing, integration, testcontainers, docker]
 ---
 
-<!-- ported-from: motadata-ai-pipeline-ARCHIVE/.claude/skills/testcontainers-setup/SKILL.md @ b2453098 -->
 
 
 # Testcontainers Setup

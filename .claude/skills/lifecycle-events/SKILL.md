@@ -1,14 +1,12 @@
 ---
 name: lifecycle-events
-description: Agent lifecycle event logging — startup, completion, failure. duration_seconds calculation. Ported verbatim.
+description: Agent lifecycle event logging — startup, completion, failure. duration_seconds calculation.
 version: 1.0.0
 created-in-run: bootstrap-seed
 status: stable
-source-pattern: ported-from-archive@b2453098:.claude/skills/lifecycle-events/SKILL.md
 tags: [meta, lifecycle, logging]
 ---
 
-<!-- ported-from: motadata-ai-pipeline-ARCHIVE/.claude/skills/lifecycle-events/SKILL.md @ b2453098 -->
 
 
 # Lifecycle Events

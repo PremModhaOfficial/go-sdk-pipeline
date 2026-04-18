@@ -1,14 +1,13 @@
 # Agent Creation Guide (SDK pipeline)
 
-Ported from `motadata-ai-pipeline-ARCHIVE/AGENT-CREATION-GUIDE.md` @ b2453098. See that file for the base 9-section template and validator. This document layers SDK-mode deltas.
+Authoring rules for new agents in `.claude/agents/<name>.md`. Every agent must meet the 9-section template and pass the validator checklist at the end of this doc.
 
-## SDK-mode deltas (vs. archive)
+## Core rules
 
-### 1. Drop microservice / frontend wave references
+### 1. Agents map to SDK phases (not microservice waves)
 
-Archive references Wave 1 system-decomposer, Wave 2 api-designer + database-architect + infrastructure-architect, Wave 3 simulated-cto etc. SDK pipeline has NO these waves. Agent wave assignment maps to SDK phases:
+SDK pipeline has no system-decomposer, api-designer, database-architect, infrastructure-architect, or simulated-cto waves. Agent wave assignment maps to SDK phases:
 
-- Phase -1 Bootstrap: `sdk-bootstrap-lead`, `sdk-skill-*`, `sdk-agent-*`
 - Phase 0 Intake: `sdk-intake-agent`
 - Phase 0.5 Analyze: `sdk-existing-api-analyzer`, `sdk-marker-scanner`
 - Phase 1 Design: `sdk-design-lead`, `sdk-designer`, `interface-designer`, `algorithm-designer`, `concurrency-designer`, `pattern-advisor`, `sdk-*-devil`
@@ -37,9 +36,7 @@ model: opus
 tools: Read, Write, Edit, Glob, Grep, Bash
 ---
 
-# Ported from motadata-ai-pipeline-ARCHIVE/.claude/agents/learning-engine.md @ b2453098
 
-## Load archive source
 
 
 ## SDK-MODE deltas

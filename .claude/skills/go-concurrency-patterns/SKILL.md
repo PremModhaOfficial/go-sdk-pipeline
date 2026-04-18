@@ -1,14 +1,12 @@
 ---
 name: go-concurrency-patterns
-description: Go concurrency patterns for goroutines, errgroup, channels, context cancellation, worker pools, sync.Pool, race detection. Ported verbatim from archive.
+description: Go concurrency patterns for goroutines, errgroup, channels, context cancellation, worker pools, sync.Pool, race detection.
 version: 1.0.0
 created-in-run: bootstrap-seed
 status: stable
-source-pattern: ported-from-archive@b2453098:.claude/skills/go-concurrency-patterns/SKILL.md
 tags: [go, concurrency, goroutine, channel, errgroup, context, worker-pool]
 ---
 
-<!-- ported-from: motadata-ai-pipeline-ARCHIVE/.claude/skills/go-concurrency-patterns/SKILL.md @ b2453098 -->
 
 
 # Go Concurrency Patterns

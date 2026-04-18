@@ -1,14 +1,12 @@
 ---
 name: testing-patterns
-description: Go testing fundamentals — table-driven, testcontainers, gomock, httptest, fixtures, benchmarks, coverage enforcement. Ported verbatim.
+description: Go testing fundamentals — table-driven, testcontainers, gomock, httptest, fixtures, benchmarks, coverage enforcement.
 version: 1.0.0
 created-in-run: bootstrap-seed
 status: stable
-source-pattern: ported-from-archive@b2453098:.claude/skills/testing-patterns/SKILL.md
 tags: [go, testing, coverage, benchmark]
 ---
 
-<!-- ported-from: motadata-ai-pipeline-ARCHIVE/.claude/skills/testing-patterns/SKILL.md @ b2453098 -->
 
 
 # Testing Patterns

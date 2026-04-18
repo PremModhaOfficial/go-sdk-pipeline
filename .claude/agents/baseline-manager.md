@@ -1,13 +1,11 @@
 ---
 name: baseline-manager
-description: Ported from archive (@ b2453098). Manages quality/coverage/performance baselines. Never lowers unless authorized. Resets every 5 runs. Adds skill-health baseline dimension (SDK-specific) and drops event-driven-compliance baseline.
+description: Manages quality/coverage/performance baselines. Never lowers unless authorized. Resets every 5 runs. Adds skill-health baseline dimension (SDK-specific) and drops event-driven-compliance baseline.
 model: opus
 tools: Read, Write, Glob, Grep
 ---
 
-<!-- ported-from: motadata-ai-pipeline-ARCHIVE/.claude/agents/baseline-manager.md @ b2453098 -->
 
-## Archive canonical body (ported verbatim)
 
 
 You are the **Baseline Manager** — you maintain quality, coverage, and performance baselines across pipeline runs. You create initial baselines from first-run data, update them as quality improves, and flag regressions.
@@ -262,12 +260,10 @@ Zero inter-agent communications were logged across 5 consecutive phases (Archite
 
 ---
 
-## SDK-pipeline adaptations
 
 
 # baseline-manager
 
-# [ported-from: motadata-ai-pipeline-ARCHIVE/.claude/agents/baseline-manager.md @ b2453098]
 
 
 
@@ -281,14 +277,16 @@ Zero inter-agent communications were logged across 5 consecutive phases (Archite
 **Why**: SDK pipeline evolves skills continuously. Need longitudinal signal.
 **How**: New baseline file `baselines/skill-health.json` tracking:
 - `skill_stability` — patches per skill per run (rolling 10-run avg)
-- `bootstrap_success_rate` — % of runs where synthesized skills survived first real use without devil NEEDS-FIX
+- `existing_skill_patch_accept_rate` — % of learning-engine body-patches that passed golden-corpus gate
+- `manifest_miss_rate` — % of runs halted at intake for missing §Guardrails-Manifest entries (exit 6). §Skills-Manifest misses are WARN-only and tracked separately (non-blocking).
 - `golden_regression_rate` — % of latest 5 runs where golden-corpus PASS
 - `mean_time_to_green_sec` — wall-clock from start to first passing test
 - `user_intervention_rate` — HITL overrides per run
 
 Update rules per metric (applied after each run):
 - `skill_stability`: target <0.3 after 10 runs; if rising for 3 consecutive runs → WARN, suggest skill consolidation
-- `bootstrap_success_rate`: target ≥0.8; below = devil over-rejecting OR synthesizer under-performing
+- `existing_skill_patch_accept_rate`: target ≥0.8; below = learning-engine over-patching OR golden-corpus too brittle
+- `manifest_miss_rate`: target 0 after library stabilizes; rising = TPRD authors referencing skills that don't yet exist (file to `docs/PROPOSED-SKILLS.md`)
 - `golden_regression_rate`: target 1.0 across last 5 runs; below = safety net leaking
 - `mean_time_to_green_sec`: monitor trend (should decrease over time); flat for 5 runs = investigate
 - `user_intervention_rate`: target trending down; flat or up = gates poorly calibrated

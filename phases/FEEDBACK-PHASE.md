@@ -15,7 +15,7 @@ New SDK agents plug in as INPUTS to `improvement-planner` — they don't replace
 - `runs/<run-id>/testing/*`
 - `runs/<run-id>/impl/*`
 - `runs/<run-id>/design/*`
-- `runs/<run-id>/bootstrap/*`
+- `runs/<run-id>/intake/*`
 - `baselines/*.json` (previous)
 - `golden-corpus/*` (canonical fixtures)
 - `evolution/knowledge-base/*.jsonl`
@@ -23,20 +23,20 @@ New SDK agents plug in as INPUTS to `improvement-planner` — they don't replace
 ## Waves
 
 ### Wave F1 — Metrics Collection
-**Agent**: `metrics-collector` (ported with delta)
+**Agent**: `metrics-collector`
 - Computes per-agent `quality_score` (formula in CLAUDE.md)
 - Per-phase metrics (duration, tokens, rework, devil-block-rate, skill-coverage-pct)
 - Per-run metrics (pipeline_quality, coverage, bench-delta, vuln-count, leak-count, flake-rate, determinism-diff)
 - Output: `runs/<run-id>/feedback/metrics.json` + `metrics-summary.md`
 
 ### Wave F2 — Phase Retrospectives
-**Agent**: `phase-retrospector` (ported)
-- For each phase (bootstrap, intake, design, impl, testing), produce `runs/<run-id>/feedback/retro-<phase>.md`
+**Agent**: `phase-retrospector`
+- For each phase (intake, design, impl, testing), produce `runs/<run-id>/feedback/retro-<phase>.md`
 - What went well / recurring patterns / surprises / coordination issues
 - Cross-phase pattern detection (if this is run ≥2)
 
 ### Wave F3 — Root-Cause Tracing (if defects)
-**Agent**: `root-cause-tracer` (ported)
+**Agent**: `root-cause-tracer`
 - For each HIGH/CRITICAL defect from testing phase, trace backward through phases
 - Where was the defect introduced? Which phase should have caught it?
 - Output: `runs/<run-id>/feedback/root-causes.md` + backpatch-log entries
@@ -57,41 +57,43 @@ Parallel:
 - If any FAIL: learning-engine HALTS auto-patch application; user must triage
 
 ### Wave F6 — Improvement Planning
-**Agent**: `improvement-planner` (ported with delta)
+**Agent**: `improvement-planner`
 Reads: metrics, retros, root-causes, drift, coverage, golden-regression, knowledge-base
 Outputs categorized improvements in `evolution/improvement-plan-<run-id>.md`:
 - Prompt-patch candidates → `evolution/prompt-patches/<agent>.md` (draft)
-- Skill candidates → `evolution/skill-candidates/<name>.json` (next-run bootstrap consumer)
-- Guardrail candidates → `evolution/guardrail-candidates/<name>.json`
+- Existing-skill body-patch candidates → marked for `learning-engine` (auto-apply with minor bump + golden-regression gate)
+- **New-skill proposals** → appended to `docs/PROPOSED-SKILLS.md` with `status: proposed`, source `run-id` (human-authored only; never drafted by pipeline)
+- **New-guardrail proposals** → appended to `docs/PROPOSED-GUARDRAILS.md` (human-authored only)
 - Process / threshold proposals (plan only, not auto-applied)
 Confidence levels: high / medium / low.
 
 ### Wave F7 — Learning Engine (auto-apply safe; draft risky)
-**Agent**: `learning-engine` (ported with delta)
-Safety gates (preserved from archive):
+**Agent**: `learning-engine`
+Safety gates (preserved from archive, narrowed post-Phase-1-removal):
 - confidence=high required for auto-apply
 - 2+ run recurrence (except CRITICAL)
 - never deletes (append-only; `status: deprecated`)
 - resets baselines every 5 runs
-- caps per run: ≤10 prompt patches, ≤3 new skills (non-bootstrap), ≤2 new guardrails, ≤2 new agents
+- caps per run: ≤10 prompt patches, ≤3 **existing-skill** body patches, **0 new skills / 0 new guardrails / 0 new agents** (all human-authored via PR)
 
-**NEW delta** — halt auto-apply if Wave F5 golden regression FAILED.
+**NEW delta** — halt auto-apply if Wave F5 golden regression FAILED. Never creates new `SKILL.md` files — only patches bodies of existing skills with a minor version bump.
 
 Actions:
-- Apply high-confidence prompt patches → `evolution/prompt-patches/<agent>.md` (append, bump skill version if affects skill)
-- Draft risky patches for user review at H9
+- Apply high-confidence prompt patches → `evolution/prompt-patches/<agent>.md` (append)
+- Apply existing-skill body patches → bump minor version, append to `evolution-log.md`, re-run golden-corpus
+- File new-skill proposals → `docs/PROPOSED-SKILLS.md` (status: proposed)
+- File new-guardrail proposals → `docs/PROPOSED-GUARDRAILS.md` (status: proposed)
 - Log applied patches in `evolution/knowledge-base/prompt-evolution-log.jsonl`
 
 ### Wave F8 — Baseline Manager
-**Agent**: `baseline-manager` (ported with delta)
+**Agent**: `baseline-manager`
 - First-run: create baselines
 - Subsequent: raise if improved by >10%, keep if regressed, reset every 5 runs
 - Update `baselines/{quality,coverage,performance,skill-health}.json`
 - Output: `baselines/regression-report-<run-id>.md`, `baseline-history.jsonl` append
 
-### Wave F9 — HITL Gate H9 (major skill bumps) + H10 (merge rec)
-**H9**: If Wave F6 proposed a MAJOR skill version bump → user approves + golden-corpus re-run
-**H10**: Final merge recommendation with run-summary
+### Wave F9 — HITL Gate H10 (merge rec)
+**H10**: Final merge recommendation with run-summary. Major skill bumps and new-skill proposals are always human PR decisions (no runtime gate needed — pipeline cannot author them).
 
 ## Exit artifacts
 
@@ -122,8 +124,9 @@ G80 (evolution-report written), G81 (baselines updated or rationale), G82 (golde
 ## Pipeline-maturity signals
 
 Longitudinal (across runs):
-- `bootstrap_success_rate` (target ≥0.8 after 5 runs)
+- `existing_skill_patch_accept_rate` (target ≥0.8 after 5 runs)
 - `skill_stability` (patches per skill per run; target <0.3 after 10 runs)
+- `manifest_miss_rate` (target 0 after library stabilizes)
 - `mean_time_to_green` (trending down)
 - `user_intervention_rate` (trending down)
 

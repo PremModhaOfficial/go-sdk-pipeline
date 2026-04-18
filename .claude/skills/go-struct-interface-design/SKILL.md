@@ -1,14 +1,12 @@
 ---
 name: go-struct-interface-design
-description: Struct tags, constructor functions, godoc, interface design (accept interfaces, return structs), -er suffix, acronym casing, no-stutter. Ported verbatim from archive.
+description: Struct tags, constructor functions, godoc, interface design (accept interfaces, return structs), -er suffix, acronym casing, no-stutter.
 version: 1.0.0
 created-in-run: bootstrap-seed
 status: stable
-source-pattern: ported-from-archive@b2453098:.claude/skills/go-struct-interface-design/SKILL.md
 tags: [go, struct, interface, naming, godoc]
 ---
 
-<!-- ported-from: motadata-ai-pipeline-ARCHIVE/.claude/skills/go-struct-interface-design/SKILL.md @ b2453098 -->
 
 
 # Go Struct & Interface Design

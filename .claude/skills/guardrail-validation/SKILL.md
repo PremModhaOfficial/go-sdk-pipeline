@@ -10,7 +10,7 @@ tags: [meta, guardrail, validator, mechanical]
 # guardrail-validation (SDK-mode, v1.1.0)
 
 
-## Delta vs. archive (v1.0.0 -> v1.1.0)
+## Delta  (v1.0.0 -> v1.1.0)
 
 ### Archive checks KEPT (adapted)
 - Go naming (no stuttering, acronym casing) — `G37`
@@ -56,7 +56,6 @@ tags: [meta, guardrail, validator, mechanical]
 
 ---
 
-## Archive canonical body (ported verbatim from motadata-ai-pipeline-ARCHIVE @ b2453098)
 
 
 # Guardrail Validation

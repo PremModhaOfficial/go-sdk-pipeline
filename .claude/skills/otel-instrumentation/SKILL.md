@@ -1,14 +1,12 @@
 ---
 name: otel-instrumentation
-description: OpenTelemetry TracerProvider, MeterProvider, OTLP exporters, slog correlation, span enrichment, context propagation, graceful shutdown. Ported from archive with SDK-mode note.
+description: OpenTelemetry TracerProvider, MeterProvider, OTLP exporters, slog correlation, span enrichment, context propagation, graceful shutdown.
 version: 1.0.0
 created-in-run: bootstrap-seed
 status: stable
-source-pattern: ported-from-archive@b2453098:.claude/skills/otel-instrumentation/SKILL.md
 tags: [otel, observability, tracing, metrics, logging]
 ---
 
-<!-- ported-from: motadata-ai-pipeline-ARCHIVE/.claude/skills/otel-instrumentation/SKILL.md @ b2453098 -->
 
 
 # OTel Instrumentation Patterns

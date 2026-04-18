@@ -1,6 +1,6 @@
 ---
 name: environment-prerequisites-check
-description: Phase-start runtime tool checklist — Go, gcc, golangci-lint, gosec + phase-specific tools. SDK-pipeline adds govulncheck, osv-scanner, staticcheck, benchstat, Docker (testcontainers), jq, git. Ported verbatim with SDK tool additions.
+description: Phase-start runtime tool checklist — Go, gcc, golangci-lint, gosec + phase-specific tools. SDK-pipeline adds govulncheck, osv-scanner, staticcheck, benchstat, Docker (testcontainers), jq, git.
 version: 1.0.0
 created-in-run: bootstrap-seed
 status: stable
@@ -25,7 +25,6 @@ tags: [meta, environment, prerequisites]
 
 ---
 
-## Archive canonical body (ported verbatim from motadata-ai-pipeline-ARCHIVE @ b2453098)
 
 
 # Environment Prerequisites Check

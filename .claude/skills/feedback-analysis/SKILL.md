@@ -106,7 +106,6 @@ Look for:
 
 ---
 
-## Archive canonical body (ported verbatim from motadata-ai-pipeline-ARCHIVE @ b2453098)
 
 
 # Feedback Analysis Patterns

@@ -4,11 +4,9 @@ description: Go hexagonal (ports and adapters) — cmd/, internal/domain/, inter
 version: 1.0.0
 created-in-run: bootstrap-seed
 status: stable
-source-pattern: ported-from-archive@b2453098:.claude/skills/go-hexagonal-architecture/SKILL.md
 tags: [go, architecture, hexagonal, ports-adapters]
 ---
 
-<!-- ported-from: motadata-ai-pipeline-ARCHIVE/.claude/skills/go-hexagonal-architecture/SKILL.md @ b2453098 -->
 
 
 # Go Hexagonal Architecture

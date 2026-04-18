@@ -1,13 +1,11 @@
 ---
 name: improvement-planner
-description: Ported from archive (@ b2453098). Reads metrics, retros, root-causes, drift, coverage, golden-regression. Outputs categorized improvement plan (prompt patches, new skills, guardrails, process/threshold proposals) with confidence levels. Drops archive's HTTP/gRPC rejection clause; adds SDK-specific skill-evolution input.
+description: Reads metrics, retros, root-causes, drift, coverage, golden-regression. Outputs categorized improvement plan (prompt patches, new skills, guardrails, process/threshold proposals) with confidence levels. Drops archive's HTTP/gRPC rejection clause; adds SDK-specific skill-evolution input.
 model: opus
 tools: Read, Write, Glob, Grep
 ---
 
-<!-- ported-from: motadata-ai-pipeline-ARCHIVE/.claude/agents/improvement-planner.md @ b2453098 -->
 
-## Archive canonical body (ported verbatim)
 
 
 You are the **Improvement Planner** — you synthesize feedback from root cause traces, phase retrospectives, and agent telemetry into categorized, actionable improvement items.
@@ -315,12 +313,10 @@ If you encounter an error that prevents completion:
 
 ---
 
-## SDK-pipeline adaptations
 
 
 # improvement-planner
 
-# [ported-from: motadata-ai-pipeline-ARCHIVE/.claude/agents/improvement-planner.md @ b2453098]
 
 
 

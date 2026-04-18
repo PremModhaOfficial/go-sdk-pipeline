@@ -10,7 +10,7 @@ import json, pathlib, sys
 root = pathlib.Path("$ROOT")
 idx = json.loads((root / "skill-index.json").read_text())
 declared = set()
-for section in ("ported_verbatim","ported_with_delta","to_synthesize_on_first_use"):
+for section in ("ported_verbatim","ported_with_delta","sdk_native"):
     for e in idx.get("skills",{}).get(section,[]):
         declared.add(e["name"])
 fs = {p.name for p in root.iterdir() if p.is_dir()}

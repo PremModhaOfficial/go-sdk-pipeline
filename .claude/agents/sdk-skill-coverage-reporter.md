@@ -9,8 +9,8 @@ tools: Read, Glob, Grep, Write
 
 ## Input
 - `runs/<run-id>/decision-log.jsonl`
-- `runs/<run-id>/tprd.md` (for expected skills via tech signals)
-- `runs/<run-id>/bootstrap/skill-gap-report.md`
+- `runs/<run-id>/tprd.md` (for expected skills via §Skills-Manifest + tech signals)
+- `runs/<run-id>/intake/skills-manifest-check.md` (declared-required set)
 
 ## Procedure
 

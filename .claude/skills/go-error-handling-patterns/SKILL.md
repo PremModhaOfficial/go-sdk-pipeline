@@ -1,14 +1,12 @@
 ---
 name: go-error-handling-patterns
-description: Go error wrapping with fmt.Errorf %w, sentinel errors, errors.Is/As, error catalog, PII-safe messages. Ported verbatim from archive.
+description: Go error wrapping with fmt.Errorf %w, sentinel errors, errors.Is/As, error catalog, PII-safe messages.
 version: 1.0.0
 created-in-run: bootstrap-seed
 status: stable
-source-pattern: ported-from-archive@b2453098:.claude/skills/go-error-handling-patterns/SKILL.md
 tags: [go, error, sentinel, wrapping, catalog]
 ---
 
-<!-- ported-from: motadata-ai-pipeline-ARCHIVE/.claude/skills/go-error-handling-patterns/SKILL.md @ b2453098 -->
 
 
 # Go Error Handling Patterns

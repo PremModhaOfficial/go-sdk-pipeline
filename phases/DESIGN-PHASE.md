@@ -26,7 +26,7 @@ Run concurrently, one context summary each. All write to `runs/<run-id>/design/`
 | `pattern-advisor` | `patterns.md` — functional options vs. Config+New rationale, hexagonal layering for the new package |
 
 ### Wave D2 — Mechanical Checks
-**Agent**: `guardrail-validator` (ported)
+**Agent**: `guardrail-validator`
 Runs G30–G38, G32 (govulncheck on proposed deps), G33 (osv-scanner), G34 (license allowlist). Any BLOCKER failure → back to D1 for the relevant agent.
 
 ### Wave D3 — Devil Review (parallel)

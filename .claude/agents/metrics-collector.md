@@ -1,13 +1,11 @@
 ---
 name: metrics-collector
-description: Ported from archive (@ b2453098). Computes per-agent quality scores, per-phase and per-run metrics. Drops frontend-metrics branch. Adds per-phase skill-coverage-pct and bootstrap-specific metrics.
+description: Computes per-agent quality scores, per-phase and per-run metrics. Drops frontend-metrics branch. Adds per-phase skill-coverage-pct and manifest-miss-rate metrics.
 model: sonnet
 tools: Read, Write, Glob, Grep, Bash
 ---
 
-<!-- ported-from: motadata-ai-pipeline-ARCHIVE/.claude/agents/metrics-collector.md @ b2453098 -->
 
-## Archive canonical body (ported verbatim)
 
 
 You are the **Metrics Collector** — you gather telemetry from completed phases and compute objective quality scores for every agent in the fleet.
@@ -294,12 +292,10 @@ Zero inter-agent communications were logged across 5 consecutive phases (Archite
 
 ---
 
-## SDK-pipeline adaptations
 
 
 # metrics-collector
 
-# [ported-from: motadata-ai-pipeline-ARCHIVE/.claude/agents/metrics-collector.md @ b2453098]
 
 
 
@@ -326,7 +322,8 @@ Zero inter-agent communications were logged across 5 consecutive phases (Archite
 
 #### Pipeline-maturity (NEW, rolling across last N=10 runs)
 - `skill_stability` — patches per skill per run
-- `bootstrap_success_rate`
+- `existing_skill_patch_accept_rate` — % of auto-applied patches that survived golden-corpus gate
+- `manifest_miss_rate` — % of runs where §Guardrails-Manifest validation halted the run (exit 6). §Skills-Manifest misses are WARN-only and do NOT count toward this rate; they are tracked separately as `manifest_misses_skills` (informational).
 - `golden_regression_rate`
 - `mean_time_to_green_sec`
 - `user_intervention_rate`

@@ -1,14 +1,12 @@
 ---
 name: context-summary-writing
-description: Context summary file format — 200-line max, Generated/Run header, revision history, ASSUMPTION and DRAFT markers. Ported verbatim.
+description: Context summary file format — 200-line max, Generated/Run header, revision history, ASSUMPTION and DRAFT markers.
 version: 1.0.0
 created-in-run: bootstrap-seed
 status: stable
-source-pattern: ported-from-archive@b2453098:.claude/skills/context-summary-writing/SKILL.md
 tags: [meta, context, summary]
 ---
 
-<!-- ported-from: motadata-ai-pipeline-ARCHIVE/.claude/skills/context-summary-writing/SKILL.md @ b2453098 -->
 
 
 # Context Summary Writing

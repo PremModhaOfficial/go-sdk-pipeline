@@ -1,14 +1,12 @@
 ---
 name: review-fix-protocol
-description: Standardized review-fix resolution loop — per-issue retry cap 5, stuck detection 2, dedup, findings schema, guardrail re-run, convergence criteria. Ported verbatim.
+description: Standardized review-fix resolution loop — per-issue retry cap 5, stuck detection 2, dedup, findings schema, guardrail re-run, convergence criteria.
 version: 1.0.0
 created-in-run: bootstrap-seed
 status: stable
-source-pattern: ported-from-archive@b2453098:.claude/skills/review-fix-protocol/SKILL.md
 tags: [meta, review, findings, retry, convergence]
 ---
 
-<!-- ported-from: motadata-ai-pipeline-ARCHIVE/.claude/skills/review-fix-protocol/SKILL.md @ b2453098 -->
 
 
 # Review-Fix Resolution Protocol

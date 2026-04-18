@@ -2,13 +2,9 @@
   "pipeline_version": "0.1.0",
   "target_sdk_dir_env": "SDK_TARGET_DIR",
   "phase_budgets": {
-    "bootstrap": {
-      "tokens": 200000,
-      "wall_clock_sec": 1800
-    },
     "intake": {
-      "tokens": 100000,
-      "wall_clock_sec": 900
+      "tokens": 150000,
+      "wall_clock_sec": 1200
     },
     "design": {
       "tokens": 500000,
@@ -29,27 +25,28 @@
   },
   "safety_caps": {
     "prompt_patches_per_run": 10,
-    "new_skills_per_run": 5,
-    "new_guardrails_per_run": 3,
-    "new_agents_per_run": 2,
+    "existing_skill_patches_per_run": 3,
+    "new_skills_per_run": 0,
+    "new_guardrails_per_run": 0,
+    "new_agents_per_run": 0,
     "per_issue_max_retries": 5,
     "global_max_iterations": 10,
     "stuck_threshold": 2,
-    "baseline_reset_every_n_runs": 5
+    "baseline_reset_every_n_runs": 5,
+    "_note": "new_skills/guardrails/agents are human-authored via PR only; pipeline runtime caps are 0"
   },
   "hitl_gate_timeouts_hours": {
-    "H0_archive": 0,
+    "H0_target_dir": 0,
     "H1_tprd": 24,
-    "H2_skills": 24,
-    "H3_agents": 48,
     "H4_breaking": 48,
     "H5_design": 24,
     "H6_dep_vet": 12,
     "H7_impl_diff": 24,
     "H7b_mode_c_diff": 48,
     "H8_bench": 12,
-    "H9_skill_major": 48,
-    "H10_merge": 72
+    "H9_testing": 24,
+    "H10_merge": 72,
+    "_note": "H2 (skills) and H3 (agents) removed with Phase -1; H9 repurposed from skill-major to testing sign-off"
   },
   "regression_gates": {
     "bench_hot_path_pct": 5,
@@ -104,5 +101,5 @@
     "MPL-2.0"
   ],
   "golden_corpus_refresh_every_n_runs": 25,
-  "skill_audit_every_n_runs": 10
+  "skill_drift_check_every_n_runs": 10
 }

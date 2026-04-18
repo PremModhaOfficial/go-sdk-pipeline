@@ -1,14 +1,12 @@
 ---
 name: table-driven-tests
-description: Go table-driven test structure — test struct, t.Run subtests, t.Cleanup, t.Parallel, naming, require/assert, gomock per-test. Ported verbatim.
+description: Go table-driven test structure — test struct, t.Run subtests, t.Cleanup, t.Parallel, naming, require/assert, gomock per-test.
 version: 1.0.0
 created-in-run: bootstrap-seed
 status: stable
-source-pattern: ported-from-archive@b2453098:.claude/skills/table-driven-tests/SKILL.md
 tags: [go, testing, table-driven, subtests]
 ---
 
-<!-- ported-from: motadata-ai-pipeline-ARCHIVE/.claude/skills/table-driven-tests/SKILL.md @ b2453098 -->
 
 
 # Table-Driven Tests

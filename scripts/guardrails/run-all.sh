@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Run all guardrails for a given phase. Each check prints PASS <id> or FAIL <id>: <reason>.
 # Usage: run-all.sh <phase> <run-dir> <target-dir>
-#   phase   = bootstrap | intake | design | impl | testing | feedback | meta
+#   phase   = intake | design | impl | testing | feedback | meta
 #   run-dir = runs/<run-id>
 #   target-dir = $SDK_TARGET_DIR (for file-scanning checks); optional for meta phase
 set -uo pipefail

@@ -1,8 +1,8 @@
 # Skill Creation Guide (SDK pipeline)
 
-Ported from `motadata-ai-pipeline-ARCHIVE/SKILL-CREATION-GUIDE.md` @ b2453098. See that file for the base 16-check validator and template. This document layers the SDK-mode deltas on top.
+Authoring rules for new skills in `.claude/skills/<name>/SKILL.md`. Every skill must pass the validator checklist at the end of this doc.
 
-## SDK-mode deltas (vs. archive)
+## Core rules
 
 ### 1. Mandatory `version:` frontmatter
 
@@ -33,8 +33,8 @@ Each `.claude/skills/<name>/` dir MUST contain `evolution-log.md`:
 ## 1.2.0 — run-<id> — 2026-MM-DD
 Triggered by: <agent> finding <id>
 Change: <one-line summary>
-Devil verdict (sdk-skill-devil): ACCEPT / NEEDS-FIX / REJECT
-Applied by: learning-engine / user / agent-bootstrapper
+Applied by: learning-engine (body patch, minor bump) | human-PR (new skill | major bump)
+Golden-regression: PASS | FAIL (FAIL blocks auto-apply)
 ## 1.1.0 — ...
 ```
 
@@ -57,9 +57,9 @@ If TPRD requests divergence: <decision procedure>
 
 Examples must cite actual files in the target SDK where possible. Purely synthetic examples ok only when no target-SDK equivalent exists.
 
-### 6. Devil review on every new skill
+### 6. Human PR review on every new skill
 
-Before a skill is merged into `.claude/skills/`, `sdk-skill-devil` produces a verdict. Verdicts recorded in `evolution-log.md` + `decision-log.jsonl` with `type: skill-evolution`.
+Skills are human-authored. Before a new skill lands in `.claude/skills/`, the PR must be reviewed by: (a) the subject-matter owner (per `AGENTS.md` ownership matrix), (b) at least one devil-agent owner for the domain. Pipeline-run reviews are not a substitute for human review. Every PR merge logs a `skill-evolution` entry in `evolution/knowledge-base/prompt-evolution-log.jsonl` for provenance.
 
 ## Skill file layout
 
@@ -81,6 +81,6 @@ The archive's 16-check validator + these SDK-mode checks:
 18. `evolution-log.md` exists with at least one entry
 19. Target SDK Convention section present if domain touches SDK structure
 20. ≥3 GOOD/BAD examples, ≥1 sourced from target SDK (when applicable)
-21. `sdk-skill-devil` verdict ACCEPT (recorded in evolution-log.md)
+21. Human PR review ACCEPT from subject-matter owner + domain devil-agent owner (recorded in commit trailers + evolution-log.md)
 22. No prescription requires `encoding/json` for internal patterns (SDK prefers MsgPack for NATS-adjacent code)
 23. No tenant_id column / schema-per-tenant artifacts proposed

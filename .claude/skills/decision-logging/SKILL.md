@@ -1,6 +1,6 @@
 ---
 name: decision-logging
-description: Canonical JSON schemas + entry limits for `runs/<run-id>/decision-log.jsonl`. Ported with delta — adds `skill-evolution` and `budget` entry types on top of archive's decision/lifecycle/communication/event/failure/refactor.
+description: Canonical JSON schemas + entry limits for `runs/<run-id>/decision-log.jsonl`.. adds `skill-evolution` and `budget` entry types .
 version: 1.1.0
 created-in-run: bootstrap-seed
 status: stable
@@ -10,7 +10,7 @@ tags: [meta, logging, decision-log, schema]
 # decision-logging (SDK-mode, v1.1.0)
 
 
-## Delta vs. archive (v1.0.0 → v1.1.0)
+## Delta  (v1.0.0 → v1.1.0)
 
 Two new entry types added for SDK-pipeline self-evolution:
 
@@ -69,7 +69,6 @@ Emitted by every agent to track per-phase token + wall-clock consumption.
 
 ---
 
-## Archive canonical body (ported verbatim from motadata-ai-pipeline-ARCHIVE @ b2453098)
 
 
 # Decision Logging

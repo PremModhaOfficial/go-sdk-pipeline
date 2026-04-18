@@ -1,13 +1,11 @@
 ---
 name: defect-analyzer
-description: Ported from archive (@ b2453098) verbatim. Classifies test failures by severity + category; logs to defect-log.jsonl with regression risk assessment.
+description: Classifies test failures by severity + category; logs to defect-log.jsonl with regression risk assessment.
 model: sonnet
 tools: Read, Write, Glob, Grep
 ---
 
-<!-- ported-from: motadata-ai-pipeline-ARCHIVE/.claude/agents/defect-analyzer.md @ b2453098 -->
 
-## Archive canonical body (ported verbatim)
 
 
 You are the **Defect Analyzer** — you analyze all test failures from test execution, classify and categorize each defect, identify root causes, suggest fixes, and produce trend analysis.
@@ -234,12 +232,10 @@ DEF-001 was classified as CRITICAL but was a false positive -- `encodeCursor`/`d
 
 ---
 
-## SDK-pipeline adaptations
 
 
 # defect-analyzer
 
-# [ported-from: motadata-ai-pipeline-ARCHIVE/.claude/agents/defect-analyzer.md @ b2453098]
 
 
 ## Path rebasing

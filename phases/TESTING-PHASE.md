@@ -13,15 +13,15 @@ Exhaustive verification beyond the TDD tests written in Phase 2. Adds integratio
 ## Waves
 
 ### Wave T1 — Unit Coverage Audit
-**Agent**: `unit-test-agent` (ported)
+**Agent**: `unit-test-agent`
 - Run `go test -cover ./<pkg>/...`
 - Report per-package branch coverage
 - Fill gaps with new table-driven tests (error paths, edge cases, boundary values, nil inputs, concurrent access)
 - Target: ≥90% per new package; zero delta on existing (Mode B/C)
 
 ### Wave T2 — Integration (testcontainers)
-**Agent**: `integration-test-agent` (ported)
-- Bootstrap testcontainers recipe per backend: redis, dragonfly, minio, localstack, kafka, rabbitmq, etc.
+**Agent**: `integration-test-agent`
+- Set up testcontainers recipe per backend: redis, dragonfly, minio, localstack, kafka, rabbitmq, etc.
 - Tag files `//go:build integration`
 - Test full lifecycle: connect → operate → close → verify cleanup
 - Tenant isolation NOT applicable (SDK is a library)
@@ -32,7 +32,7 @@ Exhaustive verification beyond the TDD tests written in Phase 2. Adds integratio
 - Any failure = flaky; BLOCKER until investigated + fixed
 
 ### Wave T4 — Benchmarks
-**Agent**: `performance-test-agent` (ported)
+**Agent**: `performance-test-agent`
 - Write `*_benchmark_test.go` for every hot path declared in TPRD §5 NFR
 - Run `go test -bench=. -benchmem -count=5 ./<pkg>/...`
 - Capture output to `runs/<run-id>/testing/bench-raw.txt`
@@ -64,12 +64,12 @@ Exhaustive verification beyond the TDD tests written in Phase 2. Adds integratio
 - `osv-scanner ./go.mod` — zero HIGH/CRITICAL
 
 ### Wave T9 — Observability Tests (conditional)
-**Agent**: `observability-test-agent` (ported)
+**Agent**: `observability-test-agent`
 - If TPRD §8 listed required spans/metrics: verify they actually emit
 - In-memory OTel exporter; span matchers
 
 ### Wave T10 — Mutation (optional)
-**Agent**: `mutation-test-agent` (ported)
+**Agent**: `mutation-test-agent`
 - Run on critical business logic packages
 - Target: 70%+ mutation score
 - Kill surviving mutants with additional tests

@@ -1,8 +1,8 @@
 # motadata-sdk-pipeline — Agent Fleet Rules
 
-Multi-agent pipeline targeting the external Go SDK at `$SDK_TARGET_DIR` (typically `motadata-go-sdk/src/motadatagosdk/`). Purpose: take a TPRD for adding / extending / incrementally updating a client in that SDK and produce production-quality code + tests + benchmarks.
+Multi-agent **NFR-driven** pipeline targeting the external Go SDK at `$SDK_TARGET_DIR` (typically `motadata-go-sdk/src/motadatagosdk/`). Purpose: take a **detailed** TPRD (with `§Skills-Manifest` + `§Guardrails-Manifest`) for adding / extending / incrementally updating a client in that SDK and produce production-quality code + tests + benchmarks against numeric NFR gates.
 
-**Inspired by and ports machinery from** motadata-ai-pipeline (archived). All ported content is inlined; this pipeline has no runtime dependency on the archive. See `PROVENANCE.md` for origin commit SHA and per-file mapping.
+**No runtime skill synthesis.** Skills and agents are human-authored, promoted via PR, and static at runtime. `learning-engine` may patch **existing** skill bodies (minor version bump) but never creates new skill files. New-skill proposals land in `docs/PROPOSED-SKILLS.md` for human triage.
 
 ---
 
@@ -50,7 +50,7 @@ All devil / critic / reviewer / validator agents never modify source. Output onl
 - Interface-first for testability; compile-time interface assertions (`var _ Interface = (*Impl)(nil)`)
 
 ### 7. Ownership Matrix — single owner per domain
-See `AGENTS.md` for full matrix. Key: skill bootstrap = `sdk-bootstrap-lead`; API design = `sdk-design-lead`; code = `sdk-impl-lead`; tests = `sdk-testing-lead`; patches = `learning-engine`.
+See `AGENTS.md` for full matrix. Key: TPRD canonicalization + manifest validation = `sdk-intake-agent`; API design = `sdk-design-lead`; code = `sdk-impl-lead`; tests = `sdk-testing-lead`; existing-skill patches = `learning-engine`.
 
 ### 8. Conflict Resolution
 Agent discovering conflict sends `ESCALATION: CONFLICT` to phase lead; lead decides per ownership matrix; logs with `tags: ["conflict-resolution"]`.
@@ -71,7 +71,7 @@ Agent failure → `lifecycle: failed` entry + assess retry-vs-proceed. Max 1 ret
 Every run has `run_id` (UUID v4). Every log entry stamps `run_id` + `pipeline_version`. Context summaries timestamp with `<!-- Generated: ISO-8601 | Run: run_id -->`.
 
 ### 13. Post-Iteration Review Re-Run — MANDATORY
-After ANY rework iteration, phase lead re-runs ALL review/devil agents. No exceptions. Ported from archive.
+After ANY rework iteration, phase lead re-runs ALL review/devil agents. No exceptions.
 
 ### 14. Implementation Completeness
 - Zero `ErrNotImplemented` / `TODO` in generated code
@@ -104,8 +104,8 @@ Every new `go get` requires `runs/<run-id>/design/dependencies.md` entry: name, 
 ### 22. Budget Tracking
 `manifest.json` tracks per-phase token + wall-clock. Soft caps → warn. Hard caps → user confirm-to-continue.
 
-### 23. Skill Versioning
-Every skill MUST have `version: X.Y.Z` frontmatter + adjacent `evolution-log.md`. Patches bump version; major changes require user approval + golden-corpus regression.
+### 23. Skill Versioning & Human-Only Authorship
+Every skill MUST have `version: X.Y.Z` frontmatter + adjacent `evolution-log.md`. **Skill files are human-authored only** — `learning-engine` may patch existing skill bodies (minor bump, append to `evolution-log.md`) but MUST NOT create new `SKILL.md` files. New skill proposals file to `docs/PROPOSED-SKILLS.md`; a human authors + PR-merges the skill before it can be referenced by any TPRD `§Skills-Manifest`. Major changes require human PR review + golden-corpus regression.
 
 ### 24. Supply Chain
 `govulncheck` + `osv-scanner` MUST be green on all new deps.
@@ -140,20 +140,19 @@ Pipeline supports three request modes: A (new package), B (extension), C (increm
 ## Phase Flow
 
 ```
-Phase -1 Bootstrap   → create/evolve skills (if gaps)
-Phase 0   Intake     → TPRD canonicalization + clarifications
+Phase 0   Intake     → TPRD canonicalization + §Skills-Manifest validation (WARN, non-blocking) + §Guardrails-Manifest validation (BLOCKER) + clarifications
 Phase 0.5 Analyze    → (Mode B/C only) snapshot existing API + tests + bench
 Phase 1   Design     → API design + devil review
 Phase 2   Impl       → TDD red/green/refactor/docs (marker-aware)
 Phase 3   Testing    → unit + integration + bench + leak
-Phase 4   Feedback   → metrics + drift + golden + learning-engine
+Phase 4   Feedback   → metrics + drift + coverage + golden + learning-engine (existing-skill patches only)
 ```
 
-HITL gates H0 through H10 + H7b control phase transitions. See plan §HITL Gates.
+HITL gates: H0 (target-dir preflight), H1 (TPRD + manifests acceptance), H5 (design sign-off), H7/H7b (impl sign-off / mid-impl checkpoint), H9 (testing sign-off), H10 (merge verdict). **H2 and H3 removed** (were bootstrap skill/agent approval gates).
 
 ## Pipeline Versioning
 
-`settings.json` declares `pipeline_version: "0.1.0"`. Every log entry stamps it. Upgrade path: bump semver, run `scripts/verify-provenance.sh` to diff against archive, update `PROVENANCE.md`.
+`settings.json` declares `pipeline_version: "0.2.0"`. Every log entry stamps it. Upgrade path: bump semver; record changes in `evolution/evolution-reports/`.
 
 ## Directory Reference
 
@@ -166,8 +165,7 @@ commands/                   — Slash commands
 runs/<run-id>/              — Per-run state
   decision-log.jsonl        — All agent entries
   state/run-manifest.json   — Wave / agent status
-  bootstrap/                — Phase -1 outputs
-  intake/                   — TPRD + clarifications
+  intake/                   — TPRD + manifest checks + clarifications
   extension/                — Phase 0.5 outputs (Mode B/C)
   design/                   — Phase 1 outputs
   impl/                     — Phase 2 outputs (ownership-map, merge plan)
@@ -179,13 +177,3 @@ evolution/                  — Learning-engine state
 state/ownership-cache.json  — Target-SDK-wide marker ownership map
 ```
 
-## Meta: this file's delta vs. archive
-
-- Rules 1–13 ported verbatim (paths rebased)
-- Rule 6 rewritten (SDK conventions, not microservice)
-- Rule 14 adapted (no NATS handler requirement, adds goleak + govulncheck)
-- Rule 15 DROPPED (no full-stack/frontend)
-- Rule 16 rewritten (feature-level, symbol-traceability)
-- Rules 17–30 NEW (SDK-mode: target-dir discipline, markers, modes, HITL, golden, supply chain)
-
-See `PROVENANCE.md` for full change log.

@@ -1,14 +1,12 @@
 ---
 name: fuzz-patterns
-description: Go native fuzzing — FuzzXxx signature, corpus seeding, crash triage, common fuzz targets (parsers, API handlers, query builders). Ported verbatim.
+description: Go native fuzzing — FuzzXxx signature, corpus seeding, crash triage, common fuzz targets (parsers, API handlers, query builders).
 version: 1.0.0
 created-in-run: bootstrap-seed
 status: stable
-source-pattern: ported-from-archive@b2453098:.claude/skills/fuzz-patterns/SKILL.md
 tags: [go, testing, fuzz, corpus]
 ---
 
-<!-- ported-from: motadata-ai-pipeline-ARCHIVE/.claude/skills/fuzz-patterns/SKILL.md @ b2453098 -->
 
 
 # Fuzz Patterns

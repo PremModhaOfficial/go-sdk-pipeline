@@ -29,13 +29,15 @@ tools: Read, Write, Edit, Glob, Grep, Bash, Agent, SendMessage, TaskCreate, Task
 
 1. **Parse input** — if NL, create TPRD skeleton with §1 Request Type inferred (keywords "add" → New package, "add X to Y" where Y exists → Extension, "update" / "tighten" / "change default" → Incremental)
 2. **Auto-fill what's inferable** — target package path, Go version (1.26 always), OTel required (default y), etc.
-3. **Clarification loop** — for every ambiguous / `TBD` / `?` / empty field:
+3. **§Skills-Manifest validation (Wave I2)** — run `scripts/guardrails/G23.sh` against the TPRD. Misses and under-versioned skills are **WARN only** (non-blocking); the script auto-files them to `docs/PROPOSED-SKILLS.md` and exits 0. Record a `skill-evolution` decision-log entry summarizing the WARNs, but do NOT halt the pipeline.
+4. **§Guardrails-Manifest validation (Wave I3)** — run `scripts/guardrails/G24.sh`. Missing scripts are **BLOCKER** (exit 6); halt with an actionable report filed under `docs/PROPOSED-GUARDRAILS.md`.
+5. **Clarification loop** — for every ambiguous / `TBD` / `?` / empty field:
    - Emit AskUserQuestion with 2-4 options
    - Record answer as `decision` entry in decision log
-   - Max 7 questions per session; exceed → `ESCALATION: TPRD underspecified`
-4. **Mode detection** — set `mode` field in `runs/<run-id>/intake/mode.json` with `target_package`, `new_exports`, `modified_exports`, `preserved_symbols`
-5. **Completeness check** — run G20 (all 14 sections non-empty) + G21 (§Non-Goals populated); loop until PASS
-6. **HITL H1** — emit canonical TPRD + summary; gate `approve / revise / cancel`
+   - Max 5 questions per session (per INTAKE-PHASE.md); exceed → `ESCALATION: TPRD underspecified`
+6. **Mode detection** — set `mode` field in `runs/<run-id>/intake/mode.json` with `target_package`, `new_exports`, `modified_exports`, `preserved_symbols`
+7. **Completeness check** — run G20 (all 14 sections non-empty) + G21 (§Non-Goals populated); loop until PASS
+8. **HITL H1** — emit canonical TPRD + summary (including any §Skills-Manifest WARNs); gate `approve / revise / cancel`
 
 ## TPRD section authority
 
@@ -53,6 +55,8 @@ The canonical 14 sections (see CLAUDE.md and plan §TPRD shape). Intake is the s
 ## Output Files
 
 - `runs/<run-id>/tprd.md` — canonical, all 14 sections non-empty
+- `runs/<run-id>/intake/skills-manifest-check.md` — I2 verdict (PASS or WARN; never halts the pipeline; misses auto-filed to `docs/PROPOSED-SKILLS.md`)
+- `runs/<run-id>/intake/guardrails-manifest-check.md` — I3 verdict (PASS or FAIL; FAIL halts pipeline with exit 6)
 - `runs/<run-id>/intake/clarifications.jsonl` — every question + answer
 - `runs/<run-id>/intake/mode.json` — `{mode, target_package, new_exports, modified_exports, preserved_symbols}`
 - `runs/<run-id>/intake/context/sdk-intake-agent-summary.md`
@@ -75,7 +79,7 @@ The canonical 14 sections (see CLAUDE.md and plan §TPRD shape). Intake is the s
 ## On Failure Protocol
 
 - User cancels H1 → log; halt pipeline gracefully
-- >7 clarifications needed → `ESCALATION: TPRD underspecified`; halt
+- >5 clarifications needed → `ESCALATION: TPRD underspecified`; halt
 - Mode detection ambiguous → ask user explicitly
 
 ## Skills invoked
