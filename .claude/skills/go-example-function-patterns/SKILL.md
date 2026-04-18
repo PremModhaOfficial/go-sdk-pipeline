@@ -1,12 +1,13 @@
 ---
 name: go-example-function-patterns
 description: `Example_*` testable godoc examples — output: comments, Ordered variants, naming.
-version: 0.1.0
+version: 0.1.1
 created-in-run: bootstrap-seed
 status: draft
 source-pattern: synthesized-for-sdk-pipeline
 priority: SHOULD
 tags: [godoc, examples, testing]
+trigger-keywords: ["ExampleCache_", "godoc example", "Example_ function", "docs wave"]
 ---
 
 # go-example-function-patterns (DRAFT — skeleton; synthesized on first Phase -1 use)

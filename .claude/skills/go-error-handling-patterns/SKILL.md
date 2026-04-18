@@ -1,10 +1,11 @@
 ---
 name: go-error-handling-patterns
 description: Go error wrapping with fmt.Errorf %w, sentinel errors, errors.Is/As, error catalog, PII-safe messages.
-version: 1.0.0
+version: 1.0.1
 created-in-run: bootstrap-seed
 status: stable
 tags: [go, error, sentinel, wrapping, catalog]
+trigger-keywords: [mapErr, "sentinel switch", "precedence order", "errors.Is", "fmt.Errorf %w chain"]
 ---
 
 

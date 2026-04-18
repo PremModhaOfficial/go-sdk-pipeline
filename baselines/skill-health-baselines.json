@@ -1,0 +1,116 @@
+{
+  "schema_version": "1.0.0",
+  "pipeline_version": "sdk-pipeline@0.2.0",
+  "note": "SDK-mode skill-health baseline per CLAUDE.md Rule #23 and baseline-manager SDK-MODE Delta 2. Tracks longitudinal skill stability under learning-engine body-patch regime (no runtime skill synthesis). First baseline established from sdk-dragonfly-s2 F4a/F4b/F7 signals.",
+  "run_id": "sdk-dragonfly-s2",
+  "baseline_run": "sdk-dragonfly-s2",
+  "captured_at": "2026-04-18T15:30:00Z",
+  "runs_tracked": 1,
+  "trend": "insufficient-data",
+  "last_updated": "2026-04-18T15:30:00Z",
+
+  "metrics": {
+    "skill_stability": {
+      "value_patches_per_skill": 0.105,
+      "computation_note": "2 patch-level bumps applied (go-error-handling-patterns 1.0.0→1.0.1, go-example-function-patterns 0.1.0→0.1.1) across 19 skills invoked this run = 2/19 = 0.105. Target <0.3 after 10-run rolling avg. Current single-run value is below target.",
+      "target_max": 0.3,
+      "rolling_window_runs": 10,
+      "status": "insufficient-data-for-trend"
+    },
+    "existing_skill_patch_accept_rate": {
+      "value": 1.0,
+      "computation_note": "2/2 F7 patch-level skill bumps applied without rollback (SP-01 error-handling triggers, SP-02 example-function triggers). No golden-corpus gate executed (golden-corpus/dragonfly-v1/ empty; human-seed pending per seq 151). Accept rate is nominal 1.0 but caveat: corpus-gate bypassed.",
+      "target_min": 0.8,
+      "status": "PASS-with-caveat-corpus-empty"
+    },
+    "manifest_miss_rate": {
+      "blocking_rate": 0.0,
+      "warn_rate": 0.296,
+      "computation_note": "G24 §Guardrails-Manifest PASS (0 blocking misses of 38 scripts). G23 §Skills-Manifest WARN (8/27 misses = 0.296 warn-rate, non-blocking). Target 0 for blocking after library stabilizes; WARN tracked separately per SDK-MODE Delta 2.",
+      "target_blocking_max": 0.0,
+      "status_blocking": "PASS",
+      "status_warn": "TRACKING-8-proposals-filed-to-PROPOSED-SKILLS.md"
+    },
+    "golden_regression_rate": {
+      "value": null,
+      "computation_note": "Golden-corpus regression did not execute — F5 determined corpus empty. Per F7 deferral (seq 151), minor/major bumps held until human seeds dragonfly-v1/ from commit a4d5d7f. Cannot compute until ≥1 future run gates against a seeded corpus.",
+      "target_min": 1.0,
+      "rolling_window_runs": 5,
+      "status": "DEFERRED-corpus-empty"
+    },
+    "mean_time_to_green_sec": {
+      "value": null,
+      "computation_note": "Not measured this run (no wall-clock instrumentation for first-green-test). Monitor trend once metrics-collector F1 adds this signal.",
+      "status": "not-instrumented"
+    },
+    "user_intervention_rate": {
+      "value_per_run": 2,
+      "hitl_approvals_count": 5,
+      "hitl_approvals": ["H1", "H5", "H6-conditional", "H7", "H8-waiver", "H9"],
+      "user_overrides_count": 2,
+      "user_overrides": [
+        "Mode A override at run-start (TPRD §16 declared Mode B; user directed greenfield regeneration)",
+        "DEP-BUMP-UNAPPROVED Option A resolution at seq 38/39 (testcontainers-go MVS bumps approved)"
+      ],
+      "computation_note": "Counting 'overrides' = user directives that deviated from declared pipeline path; not all HITL approvals count as interventions. Baseline = 2 overrides. Target trending down; flat or up signals gate miscalibration.",
+      "status": "baseline-set"
+    }
+  },
+
+  "per_skill": {
+    "go-error-handling-patterns": {
+      "baseline_version": "1.0.1",
+      "version_bumps_this_run": 1,
+      "bump_kind": "patch",
+      "reason": "SP-01 trigger-keyword expansion (added mapErr, sentinel switch, precedence order, errors.Is, fmt.Errorf %w chain); no body change.",
+      "drift_severity": "MODERATE",
+      "drift_finding_id": "SKD-005",
+      "pending_bumps": ["MINOR v1.1.0 body split (service-mode vs SDK-client-mode branch) deferred — awaiting golden-corpus seed"],
+      "runs_tracked": 1,
+      "last_updated": "2026-04-18T15:30:00Z"
+    },
+    "go-example-function-patterns": {
+      "baseline_version": "0.1.1",
+      "version_bumps_this_run": 1,
+      "bump_kind": "patch",
+      "reason": "SP-02 trigger-keyword expansion (added ExampleCache_, godoc example, Example_ function, docs wave); no body change. Preserved v0.1.x draft semantics (plan named v1.0.0→v1.0.1 but actual frontmatter was draft; patch-level bump preserved).",
+      "drift_severity": "NONE",
+      "drift_finding_id": null,
+      "pending_bumps": [],
+      "runs_tracked": 1,
+      "last_updated": "2026-04-18T15:30:00Z"
+    }
+  },
+
+  "drift_scoreboard": {
+    "captured_at": "2026-04-18T15:30:00Z",
+    "source": "runs/sdk-dragonfly-s2/feedback/skill-drift.md (F4a)",
+    "total_skills_examined": 19,
+    "MAJOR": 0,
+    "MODERATE": 1,
+    "MINOR": 3,
+    "NONE": 14,
+    "MODERATE_ids": ["SKD-005"],
+    "MINOR_ids": ["SKD-001", "SKD-012", "SKD-013"],
+    "NONE_ids": ["SKD-002","SKD-003","SKD-004","SKD-006","SKD-007","SKD-008","SKD-009","SKD-010","SKD-011","SKD-014","SKD-015","SKD-016","SKD-017","SKD-018","SKD-019"]
+  },
+
+  "coverage_scoreboard": {
+    "captured_at": "2026-04-18T15:30:00Z",
+    "source": "runs/sdk-dragonfly-s2/feedback/skill-coverage.md (F4b)",
+    "declared_present": 19,
+    "declared_warn_absent": 8,
+    "invoked_across_phases": 18,
+    "declared_and_invoked_healthy": 16,
+    "TRIGGERS_GAP": 3,
+    "TRIGGERS_GAP_ids": ["go-error-handling-patterns", "go-example-function-patterns", "tdd-patterns"],
+    "invoked_undeclared_lateral": 4,
+    "manifest_gaps": 2,
+    "manifest_gap_ids": ["review-fix-protocol", "context-deadline-patterns"]
+  },
+
+  "raise_policy": {
+    "description": "Skill-health is a mixed-direction dashboard: stability/accept-rate/golden-rate/green-time target improvement; miss-rate/intervention-rate target decrease. Baselines are locked at current values on first run; future runs are evaluated per-metric.",
+    "reset_interval_runs": 5
+  }
+}

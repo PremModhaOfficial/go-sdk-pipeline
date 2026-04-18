@@ -103,3 +103,35 @@ These are **not auto-promoted**. A human reviewer must (a) audit per `SKILL-CREA
 - **MISSING** `testcontainers-dragonfly-recipe` (≥1.0.0) — source run `preflight-dfly-7okH`
 - **MISSING** `k8s-secret-file-credential-loader` (≥1.0.0) — source run `preflight-dfly-7okH`
 - **MISSING** `sentinel-error-model-mapping` (≥1.0.0) — source run `preflight-dfly-7okH`
+
+---
+
+## Auto-filed from run `sdk-dragonfly-s2` on 2026-04-18
+
+Source: `sdk-intake-agent` Wave I2 §Skills-Manifest validation (G23 WARN, non-blocking).
+TPRD: `motadatagosdk/core/l2cache/dragonfly/TPRD.md` §Skills-Manifest (27 declared; 19 present; 8 missing, all WARN-expected per TPRD footnote).
+Status: `proposed` (awaiting human PR authorship per rule #23).
+
+- **MISSING** `redis-pipeline-tx-patterns` (≥1.0.0) — source run `sdk-dragonfly-s2`; TPRD reason: "§5.4 Pipeline + TxPipeline + Watch". Draft in `evolution/skill-candidates/`.
+- **MISSING** `hash-field-ttl-hexpire` (≥1.0.0) — source run `sdk-dragonfly-s2`; TPRD reason: "§5.3 HEXPIRE/HPEXPIRE/HTTL/HPersist family". Draft in `evolution/skill-candidates/`.
+- **MISSING** `pubsub-lifecycle` (≥1.0.0) — source run `sdk-dragonfly-s2`; TPRD reason: "§5.5 Subscribe/PSubscribe lifetime + cancellation". Draft in `evolution/skill-candidates/`.
+- **MISSING** `miniredis-testing-patterns` (≥1.0.0) — source run `sdk-dragonfly-s2`; TPRD reason: "§11.1 miniredis fakes for unit tests". Draft in `evolution/skill-candidates/`.
+- **MISSING** `lua-script-safety` (≥1.0.0) — source run `sdk-dragonfly-s2`; TPRD reason: "§5.6 Eval/EvalSha/ScriptLoad". Draft in `evolution/skill-candidates/`.
+- **MISSING** `testcontainers-dragonfly-recipe` (≥1.0.0) — source run `sdk-dragonfly-s2`; TPRD reason: "§11.2 Dragonfly container image + readiness probe". Draft in `evolution/skill-candidates/`.
+- **MISSING** `k8s-secret-file-credential-loader` (≥1.0.0) — source run `sdk-dragonfly-s2`; TPRD reason: "§9 `LoadCredsFromEnv` helper". Draft in `evolution/skill-candidates/`.
+- **MISSING** `sentinel-error-model-mapping` (≥1.0.0) — source run `sdk-dragonfly-s2`; TPRD reason: "§7 `mapErr` switch + 30 sentinels". Draft in `evolution/skill-candidates/`.
+
+---
+
+## Auto-filed from run `sdk-dragonfly-s2` on 2026-04-18 (F6 improvement-planner)
+
+Source: `improvement-planner` Wave F6, derived from retro patterns P1/P2/P5 (not intake manifest gaps).
+Status: `proposed` (awaiting human PR authorship per rule #23). These are net-new proposals beyond the 8 intake-filed WARN-absent set.
+
+| Priority | Skill | Motivation | Primary consumers | Source pattern |
+|---|---|---|---|---|
+| SHOULD | `miniredis-limitations-reference` | Documents which Redis commands miniredis v2 does/doesn't support (HEXPIRE family not supported; Lua subset; scripting edge cases). Bridges the TPRD §11.1 gap surfaced in sdk-dragonfly-s2. | `integration-test-agent`, `unit-test-agent`, `sdk-testing-lead` | P5 (retro-testing) |
+| SHOULD | `bench-constraint-calibration` | Pattern for verifying TPRD §10 numeric constraints against dep-lib measured floors before declaring them acceptable. Methodology + lookup-table approach + CALIBRATION-WARN vs FAIL taxonomy. | `sdk-intake-agent`, `sdk-benchmark-devil`, `sdk-testing-lead` | P1 (retro-intake, retro-testing) |
+| SHOULD | `mvs-forced-bump-preview` | Pattern for running Go MVS simulation against the live target `go.mod` (not a scratch module) to surface forced bumps of existing direct deps at design time, not impl time. | `sdk-dep-vet-devil`, `sdk-design-lead`, `sdk-impl-lead` | P2 (retro-design, retro-impl) |
+
+Note: These are proposals only. Per CLAUDE.md Rule #23 skills are human-authored; the pipeline does NOT draft SKILL.md bodies for these entries. Related guardrails are proposed in `docs/PROPOSED-GUARDRAILS.md` (G25, G36, G66) — guardrails and skills reinforce each other but are independently PR-able.

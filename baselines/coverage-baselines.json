@@ -1,6 +1,38 @@
 {
   "schema_version": "1.0.0",
-  "pipeline_version": "sdk-pipeline@0.1.0",
-  "note": "Per-package branch coverage targets. New packages default to 90%.",
-  "packages": {}
+  "pipeline_version": "sdk-pipeline@0.2.0",
+  "note": "Per-package branch coverage baselines. New packages default to 90% floor (CLAUDE.md Rule #14). Raise only if improvement >5%; regressions keep baseline and flag. Reset every 5 runs.",
+  "packages": {
+    "core/l2cache/dragonfly": {
+      "baseline_branch_coverage_pct": 90.4,
+      "baseline_run": "sdk-dragonfly-s2",
+      "captured_at": "2026-04-18T15:30:00Z",
+      "mode": "A-greenfield-first-run",
+      "git_sha": "b83c23e",
+      "source": "runs/sdk-dragonfly-s2/testing/coverage.out (raw) + metrics.json per_run_rollup.coverage_pct",
+      "runs_tracked": 1,
+      "trend": "insufficient-data",
+      "test_counts_at_baseline": {
+        "unit_pass": 71,
+        "unit_skip": 1,
+        "unit_fail": 0,
+        "integration_pass": 2,
+        "integration_skip": 1,
+        "integration_fail": 0,
+        "observability_pass": 4
+      },
+      "last_updated": "2026-04-18T15:30:00Z",
+      "history": [
+        {"run_id": "sdk-dragonfly-s2", "coverage_pct": 90.4}
+      ],
+      "floor_target_pct": 90.0,
+      "regression_threshold_pct": 5.0
+    }
+  },
+  "raise_policy": {
+    "threshold_pct": 5,
+    "regression_flag_threshold_pct": 5,
+    "description": "Raise baseline on >5% improvement. Flag >5% regression. Never lower without learning-engine authorization.",
+    "reset_interval_runs": 5
+  }
 }

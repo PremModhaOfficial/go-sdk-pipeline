@@ -1,6 +1,107 @@
 {
   "schema_version": "1.0.0",
-  "pipeline_version": "sdk-pipeline@0.1.0",
-  "note": "Populated after first successful run. Never lowered except via explicit learning-engine signoff (resets every 5 runs).",
-  "agents": {}
+  "pipeline_version": "sdk-pipeline@0.2.0",
+  "note": "Populated after first successful run (sdk-dragonfly-s2, 2026-04-18). Per-agent quality scores from metrics-collector (F1). Never lowered except via explicit learning-engine signoff (resets every 5 runs per settings.json baseline_reset_every_n_runs=5). Raise-only policy: improvements >10% over baseline trigger raise; regressions keep baseline and flag.",
+  "pipeline_level": {
+    "baseline_pipeline_quality": 0.95,
+    "baseline_run": "sdk-dragonfly-s2",
+    "runs_tracked": 1,
+    "trend": "insufficient-data",
+    "last_updated": "2026-04-18T15:30:00Z",
+    "history": [
+      {"run_id": "sdk-dragonfly-s2", "pipeline_quality": 0.95, "coverage_pct": 90.4, "mode": "A", "target_package": "core/l2cache/dragonfly"}
+    ],
+    "computation_note": "Mean of 4 primary agent quality scores (sdk-intake 1.00, sdk-design-lead 0.85, sdk-impl-lead 0.975, sdk-testing-lead 0.975). Weighted equally per metrics-collector F1."
+  },
+  "agents": {
+    "sdk-intake-agent": {
+      "baseline_quality_score": 1.00,
+      "baseline_run": "sdk-dragonfly-s2",
+      "runs_tracked": 1,
+      "trend": "insufficient-data",
+      "last_updated": "2026-04-18T15:30:00Z",
+      "phase": "intake",
+      "reference_components": {
+        "completeness": 1.0,
+        "review_severity": 1.0,
+        "guardrail_pass_rate": 1.0,
+        "rework_score": 1.0,
+        "communication_health": 1.0,
+        "failure_recovery": 1.0,
+        "downstream_impact": 1.0
+      },
+      "history": [
+        {"run_id": "sdk-dragonfly-s2", "score": 1.00}
+      ]
+    },
+    "sdk-design-lead": {
+      "baseline_quality_score": 0.85,
+      "baseline_run": "sdk-dragonfly-s2",
+      "runs_tracked": 1,
+      "trend": "insufficient-data",
+      "last_updated": "2026-04-18T15:30:00Z",
+      "phase": "design",
+      "reference_components": {
+        "completeness": 1.0,
+        "review_severity": 1.0,
+        "guardrail_pass_rate": 0.67,
+        "rework_score": 0.5,
+        "communication_health": 1.0,
+        "failure_recovery": 1.0,
+        "downstream_impact": 0.5
+      },
+      "reference_notes": "Lowest-scoring agent this run. G32/G33 tool-unavail drove 0.67 guardrail pass rate; 1 rework iter (D3→D4 devil loop) drove 0.5 rework score. Anomaly A1 filed.",
+      "history": [
+        {"run_id": "sdk-dragonfly-s2", "score": 0.85}
+      ]
+    },
+    "sdk-impl-lead": {
+      "baseline_quality_score": 0.975,
+      "baseline_run": "sdk-dragonfly-s2",
+      "runs_tracked": 1,
+      "trend": "insufficient-data",
+      "last_updated": "2026-04-18T15:30:00Z",
+      "phase": "impl",
+      "reference_components": {
+        "completeness": 1.0,
+        "review_severity": 1.0,
+        "guardrail_pass_rate": 1.0,
+        "rework_score": 1.0,
+        "communication_health": 1.0,
+        "failure_recovery": 1.0,
+        "downstream_impact": 0.5
+      },
+      "reference_notes": "13/13 guardrails PASS, 0 rework, 6 commits, 94 exported symbols, 90.4% coverage. DEP-BUMP-UNAPPROVED escalation resolved via run-driver Option A; recovery clean.",
+      "history": [
+        {"run_id": "sdk-dragonfly-s2", "score": 0.975}
+      ]
+    },
+    "sdk-testing-lead": {
+      "baseline_quality_score": 0.975,
+      "baseline_run": "sdk-dragonfly-s2",
+      "runs_tracked": 1,
+      "trend": "insufficient-data",
+      "last_updated": "2026-04-18T15:30:00Z",
+      "phase": "testing",
+      "reference_components": {
+        "completeness": 1.0,
+        "review_severity": 1.0,
+        "guardrail_pass_rate": 1.0,
+        "rework_score": 1.0,
+        "communication_health": 1.0,
+        "failure_recovery": 1.0,
+        "downstream_impact": 0.5
+      },
+      "reference_notes": "71 unit pass / 1 skip / 0 fail; 0 leaks/races/fuzz crashes. H8 waiver applied for allocs-per-GET (32 becomes baseline vs TPRD-declared 3; waived to 35 target with 34 regression gate).",
+      "history": [
+        {"run_id": "sdk-dragonfly-s2", "score": 0.975}
+      ]
+    }
+  },
+  "raise_policy": {
+    "threshold_pct": 10,
+    "description": "Raise baseline only if current score exceeds baseline by >10%. Keep baseline if regression. Never lower without learning-engine reset authorization.",
+    "reset_interval_runs": 5,
+    "next_reset_due_after_run_number": 5
+  }
 }

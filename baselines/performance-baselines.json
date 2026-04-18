@@ -2,5 +2,95 @@
   "schema_version": "1.0.0",
   "pipeline_version": "sdk-pipeline@0.1.0",
   "note": "Per-package benchmark baselines. ns/op + B/op + allocs/op. Regression gates: hot path +5%, shared +10%.",
-  "packages": {}
+  "packages": {
+    "core/l2cache/dragonfly": {
+      "captured_at": "2026-04-18T14:20:00Z",
+      "run_id": "sdk-dragonfly-s2",
+      "mode": "A-greenfield-first-run",
+      "git_sha": "b83c23e",
+      "goos": "linux",
+      "goarch": "amd64",
+      "cpu": "11th Gen Intel(R) Core(TM) i7-1185G7 @ 3.00GHz",
+      "go_version": "go1.26.0",
+      "bench_count": 10,
+      "bench_time": "1s",
+      "backend": "miniredis/v2 (in-process; used for unit-bench; real dfly integration bench deferred to CI infra)",
+      "source": "runs/sdk-dragonfly-s2/testing/bench-raw.txt",
+      "benchmarks": {
+        "BenchmarkGet": {
+          "ns_per_op_mean": 26600,
+          "ns_per_op_pct_variation": 4,
+          "bytes_per_op": 1257,
+          "allocs_per_op": 32,
+          "constraint_tprd_s10": "P50 GET <= 200us on local dfly",
+          "constraint_verdict": "PASS-WITH-CAVEAT",
+          "constraint_note": "Miniredis in-process result 26.6us; real-dfly network overhead NOT measured in this wave. Headroom vs 200us target is 7.5x even before adding net RTT; deemed provisional PASS. Full dfly bench deferred to CI perf-lane."
+        },
+        "BenchmarkSet": {
+          "ns_per_op_mean": 26670,
+          "ns_per_op_pct_variation": 1,
+          "bytes_per_op": 1426,
+          "allocs_per_op": 37,
+          "constraint_tprd_s10": "P50 SET <= 200us",
+          "constraint_verdict": "PASS-WITH-CAVEAT",
+          "constraint_note": "Miniredis-backed; same caveat as BenchmarkGet."
+        },
+        "BenchmarkHExpire": {
+          "ns_per_op_mean": 25050,
+          "ns_per_op_pct_variation": 2,
+          "bytes_per_op": 1815,
+          "allocs_per_op": 47,
+          "constraint_tprd_s10": "HExpire hot path",
+          "constraint_verdict": "PASS-WITH-CAVEAT",
+          "constraint_note": "Miniredis stubs HEXPIRE; real HPEXPIRE family is integration-only. Number is lower bound."
+        },
+        "BenchmarkEvalSha": {
+          "ns_per_op_mean": 136100,
+          "ns_per_op_pct_variation": 1,
+          "bytes_per_op": 178583,
+          "allocs_per_op": 729,
+          "constraint_tprd_s10": "P99 EvalSha <= 1ms",
+          "constraint_verdict": "PASS",
+          "constraint_note": "136.1us << 1ms; allocs/op dominated by Lua result marshalling."
+        },
+        "BenchmarkPipeline_100": {
+          "ns_per_op_mean": 955900,
+          "ns_per_op_pct_variation": 12,
+          "bytes_per_op": 50514,
+          "allocs_per_op": 1917,
+          "constraint_tprd_s10": "Pipeline batching amortises RTT",
+          "constraint_verdict": "PASS",
+          "constraint_note": "~9.56us per command in 100-op batch, confirming amortisation vs 26.6us single GET."
+        }
+      },
+      "missing_benchmarks": [
+        {
+          "name": "BenchmarkHSet",
+          "listed_in_tprd": "§11.3",
+          "impact": "minor",
+          "note": "TPRD §11.3 lists BenchmarkHSet but impl did not emit one. Set/HExpire cover similar paths; gap logged for future rev."
+        },
+        {
+          "name": "A/B vs raw go-redis",
+          "listed_in_tprd": "§10 SDK overhead <= 5%",
+          "impact": "moderate",
+          "note": "No A/B harness implemented. Cannot verify the <=5% overhead constraint in this run. Recommend adding BenchmarkGet_Raw vs BenchmarkGet in a follow-up slice."
+        }
+      ],
+      "tprd_s10_constraint_table": {
+        "p50_get_local_dfly_le_200us": "PROVISIONAL-PASS (miniredis 26.6us; real dfly bench deferred)",
+        "p99_get_local_dfly_le_1ms": "PROVISIONAL-PASS (miniredis +4% pct variation -> p99 ~28us; headroom 35x)",
+        "allocs_per_get_le_3": "WAIVED-H8 (user accept-with-waiver 2026-04-18: declare target <=35 allocs/GET to match go-redis v9.18 floor; 32 becomes baseline; future regressions gate against 32+5% = 34. Phase-4 backlog item: add A/B harness measuring wrapper-only overhead per original constraint intent.)",
+        "sdk_overhead_vs_raw_le_5pct": "UNMEASURED (no A/B harness)",
+        "sustained_10k_ops_sec": "UNMEASURED (no load test harness in-scope for Phase 3 unit/bench wave)"
+      },
+      "regression_policy": {
+        "hot_paths": ["BenchmarkGet", "BenchmarkSet", "BenchmarkHExpire"],
+        "shared_paths": ["BenchmarkEvalSha", "BenchmarkPipeline_100"],
+        "hot_path_threshold_pct": 5,
+        "shared_path_threshold_pct": 10,
+        "next_run_compares_against": "this record"
+      }
+    }
+  }
 }
