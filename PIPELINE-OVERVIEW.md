@@ -1,10 +1,5 @@
 # motadata-sdk-pipeline — Executive Overview
 
-> **Audience**: CXO + Tech Leads
-> **Version**: 0.2.0
-> **Date**: 2026-04-18
-> **Status**: Production-ready for first NFR-driven SDK addition
-
 ---
 
 ## 1. Executive Summary
