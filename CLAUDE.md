@@ -70,8 +70,8 @@ Agent failure → `lifecycle: failed` entry + assess retry-vs-proceed. Max 1 ret
 ### 12. Observability & Run Isolation
 Every run has `run_id` (UUID v4). Every log entry stamps `run_id` + `pipeline_version`. Context summaries timestamp with `<!-- Generated: ISO-8601 | Run: run_id -->`.
 
-### 13. Post-Iteration Review Re-Run — MANDATORY
-After ANY rework iteration, phase lead re-runs ALL review/devil agents. No exceptions.
+### 13. Post-Iteration Review Re-Run — MANDATORY (gated)
+After ANY rework iteration **that passes the deterministic-first gate**, phase lead re-runs ALL review/devil agents. No exceptions on iterations the gate admits. Iterations with BLOCKER-level guardrail failures (build/vet/fmt/staticcheck, `-race`, goleak, govulncheck/osv-scanner, marker byte-hash, constraint bench, license allowlist) loop back to fix agents without spawning the reviewer fleet — fleet re-runs once the gate is green. See `review-fix-protocol` v1.1.0 §Deterministic-First Gate. Invariant preserved: every iteration whose output a reviewer would meaningfully evaluate still gets reviewed.
 
 ### 14. Implementation Completeness
 - Zero `ErrNotImplemented` / `TODO` in generated code

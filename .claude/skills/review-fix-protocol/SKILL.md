@@ -1,10 +1,10 @@
 ---
 name: review-fix-protocol
-description: Standardized review-fix resolution loop — per-issue retry cap 5, stuck detection 2, dedup, findings schema, guardrail re-run, convergence criteria.
-version: 1.0.0
+description: Standardized review-fix resolution loop — per-issue retry cap 5, stuck detection 2, dedup, findings schema, deterministic-first gate (v1.1.0), guardrail re-run, convergence criteria.
+version: 1.1.0
 created-in-run: bootstrap-seed
 status: stable
-tags: [meta, review, findings, retry, convergence]
+tags: [meta, review, findings, retry, convergence, deterministic-gate]
 ---
 
 
@@ -153,11 +153,44 @@ FUNCTION ResolutionLoop(phase, review_findings_dir, fix_agents_map):
           agent: agent
         })
 
-    // 3f: Wait for fixes, re-run guardrails
+    // 3f: Wait for fixes, re-run deterministic guardrails
     WaitForAllFixAgents()
-    RunGuardrails()
+    guardrail_result = RunGuardrails()
 
-    // 3g: Re-run review agents
+    // 3f-gate: DETERMINISTIC-FIRST GATE (v1.1.0)
+    // Cheap deterministic guardrails run on every iteration. The expensive
+    // reviewer fleet (devil agents, simulated-human reviewers, code-reviewer)
+    // only spawns when guardrails are green. If any BLOCKER guardrail fails,
+    // synthesize the failures as findings and loop back to fix agents without
+    // paying the reviewer-fleet token cost for an iteration we already know
+    // needs another fix pass.
+    //
+    // Invariant preserved: every iteration that a reviewer fleet would have
+    // OBSERVED is still reviewed. Iterations we skip are ones where the code
+    // has known mechanical defects that would pollute reviewer findings
+    // anyway.
+    IF guardrail_result.has_blocker_fail:
+      synthesized = SynthesizeGuardrailFailuresAsFindings(
+        guardrail_result,
+        iteration=iteration
+      )
+      // Merge into issue_tracker using the same reconcile logic as reviewer findings
+      FOR each g_finding IN synthesized:
+        matching = FindMatch(g_finding, issue_tracker)
+        IF matching IS NULL:
+          issue_tracker[g_finding.id] = {
+            finding: g_finding,
+            retry_count: 0,
+            status: "open",
+            history: [{iteration: iteration, action: "guardrail_finding"}]
+          }
+        ELSE:
+          matching.finding = g_finding
+          matching.history.append({iteration: iteration, action: "guardrail_still_failing"})
+      LOG decision: "Deterministic-first gate: guardrail BLOCKER(s) — skipping reviewer fleet re-run, looping to fix"
+      CONTINUE  // back to WHILE — next iteration re-routes to fix agents
+
+    // 3g: Re-run review agents (gate is green — guardrails PASS)
     new_findings = ReRunReviewAgents()
     new_findings = Deduplicate(new_findings)
 
@@ -184,6 +217,48 @@ FUNCTION ResolutionLoop(phase, review_findings_dir, fix_agents_map):
 
   RETURN "MAX_ITERATIONS_REACHED"
 ```
+
+## Deterministic-First Gate (v1.1.0)
+
+### Why
+
+Rule 13 (Post-Iteration Review Re-Run) requires the full reviewer fleet on every rework iteration. The fleet is expensive: 5+ devil agents × full-artifact input × per-agent decision-log writes. Running the fleet on code that hasn't even passed `go build` / `go vet` / `goleak` wastes tokens — reviewer findings on broken code are dominated by the mechanical breakage and get superseded on the next iteration anyway.
+
+The gate preserves Rule 13's correctness invariant: **every iteration whose output a reviewer would meaningfully evaluate still gets reviewed.** What it removes is reviewer-fleet spawn cost for iterations we already know are going to need another fix pass.
+
+### What counts as "deterministic"
+
+BLOCKER checks that are 100% script-driven and produce PASS/FAIL without LLM judgment. In this pipeline:
+
+- `go build ./...`, `go vet ./...`, `gofmt -l`, `staticcheck ./...`
+- `go test ./... -race -count=1`
+- `goleak.VerifyTestMain` (G51)
+- `govulncheck` / `osv-scanner` (supply-chain, G32–G34)
+- Marker hygiene byte-hash checks (G95, G96, G98, G100, G103)
+- Constraint-bench proofs (G97) — deterministic given pinned seeds
+- License allowlist check (dep-vet, G33)
+
+WARNING-severity guardrail failures do NOT trigger the gate — reviewer fleet proceeds.
+
+### Gate behavior
+
+1. After every fix batch, run the guardrail script fleet (cheap, parallel).
+2. If any BLOCKER fails: synthesize the failures into the findings schema (fix_agent = the agent that owns the failing domain per the phase's fix-agent map), merge into `issue_tracker`, and loop back to fix-agent routing. **Do not spawn the reviewer fleet this iteration.**
+3. If no BLOCKER fails: proceed to reviewer fleet re-run (current behavior).
+
+Guardrail findings get IDs prefixed `GR-<Gxx>-<iter>` so they're distinguishable from reviewer findings in the issue tracker and report.
+
+### What the gate does NOT change
+
+- Full-fleet reviewer re-run still happens on every iteration that reaches 3g.
+- Per-issue retry cap (5), stuck detection (2), global iteration cap (10) apply unchanged — including to synthesized guardrail findings.
+- Final-wave reviewer fleet before phase sign-off runs regardless (exit-gate reviewer run is not a rework iteration).
+
+### Observed cost shape
+
+Reviewer-fleet spawn per iteration ≈ N_reviewers × avg_reviewer_tokens. Gate saves this cost on any iteration whose fix batch introduced a mechanical regression. In runs where the mechanical guardrails typically flag 30–40% of iterations, gate saves ~30–40% of the reviewer-fleet token spend at zero correctness loss.
+
+---
 
 ## Deduplication Logic
 
