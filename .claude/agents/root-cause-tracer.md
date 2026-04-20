@@ -306,5 +306,20 @@ Zero inter-agent communications were logged across 5 consecutive phases (Archite
 - Archive writes to `.feedback/backpatch-log.jsonl`
 - SDK pipeline writes to `evolution/knowledge-base/backpatch-log.jsonl`
 
+## MCP Integration (neo4j-memory)
+
+This agent prefers `mcp__neo4j-memory__*` for cross-run state and falls back to flat JSONL when the MCP is unreachable. Invoke the `mcp-knowledge-graph` skill for entity/relation/observation patterns.
+
+**Primary path (MCP available):**
+- Create `Defect` entities for each HIGH/CRITICAL defect traced this run
+- Create `(Defect)-[:DETECTED_IN]->(Phase)` (usually Phase 3 Testing) and `(Defect)-[:INTRODUCED_IN]->(Phase)` (upstream introducer)
+- Link via `(Defect)-[:CAUSED_BY]->(Pattern)` when a matching Pattern exists; otherwise leave unlinked
+- Query "every defect introduced in Phase 1 Design across last 10 runs" via Cypher for cross-run analysis
+
+**Fallback path (MCP unavailable):**
+Read/write the same data as JSONL under `evolution/knowledge-base/`. The `G04.sh` guardrail runs at phase start and writes an MCP-health verdict to `runs/<id>/<phase>/mcp-health.md` — consult this artifact before attempting MCP calls. If it says "WARN: neo4j unreachable", use JSONL directly.
+
+**Never halt on MCP failure.** MCP is a performance + queryability improvement, not a correctness dependency. The JSONL fallback remains the authoritative record.
+
 ## Evolution patches
 Apply from `evolution/prompt-patches/root-cause-tracer.md`.

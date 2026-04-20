@@ -397,6 +397,21 @@ Apply patches from `evolution/prompt-patches/learning-engine.md` (append-only li
 - resets baselines every 5 runs
 - caps per run: ≤10 prompt patches, ≤3 existing-skill body patches (minor bump only), **0 new skills / 0 new guardrails / 0 new agents** (human-authored via PR only)
 
+## MCP Integration (neo4j-memory)
+
+This agent prefers `mcp__neo4j-memory__*` for cross-run state and falls back to flat JSONL when the MCP is unreachable. Invoke the `mcp-knowledge-graph` skill for entity/relation/observation patterns.
+
+**Primary path (MCP available):**
+- Read pattern recurrence via `mcp__neo4j-memory__search_memories` (Patterns with ≥2 OBSERVED_IN Run relations in last 30 days)
+- Write every applied patch as a `Patch` entity via `mcp__neo4j-memory__create_entities`
+- Create `(Patch)-[:APPLIED_TO]->(Agent|Skill)`, `(Patch)-[:MOTIVATED_BY]->(Pattern)`, `(Patch)-[:REGRESSED_AGAINST]->(Baseline)` via `create_relations`
+- Append patch outcomes (confidence, golden-regression PASS/FAIL, rollback if any) as observations on the Patch entity
+
+**Fallback path (MCP unavailable):**
+Read/write the same data as JSONL under `evolution/knowledge-base/`. The `G04.sh` guardrail runs at phase start and writes an MCP-health verdict to `runs/<id>/<phase>/mcp-health.md` — consult this artifact before attempting MCP calls. If it says "WARN: neo4j unreachable", use JSONL directly.
+
+**Never halt on MCP failure.** MCP is a performance + queryability improvement, not a correctness dependency. The JSONL fallback remains the authoritative record.
+
 ## Completion Protocol (SDK-mode, post-Phase-1-removal)
 
 1. If golden regression FAIL: halt auto-apply, emit ESCALATION, halt run

@@ -312,6 +312,21 @@ Apply patches from `evolution/prompt-patches/baseline-manager.md`.
 - Never lower unless `learning-engine` explicitly signs off (e.g., reset or intentional regression accepted)
 - Output: per-dimension baseline file + regression report + append-only history
 
+## MCP Integration (neo4j-memory)
+
+This agent prefers `mcp__neo4j-memory__*` for cross-run state and falls back to flat JSONL when the MCP is unreachable. Invoke the `mcp-knowledge-graph` skill for entity/relation/observation patterns.
+
+**Primary path (MCP available):**
+- For each baseline dimension (quality, coverage, performance, skill-health), query last N Run observations via Cypher; compute new baseline
+- If baseline raised: create new `Baseline` entity (append-only; never update in-place — preserves history)
+- Link `(Baseline)-[:UPDATED_IN]->(Run)` with the new value as observation
+- Fast reads: `MATCH (b:Baseline {dimension: $dim})-[:UPDATED_IN]->(r:Run) RETURN b ORDER BY r.completed_at DESC LIMIT 10`
+
+**Fallback path (MCP unavailable):**
+Read/write the same data as JSONL under `evolution/knowledge-base/`. The `G04.sh` guardrail runs at phase start and writes an MCP-health verdict to `runs/<id>/<phase>/mcp-health.md` — consult this artifact before attempting MCP calls. If it says "WARN: neo4j unreachable", use JSONL directly.
+
+**Never halt on MCP failure.** MCP is a performance + queryability improvement, not a correctness dependency. The JSONL fallback remains the authoritative record.
+
 ## Completion Protocol (SDK-mode)
 
 1. Update `baselines/quality-baselines.json`, `coverage-baselines.json`, `performance-baselines.json`, `skill-health.json`

@@ -361,6 +361,20 @@ quality_score =
 - `runs/<run-id>/feedback/metrics-summary.md` (human-readable, ≤300 lines)
 - `evolution/knowledge-base/agent-performance.jsonl` (append one entry per agent)
 
+## MCP Integration (neo4j-memory)
+
+This agent prefers `mcp__neo4j-memory__*` for cross-run state and falls back to flat JSONL when the MCP is unreachable. Invoke the `mcp-knowledge-graph` skill for entity/relation/observation patterns.
+
+**Primary path (MCP available):**
+- After computing per-agent quality_score, write `(Agent)-[:OBSERVED_IN {score, duration_sec, retries}]->(Run)` relation
+- Create the current Run entity at wave start if not already created; add observations for per-wave metrics
+- Write per-skill invocation counts as `(Skill)-[:INVOKED_IN {count}]->(Run)` so `sdk-skill-coverage-reporter` can query without re-reading decision logs
+
+**Fallback path (MCP unavailable):**
+Read/write the same data as JSONL under `evolution/knowledge-base/`. The `G04.sh` guardrail runs at phase start and writes an MCP-health verdict to `runs/<id>/<phase>/mcp-health.md` — consult this artifact before attempting MCP calls. If it says "WARN: neo4j unreachable", use JSONL directly.
+
+**Never halt on MCP failure.** MCP is a performance + queryability improvement, not a correctness dependency. The JSONL fallback remains the authoritative record.
+
 ## Completion Protocol (SDK-mode)
 
 1. Metrics files written

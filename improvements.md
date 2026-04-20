@@ -148,3 +148,27 @@ What this NFR-driven pipeline adds on top of the original SaaS multi-agent fleet
 **+23 agents · +19 skills · +10 implemented guardrails (catalog grew ~75 entries) · +2 commands · +1 phase (Intake re-scoped) · all marker-protocol mechanics · all manifest validation · NFR-as-contract framing · golden-corpus gate · branch safety · determinism rule · human-only skill governance.**
 
 The reference provided 11 feedback-track agents + 21 generic Go/test skills. Everything SDK-specific (Mode B/C, markers, manifests, devils, NFR gates, intake, leads) is **new**.
+
+---
+
+## MCP Integration (v0.3.0 — in progress on `mcp-enhanced-graph` branch)
+
+Cross-run state moves from flat JSONL under `evolution/knowledge-base/` to a queryable Neo4j graph via `mcp__neo4j-memory__*`. JSONL remains authoritative fallback; pipeline never halts on MCP failure.
+
+### What changed
+
+| Item | Kind | Detail |
+|---|---|---|
+| `mcp-knowledge-graph` | **NEW skill (v1.0.0)** | Canonical read/write + fallback pattern for all MCP-aware agents |
+| `environment-prerequisites-check` | **Updated skill** | v1.0.0 → v1.1.0 (adds MCP reachability probe) |
+| `learning-engine`, `improvement-planner`, `root-cause-tracer`, `metrics-collector`, `baseline-manager` | **5 agents updated** | MCP-aware sections appended; JSONL fallback preserved |
+| **G04** | **NEW guardrail** | MCP health check at phase start (WARN-only; writes `runs/<id>/<phase>/mcp-health.md`) |
+| `docs/MCP-INTEGRATION-PROPOSAL.md` | **NEW doc** | Scope + rollout (0.3.0 → 0.5.0) |
+| `docs/NEO4J-KNOWLEDGE-GRAPH.md` | **NEW doc** | Graph schema + canonical Cypher |
+| `scripts/migrate-jsonl-to-neo4j.py` | **NEW script** | Backfills graph from JSONL on next healthy run |
+| `CLAUDE.md` rule 31 | **NEW rule** | MCP Fallback Policy |
+| `AGENTS.md` | **Updated** | New **MCPs used** column in Ownership Matrix |
+
+### Fallback guarantee
+
+Every MCP is an enhancement, not a correctness dependency. On `mcp__neo4j-memory__*` (or any MCP) unavailability, agents degrade to JSONL / Grep / text-based paths with a WARN log entry. Pipeline never halts. Golden-corpus gate unaffected. See `CLAUDE.md` rule 31.

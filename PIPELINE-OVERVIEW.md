@@ -238,7 +238,40 @@ After every Phase 4:
 
 ---
 
-## 11. Numbers
+## 11. MCP-Enhanced Knowledge Graph
+
+The pipeline's cross-run state (defects, patterns, baselines, agent performance, patches) lives in a Neo4j graph database via the `mcp__neo4j-memory__*` MCP. What used to be grep-through-JSONL becomes queryable Cypher.
+
+### What it enables
+
+| Before (flat JSONL) | After (neo4j-memory) |
+|---|---|
+| "Which runs patched skill X?" → grep N files | `MATCH (p:Patch)-[:APPLIED_TO]->(s:Skill {name: $x}) RETURN p` |
+| "Recurring defects last 30 days" → regex scan | `MATCH (d:Defect)<-[:CAUSED_BY]-(p:Pattern) WHERE count(r) >= 2 ...` |
+| Baseline trend plots | Direct Cypher + time-series |
+| Defect origin tracing across runs | `(Defect)-[:INTRODUCED_IN]->(Phase)` — 1-line query |
+
+### Entities (graph schema)
+
+`Run`, `Agent`, `Skill`, `Phase`, `Defect`, `Pattern`, `Baseline`, `Patch`, `TPRD` — see `docs/NEO4J-KNOWLEDGE-GRAPH.md` for the full schema + canonical queries.
+
+### Fallback guarantee
+
+If Neo4j is unreachable, every affected agent falls back to the existing JSONL under `evolution/knowledge-base/`. The pipeline never halts on MCP failure. `scripts/migrate-jsonl-to-neo4j.py` backfills the graph on the next healthy run.
+
+### Rollout
+
+| Version | Integration |
+|---|---|
+| 0.3.0 | neo4j-memory for cross-run knowledge (this release) |
+| 0.4.0 | Serena for Phase 0.5 + Phase 2; code-graph for blast-radius queries |
+| 0.5.0 | context7 at Intake + Design for current library docs |
+
+See `docs/MCP-INTEGRATION-PROPOSAL.md` for the full proposal.
+
+---
+
+## 12. Numbers
 
 ### Resource limits
 
@@ -296,7 +329,7 @@ quality_score = completeness         × 0.20
 
 ---
 
-## 12. Worked Example: Dragonfly L2 Cache
+## 13. Worked Example: Dragonfly L2 Cache
 
 **TPRD**: `motadata-go-sdk/src/motadatagosdk/core/l2cache/dragonfly/TPRD.md` — 470 lines, Mode B (extension to existing package, Slice 1 already shipped). Adds Slices 2–6: string ops, hash + HEXPIRE, pipeline + transactions, pubsub, scripting.
 
@@ -332,7 +365,7 @@ quality_score = completeness         × 0.20
 
 ---
 
-## 13. Operating Model
+## 14. Operating Model
 
 | Role | What they do | When |
 |---|---|---|
@@ -345,7 +378,7 @@ quality_score = completeness         × 0.20
 
 ---
 
-## 14. What's Next
+## 15. What's Next
 
 ### Immediate (next run)
 - Add 2 minimum manifest sections to the Dragonfly TPRD (already done in current branch)
@@ -369,7 +402,7 @@ quality_score = completeness         × 0.20
 
 ---
 
-## 15. Risks & Mitigations
+## 16. Risks & Mitigations
 
 | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
@@ -386,7 +419,7 @@ quality_score = completeness         × 0.20
 
 ---
 
-## 16. Glossary
+## 17. Glossary
 
 | Term | Meaning |
 |---|---|
@@ -404,7 +437,7 @@ quality_score = completeness         × 0.20
 
 ---
 
-## 17. Reference Documents
+## 18. Reference Documents
 
 - `LIFECYCLE.md` — operator's manual (this is its complement)
 - `improvements.md` — what we built on top of the reference fleet

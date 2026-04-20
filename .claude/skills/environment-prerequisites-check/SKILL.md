@@ -1,7 +1,7 @@
 ---
 name: environment-prerequisites-check
 description: Phase-start runtime tool checklist — Go, gcc, golangci-lint, gosec + phase-specific tools. SDK-pipeline adds govulncheck, osv-scanner, staticcheck, benchstat, Docker (testcontainers), jq, git.
-version: 1.0.0
+version: 1.1.0
 created-in-run: bootstrap-seed
 status: stable
 tags: [meta, environment, prerequisites]
@@ -120,3 +120,16 @@ echo "All prerequisites satisfied."
    c. Decide: proceed with degraded quality gates OR block until tools are available
    d. If proceeding, log the decision with explicit risk acceptance
 3. Include prerequisites status in the phase report
+
+## MCP dependencies (optional, non-blocking)
+
+MCP servers extend agent capability but are never on the correctness path. Phase leads check availability at phase start; any MCP unavailable → WARN entry in the decision log; pipeline proceeds with the documented fallback.
+
+| MCP | Purpose | Health check | Fallback on miss |
+|-----|---------|--------------|-------------------|
+| `mcp__neo4j-memory__*` | Cross-run knowledge graph (feedback) | `docker ps --filter name=claude-neo4j --format '{{.Status}}'` returns "Up..." | JSONL writes under `evolution/knowledge-base/` and `runs/<id>/feedback/` (see `mcp-knowledge-graph` skill) |
+| `mcp__serena__*` | Phase 0.5 type-aware symbol scans (Mode B/C) | Serena LSP index fresh (index timestamp newer than last `$SDK_TARGET_DIR` mtime) | Grep-based symbol extraction, flagged lower confidence |
+| `mcp__code-graph__*` | Call-graph queries | Neo4j reachable at `bolt://localhost:7687` | Static `grep`/`go/ast`-based call-graph, marked degraded |
+| `mcp__context7__*` | Current library docs at design time | Trivial `resolve-library-id` response within 5s | Rely on in-repo docs + agent training cutoff, emit WARN |
+
+**Policy**: any MCP unavailable → WARN; pipeline proceeds. A missing MCP is NEVER a BLOCKER. Guardrail `G04 mcp-health` records the verdict at phase start; agents consult that verdict instead of probing per-call.

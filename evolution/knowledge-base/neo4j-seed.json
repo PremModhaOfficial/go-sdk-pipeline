@@ -1,0 +1,663 @@
+{
+  "entities": [
+    {
+      "entityType": "Run",
+      "name": "Run:sdk-dragonfly-s2",
+      "observations": [
+        "pipeline_version=0.1.0",
+        "mode=A",
+        "collected_at=2026-04-18T15:00:00Z",
+        "status=completed",
+        "pipeline_version=0.2.0"
+      ]
+    },
+    {
+      "entityType": "Agent",
+      "name": "Agent:sdk-intake-agent",
+      "observations": [
+        "phase=intake",
+        "sdk-dragonfly-s2: quality_score=1.0, rework_iterations=0, failures=0",
+        "patched_by=PP-01-intake"
+      ]
+    },
+    {
+      "entityType": "Phase",
+      "name": "Phase:intake",
+      "observations": [
+        "id=intake"
+      ]
+    },
+    {
+      "entityType": "Agent",
+      "name": "Agent:sdk-design-lead",
+      "observations": [
+        "phase=design",
+        "sdk-dragonfly-s2: quality_score=0.85, rework_iterations=1, failures=0",
+        "patched_by=PP-02-design"
+      ]
+    },
+    {
+      "entityType": "Phase",
+      "name": "Phase:design",
+      "observations": [
+        "id=design"
+      ]
+    },
+    {
+      "entityType": "Agent",
+      "name": "Agent:sdk-impl-lead",
+      "observations": [
+        "phase=impl",
+        "sdk-dragonfly-s2: quality_score=0.975, rework_iterations=0, failures=1, coverage_pct=90.4",
+        "patched_by=PP-03-impl"
+      ]
+    },
+    {
+      "entityType": "Phase",
+      "name": "Phase:impl",
+      "observations": [
+        "id=impl"
+      ]
+    },
+    {
+      "entityType": "Agent",
+      "name": "Agent:sdk-testing-lead",
+      "observations": [
+        "phase=testing",
+        "sdk-dragonfly-s2: quality_score=0.975, rework_iterations=0, failures=0, coverage_pct=90.4",
+        "patched_by=PP-04-testing"
+      ]
+    },
+    {
+      "entityType": "Phase",
+      "name": "Phase:testing",
+      "observations": [
+        "id=testing"
+      ]
+    },
+    {
+      "entityType": "Patch",
+      "name": "Patch:PP-01-intake",
+      "observations": [
+        "confidence=high",
+        "applied_at=2026-04-18T15:26:00Z",
+        "change_type=append-learned-pattern",
+        "description=Appended two Learned Patterns: 'TPRD \u00a710 numeric-constraint vs dependency-baseline cross-check (I3)' and 'Mode override formalization (I1)'. Append-only; existing agent body unc..."
+      ]
+    },
+    {
+      "entityType": "Pattern",
+      "name": "Pattern:PAT-retro-intake-RP1",
+      "observations": [
+        "evidence=retro-intake RP1",
+        "first_in=sdk-dragonfly-s2"
+      ]
+    },
+    {
+      "entityType": "Pattern",
+      "name": "Pattern:PAT-retro-testing-RP1",
+      "observations": [
+        "evidence=retro-testing RP1",
+        "first_in=sdk-dragonfly-s2"
+      ]
+    },
+    {
+      "entityType": "Pattern",
+      "name": "Pattern:PAT-anomaly-A3",
+      "observations": [
+        "evidence=anomaly A3",
+        "first_in=sdk-dragonfly-s2"
+      ]
+    },
+    {
+      "entityType": "Pattern",
+      "name": "Pattern:PAT-improvement-plan-A.1",
+      "observations": [
+        "evidence=improvement-plan A.1",
+        "first_in=sdk-dragonfly-s2"
+      ]
+    },
+    {
+      "entityType": "Patch",
+      "name": "Patch:PP-02-design",
+      "observations": [
+        "confidence=high",
+        "applied_at=2026-04-18T15:26:05Z",
+        "change_type=append-learned-pattern",
+        "description=Appended two Learned Patterns: 'MVS simulation against real target go.mod at D2 (not scratch module)' and 'Cross-SDK convention-deviation recording'. Append-only; existing agent..."
+      ]
+    },
+    {
+      "entityType": "Pattern",
+      "name": "Pattern:PAT-retro-design-RP2",
+      "observations": [
+        "evidence=retro-design RP2",
+        "first_in=sdk-dragonfly-s2"
+      ]
+    },
+    {
+      "entityType": "Pattern",
+      "name": "Pattern:PAT-retro-impl-RP2",
+      "observations": [
+        "evidence=retro-impl RP2",
+        "first_in=sdk-dragonfly-s2"
+      ]
+    },
+    {
+      "entityType": "Pattern",
+      "name": "Pattern:PAT-anomaly-A2",
+      "observations": [
+        "evidence=anomaly A2",
+        "first_in=sdk-dragonfly-s2"
+      ]
+    },
+    {
+      "entityType": "Pattern",
+      "name": "Pattern:PAT-improvement-plan-A.2",
+      "observations": [
+        "evidence=improvement-plan A.2",
+        "first_in=sdk-dragonfly-s2"
+      ]
+    },
+    {
+      "entityType": "Patch",
+      "name": "Patch:PP-03-impl",
+      "observations": [
+        "confidence=high",
+        "applied_at=2026-04-18T15:26:10Z",
+        "change_type=append-learned-pattern",
+        "description=Appended two Learned Patterns: 'Static OTel conformance test in M6 Docs wave (shift-left)' and 'M1 pre-flight MVS dry-run against target go.mod'. Append-only; existing agent bod..."
+      ]
+    },
+    {
+      "entityType": "Pattern",
+      "name": "Pattern:PAT-retro-impl-RP4",
+      "observations": [
+        "evidence=retro-impl RP4",
+        "first_in=sdk-dragonfly-s2"
+      ]
+    },
+    {
+      "entityType": "Pattern",
+      "name": "Pattern:PAT-retro-testing-RP4",
+      "observations": [
+        "evidence=retro-testing RP4",
+        "first_in=sdk-dragonfly-s2"
+      ]
+    },
+    {
+      "entityType": "Pattern",
+      "name": "Pattern:PAT-retro-impl-surprises",
+      "observations": [
+        "evidence=retro-impl surprises",
+        "first_in=sdk-dragonfly-s2"
+      ]
+    },
+    {
+      "entityType": "Pattern",
+      "name": "Pattern:PAT-improvement-plan-A.3",
+      "observations": [
+        "evidence=improvement-plan A.3",
+        "first_in=sdk-dragonfly-s2"
+      ]
+    },
+    {
+      "entityType": "Patch",
+      "name": "Patch:PP-04-testing",
+      "observations": [
+        "confidence=medium",
+        "applied_at=2026-04-18T15:26:15Z",
+        "change_type=append-learned-pattern",
+        "description=Appended two Learned Patterns: 'CALIBRATION-WARN classification for dep-floor-unachievable constraints (T5)' and 'miniredis-family gap enumeration in TPRD \u00a711.1'. Append-only; e..."
+      ]
+    },
+    {
+      "entityType": "Pattern",
+      "name": "Pattern:PAT-retro-testing-RP5",
+      "observations": [
+        "evidence=retro-testing RP5",
+        "first_in=sdk-dragonfly-s2"
+      ]
+    },
+    {
+      "entityType": "Pattern",
+      "name": "Pattern:PAT-improvement-plan-B.7",
+      "observations": [
+        "evidence=improvement-plan B.7",
+        "first_in=sdk-dragonfly-s2"
+      ]
+    },
+    {
+      "entityType": "Patch",
+      "name": "Patch:SP-01-error-handling-triggers",
+      "observations": [
+        "confidence=high",
+        "applied_at=2026-04-18T15:26:20Z",
+        "change_type=existing-skill-patch",
+        "description=Patch-level version bump v1.0.0 \u2192 v1.0.1. Added frontmatter `trigger-keywords` field with activation phrases mapErr, sentinel switch, precedence order, errors.Is, fmt.Errorf %w ..."
+      ]
+    },
+    {
+      "entityType": "Skill",
+      "name": "Skill:go-error-handling-patterns",
+      "observations": [
+        "patched_by=SP-01-error-handling-triggers",
+        "patched_by=DEFERRED-body-split-error-handling"
+      ]
+    },
+    {
+      "entityType": "Pattern",
+      "name": "Pattern:PAT-COV-TRIGGERS-GAP",
+      "observations": [
+        "evidence=COV TRIGGERS-GAP",
+        "first_in=sdk-dragonfly-s2"
+      ]
+    },
+    {
+      "entityType": "Pattern",
+      "name": "Pattern:PAT-SKD-005-MODERATE",
+      "observations": [
+        "evidence=SKD-005 MODERATE",
+        "first_in=sdk-dragonfly-s2"
+      ]
+    },
+    {
+      "entityType": "Pattern",
+      "name": "Pattern:PAT-improvement-plan-\u00a7F-rank-1",
+      "observations": [
+        "evidence=improvement-plan \u00a7F rank 1",
+        "first_in=sdk-dragonfly-s2"
+      ]
+    },
+    {
+      "entityType": "Patch",
+      "name": "Patch:SP-02-example-function-triggers",
+      "observations": [
+        "confidence=medium",
+        "applied_at=2026-04-18T15:26:25Z",
+        "change_type=existing-skill-patch",
+        "description=Patch-level version bump v0.1.0 \u2192 v0.1.1 (preserving draft status). Added frontmatter `trigger-keywords` field with activation phrases ExampleCache_, godoc example, Example_ fun..."
+      ]
+    },
+    {
+      "entityType": "Skill",
+      "name": "Skill:go-example-function-patterns",
+      "observations": [
+        "patched_by=SP-02-example-function-triggers"
+      ]
+    },
+    {
+      "entityType": "Pattern",
+      "name": "Pattern:PAT-improvement-plan-\u00a7F-rank-2",
+      "observations": [
+        "evidence=improvement-plan \u00a7F rank 2",
+        "first_in=sdk-dragonfly-s2"
+      ]
+    },
+    {
+      "entityType": "Patch",
+      "name": "Patch:DEFERRED-body-split-error-handling",
+      "observations": [
+        "confidence=medium",
+        "applied_at=2026-04-18T15:26:30Z",
+        "change_type=deferred-minor-bump",
+        "description=Proposed body split adding 'SDK-client sentinel-only mode' branch alongside existing 'service AppError' branch. DEFERRED until golden-corpus/dragonfly-v1/ is seeded post-H10 per..."
+      ]
+    },
+    {
+      "entityType": "Pattern",
+      "name": "Pattern:PAT-improvement-plan-\u00a7F-rank-1-deferred-row",
+      "observations": [
+        "evidence=improvement-plan \u00a7F rank 1 deferred-row",
+        "first_in=sdk-dragonfly-s2"
+      ]
+    },
+    {
+      "entityType": "Patch",
+      "name": "Patch:DEFERRED-tdd-patterns-triggers",
+      "observations": [
+        "confidence=low",
+        "applied_at=2026-04-18T15:26:35Z",
+        "change_type=deferred-trigger-expansion",
+        "description=Proposed trigger-keyword expansion with phrases 'coverage audit', 'test-extension', 'test phase'. DEFERRED per improvement-plan \u00a7F rank 3: LOW confidence (trigger broader than e..."
+      ]
+    },
+    {
+      "entityType": "Skill",
+      "name": "Skill:tdd-patterns",
+      "observations": [
+        "patched_by=DEFERRED-tdd-patterns-triggers"
+      ]
+    },
+    {
+      "entityType": "Pattern",
+      "name": "Pattern:PAT-COV-TRIGGERS-GAP-(testing-partial)",
+      "observations": [
+        "evidence=COV TRIGGERS-GAP (testing partial)",
+        "first_in=sdk-dragonfly-s2"
+      ]
+    },
+    {
+      "entityType": "Pattern",
+      "name": "Pattern:PAT-improvement-plan-\u00a7F-rank-3",
+      "observations": [
+        "evidence=improvement-plan \u00a7F rank 3",
+        "first_in=sdk-dragonfly-s2"
+      ]
+    }
+  ],
+  "migrated_at": "2026-04-20T10:18:13Z",
+  "relations": [
+    {
+      "from": "Run:sdk-dragonfly-s2",
+      "relationType": "RAN_IN_PHASE",
+      "to": "Phase:intake"
+    },
+    {
+      "from": "Agent:sdk-intake-agent",
+      "relationType": "OBSERVED_IN",
+      "to": "Run:sdk-dragonfly-s2"
+    },
+    {
+      "from": "Run:sdk-dragonfly-s2",
+      "relationType": "RAN_IN_PHASE",
+      "to": "Phase:design"
+    },
+    {
+      "from": "Agent:sdk-design-lead",
+      "relationType": "OBSERVED_IN",
+      "to": "Run:sdk-dragonfly-s2"
+    },
+    {
+      "from": "Run:sdk-dragonfly-s2",
+      "relationType": "RAN_IN_PHASE",
+      "to": "Phase:impl"
+    },
+    {
+      "from": "Agent:sdk-impl-lead",
+      "relationType": "OBSERVED_IN",
+      "to": "Run:sdk-dragonfly-s2"
+    },
+    {
+      "from": "Run:sdk-dragonfly-s2",
+      "relationType": "RAN_IN_PHASE",
+      "to": "Phase:testing"
+    },
+    {
+      "from": "Agent:sdk-testing-lead",
+      "relationType": "OBSERVED_IN",
+      "to": "Run:sdk-dragonfly-s2"
+    },
+    {
+      "from": "Patch:PP-01-intake",
+      "relationType": "APPLIED_TO",
+      "to": "Agent:sdk-intake-agent"
+    },
+    {
+      "from": "Patch:PP-01-intake",
+      "relationType": "MOTIVATED_BY",
+      "to": "Pattern:PAT-retro-intake-RP1"
+    },
+    {
+      "from": "Pattern:PAT-retro-intake-RP1",
+      "relationType": "OBSERVED_IN",
+      "to": "Run:sdk-dragonfly-s2"
+    },
+    {
+      "from": "Patch:PP-01-intake",
+      "relationType": "MOTIVATED_BY",
+      "to": "Pattern:PAT-retro-testing-RP1"
+    },
+    {
+      "from": "Pattern:PAT-retro-testing-RP1",
+      "relationType": "OBSERVED_IN",
+      "to": "Run:sdk-dragonfly-s2"
+    },
+    {
+      "from": "Patch:PP-01-intake",
+      "relationType": "MOTIVATED_BY",
+      "to": "Pattern:PAT-anomaly-A3"
+    },
+    {
+      "from": "Pattern:PAT-anomaly-A3",
+      "relationType": "OBSERVED_IN",
+      "to": "Run:sdk-dragonfly-s2"
+    },
+    {
+      "from": "Patch:PP-01-intake",
+      "relationType": "MOTIVATED_BY",
+      "to": "Pattern:PAT-improvement-plan-A.1"
+    },
+    {
+      "from": "Pattern:PAT-improvement-plan-A.1",
+      "relationType": "OBSERVED_IN",
+      "to": "Run:sdk-dragonfly-s2"
+    },
+    {
+      "from": "Patch:PP-02-design",
+      "relationType": "APPLIED_TO",
+      "to": "Agent:sdk-design-lead"
+    },
+    {
+      "from": "Patch:PP-02-design",
+      "relationType": "MOTIVATED_BY",
+      "to": "Pattern:PAT-retro-design-RP2"
+    },
+    {
+      "from": "Pattern:PAT-retro-design-RP2",
+      "relationType": "OBSERVED_IN",
+      "to": "Run:sdk-dragonfly-s2"
+    },
+    {
+      "from": "Patch:PP-02-design",
+      "relationType": "MOTIVATED_BY",
+      "to": "Pattern:PAT-retro-impl-RP2"
+    },
+    {
+      "from": "Pattern:PAT-retro-impl-RP2",
+      "relationType": "OBSERVED_IN",
+      "to": "Run:sdk-dragonfly-s2"
+    },
+    {
+      "from": "Patch:PP-02-design",
+      "relationType": "MOTIVATED_BY",
+      "to": "Pattern:PAT-anomaly-A2"
+    },
+    {
+      "from": "Pattern:PAT-anomaly-A2",
+      "relationType": "OBSERVED_IN",
+      "to": "Run:sdk-dragonfly-s2"
+    },
+    {
+      "from": "Patch:PP-02-design",
+      "relationType": "MOTIVATED_BY",
+      "to": "Pattern:PAT-improvement-plan-A.2"
+    },
+    {
+      "from": "Pattern:PAT-improvement-plan-A.2",
+      "relationType": "OBSERVED_IN",
+      "to": "Run:sdk-dragonfly-s2"
+    },
+    {
+      "from": "Patch:PP-03-impl",
+      "relationType": "APPLIED_TO",
+      "to": "Agent:sdk-impl-lead"
+    },
+    {
+      "from": "Patch:PP-03-impl",
+      "relationType": "MOTIVATED_BY",
+      "to": "Pattern:PAT-retro-impl-RP4"
+    },
+    {
+      "from": "Pattern:PAT-retro-impl-RP4",
+      "relationType": "OBSERVED_IN",
+      "to": "Run:sdk-dragonfly-s2"
+    },
+    {
+      "from": "Patch:PP-03-impl",
+      "relationType": "MOTIVATED_BY",
+      "to": "Pattern:PAT-retro-testing-RP4"
+    },
+    {
+      "from": "Pattern:PAT-retro-testing-RP4",
+      "relationType": "OBSERVED_IN",
+      "to": "Run:sdk-dragonfly-s2"
+    },
+    {
+      "from": "Patch:PP-03-impl",
+      "relationType": "MOTIVATED_BY",
+      "to": "Pattern:PAT-retro-impl-surprises"
+    },
+    {
+      "from": "Pattern:PAT-retro-impl-surprises",
+      "relationType": "OBSERVED_IN",
+      "to": "Run:sdk-dragonfly-s2"
+    },
+    {
+      "from": "Patch:PP-03-impl",
+      "relationType": "MOTIVATED_BY",
+      "to": "Pattern:PAT-improvement-plan-A.3"
+    },
+    {
+      "from": "Pattern:PAT-improvement-plan-A.3",
+      "relationType": "OBSERVED_IN",
+      "to": "Run:sdk-dragonfly-s2"
+    },
+    {
+      "from": "Patch:PP-04-testing",
+      "relationType": "APPLIED_TO",
+      "to": "Agent:sdk-testing-lead"
+    },
+    {
+      "from": "Patch:PP-04-testing",
+      "relationType": "MOTIVATED_BY",
+      "to": "Pattern:PAT-retro-testing-RP1"
+    },
+    {
+      "from": "Patch:PP-04-testing",
+      "relationType": "MOTIVATED_BY",
+      "to": "Pattern:PAT-retro-testing-RP5"
+    },
+    {
+      "from": "Pattern:PAT-retro-testing-RP5",
+      "relationType": "OBSERVED_IN",
+      "to": "Run:sdk-dragonfly-s2"
+    },
+    {
+      "from": "Patch:PP-04-testing",
+      "relationType": "MOTIVATED_BY",
+      "to": "Pattern:PAT-anomaly-A3"
+    },
+    {
+      "from": "Patch:PP-04-testing",
+      "relationType": "MOTIVATED_BY",
+      "to": "Pattern:PAT-improvement-plan-B.7"
+    },
+    {
+      "from": "Pattern:PAT-improvement-plan-B.7",
+      "relationType": "OBSERVED_IN",
+      "to": "Run:sdk-dragonfly-s2"
+    },
+    {
+      "from": "Patch:SP-01-error-handling-triggers",
+      "relationType": "APPLIED_TO",
+      "to": "Skill:go-error-handling-patterns"
+    },
+    {
+      "from": "Patch:SP-01-error-handling-triggers",
+      "relationType": "MOTIVATED_BY",
+      "to": "Pattern:PAT-COV-TRIGGERS-GAP"
+    },
+    {
+      "from": "Pattern:PAT-COV-TRIGGERS-GAP",
+      "relationType": "OBSERVED_IN",
+      "to": "Run:sdk-dragonfly-s2"
+    },
+    {
+      "from": "Patch:SP-01-error-handling-triggers",
+      "relationType": "MOTIVATED_BY",
+      "to": "Pattern:PAT-SKD-005-MODERATE"
+    },
+    {
+      "from": "Pattern:PAT-SKD-005-MODERATE",
+      "relationType": "OBSERVED_IN",
+      "to": "Run:sdk-dragonfly-s2"
+    },
+    {
+      "from": "Patch:SP-01-error-handling-triggers",
+      "relationType": "MOTIVATED_BY",
+      "to": "Pattern:PAT-improvement-plan-\u00a7F-rank-1"
+    },
+    {
+      "from": "Pattern:PAT-improvement-plan-\u00a7F-rank-1",
+      "relationType": "OBSERVED_IN",
+      "to": "Run:sdk-dragonfly-s2"
+    },
+    {
+      "from": "Patch:SP-02-example-function-triggers",
+      "relationType": "APPLIED_TO",
+      "to": "Skill:go-example-function-patterns"
+    },
+    {
+      "from": "Patch:SP-02-example-function-triggers",
+      "relationType": "MOTIVATED_BY",
+      "to": "Pattern:PAT-COV-TRIGGERS-GAP"
+    },
+    {
+      "from": "Patch:SP-02-example-function-triggers",
+      "relationType": "MOTIVATED_BY",
+      "to": "Pattern:PAT-improvement-plan-\u00a7F-rank-2"
+    },
+    {
+      "from": "Pattern:PAT-improvement-plan-\u00a7F-rank-2",
+      "relationType": "OBSERVED_IN",
+      "to": "Run:sdk-dragonfly-s2"
+    },
+    {
+      "from": "Patch:DEFERRED-body-split-error-handling",
+      "relationType": "APPLIED_TO",
+      "to": "Skill:go-error-handling-patterns"
+    },
+    {
+      "from": "Patch:DEFERRED-body-split-error-handling",
+      "relationType": "MOTIVATED_BY",
+      "to": "Pattern:PAT-SKD-005-MODERATE"
+    },
+    {
+      "from": "Patch:DEFERRED-body-split-error-handling",
+      "relationType": "MOTIVATED_BY",
+      "to": "Pattern:PAT-improvement-plan-\u00a7F-rank-1-deferred-row"
+    },
+    {
+      "from": "Pattern:PAT-improvement-plan-\u00a7F-rank-1-deferred-row",
+      "relationType": "OBSERVED_IN",
+      "to": "Run:sdk-dragonfly-s2"
+    },
+    {
+      "from": "Patch:DEFERRED-tdd-patterns-triggers",
+      "relationType": "APPLIED_TO",
+      "to": "Skill:tdd-patterns"
+    },
+    {
+      "from": "Patch:DEFERRED-tdd-patterns-triggers",
+      "relationType": "MOTIVATED_BY",
+      "to": "Pattern:PAT-COV-TRIGGERS-GAP-(testing-partial)"
+    },
+    {
+      "from": "Pattern:PAT-COV-TRIGGERS-GAP-(testing-partial)",
+      "relationType": "OBSERVED_IN",
+      "to": "Run:sdk-dragonfly-s2"
+    },
+    {
+      "from": "Patch:DEFERRED-tdd-patterns-triggers",
+      "relationType": "MOTIVATED_BY",
+      "to": "Pattern:PAT-improvement-plan-\u00a7F-rank-3"
+    },
+    {
+      "from": "Pattern:PAT-improvement-plan-\u00a7F-rank-3",
+      "relationType": "OBSERVED_IN",
+      "to": "Run:sdk-dragonfly-s2"
+    }
+  ],
+  "schema_version": "0.3.0"
+}

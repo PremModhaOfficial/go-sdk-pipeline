@@ -28,6 +28,7 @@ New SDK agents plug in as INPUTS to `improvement-planner` — they don't replace
 - Per-phase metrics (duration, tokens, rework, devil-block-rate, skill-coverage-pct)
 - Per-run metrics (pipeline_quality, coverage, bench-delta, vuln-count, leak-count, flake-rate, determinism-diff)
 - Output: `runs/<run-id>/feedback/metrics.json` + `metrics-summary.md`
+- Persists per-agent quality_score as `(Agent)-[:OBSERVED_IN {score}]->(Run)` observation in neo4j-memory (fallback: agent-performance.jsonl).
 
 ### Wave F2 — Phase Retrospectives
 **Agent**: `phase-retrospector`
@@ -48,6 +49,8 @@ Parallel:
 |-------|------|
 | `sdk-skill-drift-detector` | Compare what each invoked skill PRESCRIBED vs. what the code actually DOES. Example: `sdk-config-struct-pattern` says Config is immutable — code has exported mutable fields. Output: `feedback/skill-drift.md`. |
 | `sdk-skill-coverage-reporter` | Which skills got invoked per phase? Which were expected-but-unused (based on TPRD tech signals)? Output: `feedback/skill-coverage.md`. |
+
+Writes drift + coverage observations to neo4j-memory via `mcp-knowledge-graph` skill when available; falls back to markdown artifacts if MCP is down.
 
 ### Wave F5 — Golden Regression
 **Agent**: `sdk-golden-regression-runner`
@@ -78,6 +81,9 @@ Safety gates (preserved from archive, narrowed post-Phase-1-removal):
 
 **NEW delta** — halt auto-apply if Wave F5 golden regression FAILED. Never creates new `SKILL.md` files — only patches bodies of existing skills with a minor version bump.
 
+Reads recurring-pattern signals from neo4j-memory when available; falls back to grepping `evolution/knowledge-base/*.jsonl`.
+Writes every applied patch as a `Patch` entity with `(Patch)-[:APPLIED_TO]->(Agent|Skill)` and `(Patch)-[:MOTIVATED_BY]->(Pattern)` relations.
+
 Actions:
 - Apply high-confidence prompt patches → `evolution/prompt-patches/<agent>.md` (append)
 - Apply existing-skill body patches → bump minor version, append to `evolution-log.md`, re-run golden-corpus
@@ -91,6 +97,7 @@ Actions:
 - Subsequent: raise if improved by >10%, keep if regressed, reset every 5 runs
 - Update `baselines/{quality,coverage,performance,skill-health}.json`
 - Output: `baselines/regression-report-<run-id>.md`, `baseline-history.jsonl` append
+- Creates `(Baseline)-[:UPDATED_IN]->(Run)` with new value as observation (fallback: baseline-history.jsonl).
 
 ### Wave F9 — HITL Gate H10 (merge rec)
 **H10**: Final merge recommendation with run-summary. Major skill bumps and new-skill proposals are always human PR decisions (no runtime gate needed — pipeline cannot author them).

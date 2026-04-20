@@ -135,6 +135,9 @@ Markers (`[traces-to:]`, `[constraint:]`, `[stable-since:]`, `[deprecated-in:]`,
 ### 30. Incremental Update Support
 Pipeline supports three request modes: A (new package), B (extension), C (incremental update). Mode C uses marker-aware 3-way merge via `sdk-merge-planner`. Existing tests + bench MUST continue passing post-update (G95).
 
+### 31. MCP Fallback Policy
+Every MCP integration (`mcp__neo4j-memory__*`, `mcp__serena__*`, `mcp__code-graph__*`, `mcp__context7__*`) is an **enhancement, not a correctness dependency**. Guardrail `G04.sh` runs at phase start, verifies each MCP is reachable, and writes a verdict to `runs/<id>/<phase>/mcp-health.md`. On MCP unavailability: agents degrade to existing JSONL / Grep / text-based fallbacks with a WARN log entry. Pipeline NEVER halts on MCP failure. See `.claude/skills/mcp-knowledge-graph/SKILL.md` for the canonical read/write + fallback pattern. See `docs/MCP-INTEGRATION-PROPOSAL.md` for scope + rollout.
+
 ---
 
 ## Phase Flow

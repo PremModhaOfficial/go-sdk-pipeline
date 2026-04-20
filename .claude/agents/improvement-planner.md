@@ -370,6 +370,21 @@ If marker-related issues recur across runs → propose enhancing `sdk-marker-pro
 ### HITL gate timing proposals
 If user consistently uses full timeout on a gate → propose shortening default. If user consistently overrides a gate default → propose flipping the default.
 
+## MCP Integration (neo4j-memory)
+
+This agent prefers `mcp__neo4j-memory__*` for cross-run state and falls back to flat JSONL when the MCP is unreachable. Invoke the `mcp-knowledge-graph` skill for entity/relation/observation patterns.
+
+**Primary path (MCP available):**
+- Query existing Patterns via `mcp__neo4j-memory__find_memories_by_name` before proposing new ones (dedup)
+- Create new Pattern entities when recurrence signals cross the 2-run threshold; set `pattern_type` ∈ {defect, communication, failure, refactor, story-gap}
+- Link patterns to affected Skills / Agents via `(Pattern)-[:AFFECTS]->(Skill|Agent)` relations
+- Add observations describing motivation (retro patterns P1/P2/P5, etc.) + proposed severity / priority
+
+**Fallback path (MCP unavailable):**
+Read/write the same data as JSONL under `evolution/knowledge-base/`. The `G04.sh` guardrail runs at phase start and writes an MCP-health verdict to `runs/<id>/<phase>/mcp-health.md` — consult this artifact before attempting MCP calls. If it says "WARN: neo4j unreachable", use JSONL directly.
+
+**Never halt on MCP failure.** MCP is a performance + queryability improvement, not a correctness dependency. The JSONL fallback remains the authoritative record.
+
 ## Completion Protocol (SDK-mode)
 
 1. Write `evolution/improvement-plan-<run-id>.md` (≤500 lines, ≤20 items)
