@@ -1,0 +1,2171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>motadata-sdk-pipeline — Interactive Map</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{
+  --bg:#0b0d12; --panel:#11141b; --panel2:#161a23; --border:#242a37; --border2:#2e3545;
+  --ink:#e6e9ef; --ink2:#a9b1c1; --ink3:#6b7487; --accent:#7dd3fc;
+  --phase:#818cf8; --agent:#60a5fa; --skill:#34d399; --command:#c084fc;
+  --script:#22d3ee; --mcp:#fb923c; --store:#f472b6; --gate:#f87171;
+  --artifact:#94a3b8; --external:#a3a3a3; --config:#fbbf24; --loop:#facc15;
+  --ok:#22c55e; --warn:#eab308; --err:#ef4444;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+code,kbd{font-family:var(--mono);font-size:12.5px;background:var(--panel2);padding:1px 5px;border-radius:3px;border:1px solid var(--border)}
+h1,h2,h3,h4{margin:0;font-weight:600;letter-spacing:-0.01em}
+h1{font-size:18px}
+h2{font-size:16px;margin-bottom:8px}
+h3{font-size:13px;color:var(--ink2);text-transform:uppercase;letter-spacing:0.08em;margin:14px 0 6px}
+h4{font-size:13px;margin:10px 0 4px}
+p{margin:0 0 8px}
+ul{margin:0 0 8px;padding-left:18px}
+li{margin-bottom:3px}
+
+/* ---- layout shell ---- */
+#app{display:grid;grid-template-columns:260px 1fr;min-height:100vh}
+#topbar{position:sticky;top:0;z-index:50;grid-column:1/-1;display:flex;align-items:center;gap:14px;padding:10px 16px;background:rgba(11,13,18,0.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+#topbar h1{color:var(--ink)}
+#topbar .tag{color:var(--ink3);font-size:12px;font-weight:400}
+#search{flex:0 1 320px;display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:6px 10px}
+#search input{flex:1;background:transparent;border:0;color:var(--ink);outline:none;font-size:13px;font-family:inherit}
+#filters{display:flex;flex-wrap:wrap;gap:4px;margin-left:auto}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:500;background:var(--panel);border:1px solid var(--border);color:var(--ink2);cursor:pointer;user-select:none}
+.chip.active{background:var(--panel2);color:var(--ink);border-color:var(--border2)}
+.chip .dot{width:8px;height:8px;border-radius:50%}
+.chip[data-t=phase] .dot{background:var(--phase)}
+.chip[data-t=agent] .dot{background:var(--agent)}
+.chip[data-t=skill] .dot{background:var(--skill)}
+.chip[data-t=command] .dot{background:var(--command)}
+.chip[data-t=script] .dot{background:var(--script)}
+.chip[data-t=mcp] .dot{background:var(--mcp)}
+.chip[data-t=store] .dot{background:var(--store)}
+.chip[data-t=gate] .dot{background:var(--gate)}
+.chip[data-t=artifact] .dot{background:var(--artifact)}
+.chip[data-t=external] .dot{background:var(--external)}
+.chip[data-t=config] .dot{background:var(--config)}
+.chip[data-t=loop] .dot{background:var(--loop)}
+
+/* ---- sidebar ---- */
+#sidebar{grid-column:1;padding:16px;border-right:1px solid var(--border);background:var(--panel);position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto}
+#sidebar h3:first-child{margin-top:0}
+#toc a{display:block;padding:4px 8px;color:var(--ink2);border-radius:5px;font-size:12.5px;margin-bottom:1px}
+#toc a:hover{background:var(--panel2);color:var(--ink);text-decoration:none}
+#toc a.depth-2{padding-left:22px;font-size:12px;color:var(--ink3)}
+.stat{display:flex;justify-content:space-between;padding:3px 0;font-size:12px;color:var(--ink2)}
+.stat b{color:var(--ink);font-variant-numeric:tabular-nums}
+
+/* ---- main content ---- */
+#main{grid-column:2;padding:18px 28px 80px;max-width:1400px}
+.section{margin-bottom:32px;scroll-margin-top:70px}
+.hero{background:linear-gradient(135deg,#11141b 0%,#1a1f2e 100%);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-bottom:28px}
+.hero p{color:var(--ink2);max-width:780px}
+.hero .badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.hero .badge{padding:4px 10px;border-radius:6px;background:var(--panel2);border:1px solid var(--border2);font-size:12px;color:var(--ink);font-variant-numeric:tabular-nums}
+.hero .badge b{color:var(--accent)}
+
+/* ---- pipeline overview diagram ---- */
+#overview{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px;overflow-x:auto}
+#overview svg{display:block;min-width:1100px;height:auto}
+
+/* ---- phase cards ---- */
+.phase-card{background:var(--panel);border:1px solid var(--border);border-radius:12px;margin-bottom:18px;overflow:hidden}
+.phase-head{display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
+.phase-head:hover{background:var(--panel2)}
+.phase-num{width:46px;height:46px;border-radius:10px;background:var(--panel2);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--phase);font-family:var(--mono)}
+.phase-title{flex:1}
+.phase-title h2{margin:0}
+.phase-title .desc{color:var(--ink2);font-size:12.5px;margin-top:2px}
+.phase-cost{text-align:right;font-size:12px;color:var(--ink3);font-family:var(--mono)}
+.phase-cost b{color:var(--accent);font-weight:600}
+.phase-body{padding:16px 18px;display:none}
+.phase-card.open .phase-body{display:block}
+.phase-card.open .phase-head .twist{transform:rotate(90deg)}
+.twist{transition:transform .15s;color:var(--ink3)}
+
+/* ---- entity pills ---- */
+.pills{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--panel2);border:1px solid var(--border);font-size:12px;color:var(--ink);cursor:pointer;white-space:nowrap;transition:transform .1s,border-color .15s}
+.pill:hover{border-color:var(--border2);transform:translateY(-1px)}
+.pill.dim{opacity:0.25}
+.pill.hit{box-shadow:0 0 0 2px var(--accent)}
+.pill .lbl{font-family:var(--mono);font-size:11px;color:var(--ink3)}
+.pill .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.pill[data-t=phase]{border-left:3px solid var(--phase)}
+.pill[data-t=phase] .dot{background:var(--phase)}
+.pill[data-t=agent]{border-left:3px solid var(--agent)}
+.pill[data-t=agent] .dot{background:var(--agent)}
+.pill[data-t=skill]{border-left:3px solid var(--skill)}
+.pill[data-t=skill] .dot{background:var(--skill)}
+.pill[data-t=command]{border-left:3px solid var(--command)}
+.pill[data-t=command] .dot{background:var(--command)}
+.pill[data-t=script]{border-left:3px solid var(--script)}
+.pill[data-t=script] .dot{background:var(--script)}
+.pill[data-t=mcp]{border-left:3px solid var(--mcp)}
+.pill[data-t=mcp] .dot{background:var(--mcp)}
+.pill[data-t=store]{border-left:3px solid var(--store)}
+.pill[data-t=store] .dot{background:var(--store)}
+.pill[data-t=gate]{border-left:3px solid var(--gate)}
+.pill[data-t=gate] .dot{background:var(--gate)}
+.pill[data-t=artifact]{border-left:3px solid var(--artifact)}
+.pill[data-t=artifact] .dot{background:var(--artifact)}
+.pill[data-t=external]{border-left:3px solid var(--external)}
+.pill[data-t=external] .dot{background:var(--external)}
+.pill[data-t=config]{border-left:3px solid var(--config)}
+.pill[data-t=config] .dot{background:var(--config)}
+.pill[data-t=loop]{border-left:3px solid var(--loop)}
+.pill[data-t=loop] .dot{background:var(--loop)}
+
+/* ---- wave table ---- */
+.waves{display:grid;gap:6px;margin:6px 0 12px}
+.wave{display:grid;grid-template-columns:56px 1fr;gap:12px;padding:8px 10px;background:var(--panel2);border:1px solid var(--border);border-radius:8px}
+.wave .wid{font-family:var(--mono);font-size:11px;color:var(--accent);font-weight:600}
+.wave .wbody{font-size:12.5px;color:var(--ink2)}
+.wave .wbody b{color:var(--ink)}
+
+/* ---- two-col ---- */
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.twocol > div h3{margin-top:0}
+@media(max-width:920px){.twocol{grid-template-columns:1fr}}
+
+/* ---- lifecycle block ---- */
+.lifecycle{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0}
+.lifecycle > div{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.lifecycle h4{margin:0 0 4px;color:var(--accent);font-size:12px;text-transform:uppercase;letter-spacing:0.08em}
+.lifecycle p{color:var(--ink2);font-size:12.5px;margin:0}
+
+/* ---- io lists ---- */
+.iolist{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.iolist > div{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.iolist h4{margin:0 0 6px;color:var(--accent)}
+.iolist ul{margin:0;padding-left:16px;font-size:12.5px;color:var(--ink2)}
+.iolist li{margin-bottom:2px}
+.iolist code{font-size:11.5px}
+
+/* ---- loops box ---- */
+.loop-box{background:rgba(250,204,21,0.06);border:1px solid rgba(250,204,21,0.25);border-radius:8px;padding:10px 12px;margin:6px 0}
+.loop-box h4{color:var(--loop);margin-top:0}
+.loop-box .cap{font-family:var(--mono);font-size:11.5px;color:var(--ink2);display:inline-block;margin-right:10px}
+
+/* ---- grid card layouts ---- */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;cursor:pointer;transition:border-color .15s,transform .1s}
+.card:hover{border-color:var(--border2);transform:translateY(-1px)}
+.card .hd{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.card .hd .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.card .hd b{font-size:13px;color:var(--ink)}
+.card .sub{font-size:11.5px;color:var(--ink3);font-family:var(--mono)}
+.card .desc{font-size:12px;color:var(--ink2);margin-top:4px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+
+/* ---- drawer ---- */
+#drawer{position:fixed;top:0;right:-520px;width:520px;height:100vh;background:var(--panel);border-left:1px solid var(--border);box-shadow:-8px 0 30px rgba(0,0,0,0.4);transition:right .2s;z-index:60;overflow-y:auto;padding:18px 22px}
+#drawer.open{right:0}
+#drawer .close{position:absolute;top:12px;right:14px;background:transparent;border:0;color:var(--ink2);font-size:18px;cursor:pointer;padding:4px 8px}
+#drawer .close:hover{color:var(--ink)}
+#drawer .type-chip{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-right:8px}
+#drawer .type-chip[data-t=phase]{background:rgba(129,140,248,0.15);color:var(--phase)}
+#drawer .type-chip[data-t=agent]{background:rgba(96,165,250,0.15);color:var(--agent)}
+#drawer .type-chip[data-t=skill]{background:rgba(52,211,153,0.15);color:var(--skill)}
+#drawer .type-chip[data-t=command]{background:rgba(192,132,252,0.15);color:var(--command)}
+#drawer .type-chip[data-t=script]{background:rgba(34,211,238,0.15);color:var(--script)}
+#drawer .type-chip[data-t=mcp]{background:rgba(251,146,60,0.15);color:var(--mcp)}
+#drawer .type-chip[data-t=store]{background:rgba(244,114,182,0.15);color:var(--store)}
+#drawer .type-chip[data-t=gate]{background:rgba(248,113,113,0.15);color:var(--gate)}
+#drawer .type-chip[data-t=artifact]{background:rgba(148,163,184,0.15);color:var(--artifact)}
+#drawer .type-chip[data-t=external]{background:rgba(163,163,163,0.15);color:var(--external)}
+#drawer .type-chip[data-t=config]{background:rgba(251,191,36,0.15);color:var(--config)}
+#drawer .type-chip[data-t=loop]{background:rgba(250,204,21,0.15);color:var(--loop)}
+#drawer h2{margin-bottom:4px;padding-right:32px}
+#drawer .path{font-family:var(--mono);font-size:11.5px;color:var(--ink3);margin-bottom:12px;word-break:break-all}
+#drawer .desc{color:var(--ink2);font-size:13px;margin-bottom:14px}
+#drawer section{margin-bottom:12px}
+#drawer section h3{margin:8px 0 4px;font-size:11px}
+#drawer section p,#drawer section ul{font-size:12.5px;color:var(--ink)}
+#drawer section ul{padding-left:18px}
+#drawer .meta{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:12px;margin-bottom:10px}
+#drawer .meta dt{color:var(--ink3)}
+#drawer .meta dd{margin:0;color:var(--ink);font-family:var(--mono);font-size:11.5px}
+
+#backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.4);opacity:0;pointer-events:none;transition:opacity .2s;z-index:55}
+#backdrop.on{opacity:1;pointer-events:auto}
+
+/* ---- glossary ---- */
+#glossary{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px 20px}
+.glossary-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.gterm{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.gterm b{color:var(--accent);font-family:var(--mono);font-size:12.5px}
+.gterm p{color:var(--ink2);font-size:12px;margin:4px 0 0}
+
+/* ---- mini diagram helpers (SVG colors) ---- */
+.e-phase{fill:var(--panel2);stroke:var(--phase)}
+.e-gate{fill:var(--panel2);stroke:var(--gate)}
+.e-store{fill:var(--panel2);stroke:var(--store)}
+.e-mcp{fill:var(--panel2);stroke:var(--mcp)}
+.e-loop{fill:none;stroke:var(--loop);stroke-dasharray:6 4}
+.e-line{fill:none;stroke:var(--border2);stroke-width:1.5}
+.e-arrow{fill:var(--border2)}
+.e-lbl{fill:var(--ink);font-family:var(--sans);font-weight:600;font-size:13px}
+.e-sub{fill:var(--ink3);font-family:var(--mono);font-size:10px}
+.e-cost{fill:var(--accent);font-family:var(--mono);font-size:10px}
+
+/* ---- mode switches ---- */
+.modebar{display:flex;gap:4px;margin-bottom:10px}
+.modebar button{background:var(--panel);border:1px solid var(--border);color:var(--ink2);padding:4px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit}
+.modebar button.on{background:var(--panel2);color:var(--ink);border-color:var(--border2)}
+.modebar button:hover{color:var(--ink)}
+
+/* ---- scrollbars ---- */
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:5px}
+::-webkit-scrollbar-thumb:hover{background:var(--border2)}
+
+.small{font-size:11.5px;color:var(--ink3)}
+.mono{font-family:var(--mono)}
+.ok{color:var(--ok)} .warn{color:var(--warn)} .err{color:var(--err)}
+.hidden{display:none !important}
+</style>
+</head>
+<body>
+
+<header id="topbar">
+  <h1>motadata-sdk-pipeline <span class="tag">interactive map · v0.2.0</span></h1>
+  <div id="search"><span style="color:var(--ink3)">⌕</span><input id="searchInput" placeholder="search entities / glossary..."></div>
+  <div id="filters"></div>
+</header>
+
+<div id="app">
+  <aside id="sidebar">
+    <h3>Pipeline at a glance</h3>
+    <div id="stats"></div>
+    <h3>Jump to</h3>
+    <nav id="toc"></nav>
+    <h3>Views</h3>
+    <div class="modebar">
+      <button id="btnLoops" title="Emphasize loop arcs">Loops only</button>
+      <button id="btnReset">Reset</button>
+    </div>
+    <p class="small" style="margin-top:18px">Click any <span class="pill" data-t=agent style="cursor:default"><span class="dot"></span>pill</span> to open full details. Legend pills at top filter types.</p>
+  </aside>
+
+  <main id="main">
+    <!-- Hero -->
+    <section id="hero" class="hero section">
+      <h1 style="font-size:22px">A multi-agent, NFR-driven, self-improving SDK code generation pipeline</h1>
+      <p>Turns a human-authored TPRD (Technical Product Requirements Document) into a reviewed, tested, benchmarked Go SDK package on a dedicated branch of a target repo. Runs five phases orchestrated by phase-lead agents, with adversarial "devil" reviewers, mechanical guardrail checks, seven human-in-the-loop gates, and a Phase&nbsp;4 feedback/self-learning loop that patches agent prompts and existing skills across runs — never creating new skills/agents itself (those require human PRs).</p>
+      <div class="badges" id="heroBadges"></div>
+    </section>
+
+    <!-- Pipeline overview diagram -->
+    <section id="sec-overview" class="section">
+      <h2>Pipeline flow — single run</h2>
+      <p class="small">External inputs on the left · phases top-to-bottom · data stores on the right · loops as dashed arcs · HITL gates as red pillars. Click any node for details.</p>
+      <div id="overview"></div>
+    </section>
+
+    <!-- Phases -->
+    <section id="sec-phases" class="section">
+      <h2>Phases — detailed view</h2>
+      <p class="small">Each phase card expands to show the agents it invokes, its waves, inputs/outputs, MCPs it touches, guardrails, loops, local &amp; global lifecycle.</p>
+      <div id="phases"></div>
+    </section>
+
+    <!-- HITL gates -->
+    <section id="sec-gates" class="section">
+      <h2>HITL gates — human checkpoints</h2>
+      <p class="small">Seven primary gates + H0 preflight + H7b mid-impl surface co-owned symbols. Default timeouts: 24h / 48h / 72h with action-on-timeout varying by gate.</p>
+      <div id="gates" class="card-grid"></div>
+    </section>
+
+    <!-- Loops -->
+    <section id="sec-loops" class="section">
+      <h2>Loops — iteration points</h2>
+      <p class="small">Five distinct loops across local (within phase) and global (cross-run) scope.</p>
+      <div id="loops" class="card-grid"></div>
+    </section>
+
+    <!-- Agents -->
+    <section id="sec-agents" class="section">
+      <h2>Agents — all 33</h2>
+      <p class="small">Leads orchestrate phases; devils review (read-only); feedback agents analyze and patch. Click any card for invocation hierarchy, token cost, and lifecycle.</p>
+      <div id="agents" class="card-grid"></div>
+    </section>
+
+    <!-- Skills -->
+    <section id="sec-skills" class="section">
+      <h2>Skills — 52 total</h2>
+      <p class="small">31 SDK-native + 19 ported + 2 ported-with-deltas. Invoked by agents via the Skill tool; patched (minor bump) by learning-engine across runs.</p>
+      <div id="skills"></div>
+    </section>
+
+    <!-- MCPs -->
+    <section id="sec-mcps" class="section">
+      <h2>MCP servers — 6</h2>
+      <p class="small">Every MCP is an <em>enhancement, not a correctness dependency</em>. G04 checks reachability at phase start; agents degrade to JSONL/Grep fallbacks on unavailability. Pipeline never halts on MCP failure.</p>
+      <div id="mcps" class="card-grid"></div>
+    </section>
+
+    <!-- Scripts / guardrails -->
+    <section id="sec-scripts" class="section">
+      <h2>Scripts &amp; guardrails</h2>
+      <p class="small">40+ guardrail shell scripts enforced at phase checkpoints + a Python JSONL→neo4j ETL bridge.</p>
+      <div id="scripts" class="card-grid"></div>
+    </section>
+
+    <!-- Data stores -->
+    <section id="sec-stores" class="section">
+      <h2>Data stores &amp; artifacts</h2>
+      <p class="small">Five persistent data stores. <code>runs/</code> holds per-run artifacts; the others accumulate across runs.</p>
+      <div id="stores" class="card-grid"></div>
+    </section>
+
+    <!-- Cross-run loop / evolution -->
+    <section id="sec-evolution" class="section">
+      <h2>Cross-run evolution loop</h2>
+      <p class="small">How information flows from one run back into the next — and the strict caps that keep it safe.</p>
+      <div id="evolution"></div>
+    </section>
+
+    <!-- Commands -->
+    <section id="sec-commands" class="section">
+      <h2>Entry commands</h2>
+      <div id="commands" class="card-grid"></div>
+    </section>
+
+    <!-- Externals + config -->
+    <section id="sec-ext" class="section">
+      <h2>External systems &amp; config</h2>
+      <div id="externals" class="card-grid"></div>
+    </section>
+
+    <!-- Sample run -->
+    <section id="sec-sample" class="section">
+      <h2>Anatomy of a real run — <code>sdk-dragonfly-s2</code></h2>
+      <p class="small">The most recent run, end-to-end, as it actually happened on 2026-04-18 (greenfield Mode&nbsp;A, ~10h total).</p>
+      <div id="sample"></div>
+    </section>
+
+    <!-- Glossary -->
+    <section id="sec-glossary" class="section">
+      <h2>Glossary</h2>
+      <p class="small">Pipeline-specific terms. Use top search to filter.</p>
+      <div id="glossary"><div id="glossaryGrid" class="glossary-grid"></div></div>
+    </section>
+  </main>
+</div>
+
+<div id="backdrop"></div>
+<aside id="drawer" aria-hidden="true">
+  <button class="close" onclick="closeDrawer()">✕</button>
+  <div id="drawerBody"></div>
+</aside>
+
+<script>
+/* ================================================================
+   DATA — ground truth from the pipeline repo, filled below
+   ================================================================ */
+const DATA = {
+  meta: {},
+  types: {
+    phase:'Phase', agent:'Agent', skill:'Skill', command:'Command',
+    script:'Script', mcp:'MCP', store:'Data store', gate:'HITL gate',
+    artifact:'Artifact', external:'External', config:'Config', loop:'Loop'
+  },
+  phases: [], commands: [], agents: [], skills: [], skill_categories: [],
+  mcps: [], scripts: [], stores: [], gates: [], loops: [],
+  externals: [], configs: [], glossary: []
+};
+
+/* filled by subsequent script blocks */
+</script>
+
+<script id="data-meta">
+/* meta + hero badges */
+DATA.meta = {
+  version: '0.2.0 (v0.3.0 in progress)',
+  date: '2026-04-21',
+  phases: 6,        // 5 + optional 0.5
+  agents: '47 roles (33 dedicated files + 14 wave-helpers)',
+  skills: '40 of 52 cataloged',
+  mcps: 6,
+  guardrails: '40+ (G01–G103)',
+  gates: 10,         // H0,H1,H4,H5,H6,H7,H7b,H8,H9,H10
+  budget_tokens: '~2.35 M / run',
+  budget_time: '~4.5 h soft cap',
+  entry_commands: 2,
+  data_stores: 5
+};
+</script>
+
+<script id="data-phases">
+DATA.phases = [
+  {
+    id:'p-intake', type:'phase', order:'0', name:'Intake',
+    path:'phases/INTAKE-PHASE.md',
+    subtitle:'TPRD Intake & Manifest Validation',
+    desc:'Canonicalize human-authored TPRD, validate §Skills-Manifest (WARN) and §Guardrails-Manifest (BLOCKER), ask ≤5 clarifying questions, detect Mode A/B/C, gate H1.',
+    role_local:'Single contract-acceptance gate before design work. Ensures every required skill exists (flags missing ones non-blockingly) and every required guardrail script exists (halts on miss).',
+    role_global:'Entry point for every run. Files missing skills to docs/PROPOSED-SKILLS.md (backlog for human PR). Missing guardrails exit the pipeline.',
+    triggers:'Initial entry point — always runs first. Every run starts here.',
+    when_needed:'Every run.',
+    budget:{tokens:'150 K', time:'~10–20 min'},
+    waves:[
+      ['I1','Ingest TPRD (verbatim or NL→canonical)'],
+      ['I2','§Skills-Manifest validation (WARN; misses → PROPOSED-SKILLS.md)'],
+      ['I3','§Guardrails-Manifest validation (BLOCKER on missing script)'],
+      ['I4','Clarification loop — max 5 AskUserQuestion (else escalate + halt)'],
+      ['I5','Mode detection (A greenfield / B extend / C incremental update)'],
+      ['I6','Completeness check — if [ambiguous]/TBD/? remain, loop to I4'],
+      ['I7','HITL gate H1 — user approves canonical TPRD']
+    ],
+    agents:['sdk-intake-agent'],
+    mcps:['context7'],
+    guardrails:['G20','G21','G22','G23','G24','G04','G07','G01'],
+    inputs:[
+      {label:'TPRD (file or NL string)', kind:'user'},
+      {label:'$SDK_TARGET_DIR tree', kind:'env'},
+      {label:'.claude/skills/skill-index.json', kind:'catalog'},
+      {label:'scripts/guardrails/', kind:'directory'}
+    ],
+    outputs:[
+      {label:'runs/&lt;run-id&gt;/tprd.md', kind:'artifact'},
+      {label:'runs/&lt;run-id&gt;/intake/skills-manifest-check.md', kind:'report'},
+      {label:'runs/&lt;run-id&gt;/intake/guardrails-manifest-check.md', kind:'report'},
+      {label:'runs/&lt;run-id&gt;/intake/clarifications.jsonl', kind:'log'},
+      {label:'runs/&lt;run-id&gt;/intake/mode.json', kind:'metadata'},
+      {label:'runs/&lt;run-id&gt;/state/run-manifest.json', kind:'checkpoint'}
+    ],
+    loops:[
+      {name:'Clarification loop (I4)', caps:'max 5 user questions → escalate on 6th'},
+      {name:'Completeness retry (I6→I4)', caps:'if [ambiguous]/TBD/? remain, loop back to I4'}
+    ],
+    local_lifecycle:'Creates runs/<run-id>/ and subdirs (intake/, state/). Validation artifacts persist for full run.',
+    global_lifecycle:'Auto-files missing skills to docs/PROPOSED-SKILLS.md (status=proposed, source=run-id). On missing-guardrail BLOCKER, pipeline exits 6.',
+    gates:['H0','H1']
+  },
+  {
+    id:'p-extension', type:'phase', order:'0.5', name:'Extension Analyze',
+    path:'phases/DESIGN-PHASE.md (prereq for Mode B/C)',
+    subtitle:'Existing-API & Marker Snapshot — Mode B/C only',
+    desc:'Snapshot existing API, tests, benchmarks, and marker ownership map before design begins. Preserves invariants for extension (B) and incremental-update (C) runs.',
+    role_local:'Builds ownership-map.json (MANUAL vs pipeline-owned vs co-owned per symbol). Required input for sdk-semver-devil, sdk-breaking-change-devil, sdk-constraint-devil.',
+    role_global:'No persistent writes outside runs dir. Used purely as reference input for Phase 1–2 in the current run.',
+    triggers:'Mode ∈ {B, C} only. Runs immediately after H1 approval.',
+    when_needed:'Only when extending existing code or incrementally updating — skipped entirely in Mode A (greenfield).',
+    budget:{tokens:'~80 K', time:'~5 min'},
+    waves:[
+      ['—','Single-pass snapshot: API surface via go doc / code-graph'],
+      ['—','Test baseline (current coverage, benchmark numbers)'],
+      ['—','Marker scan ([traces-to:], [constraint:], [owned-by:], [do-not-regenerate])'],
+      ['—','Update state/ownership-cache.json for whole-tree marker map']
+    ],
+    agents:['sdk-existing-api-analyzer','sdk-marker-scanner'],
+    mcps:['serena','code-graph'],
+    guardrails:['G07','G01'],
+    inputs:[
+      {label:'runs/&lt;run-id&gt;/tprd.md', kind:'spec'},
+      {label:'runs/&lt;run-id&gt;/intake/mode.json', kind:'metadata'},
+      {label:'$SDK_TARGET_DIR/&lt;target-pkg&gt;/*.go', kind:'source'},
+      {label:'baselines/performance-baselines.json', kind:'baseline'}
+    ],
+    outputs:[
+      {label:'runs/&lt;run-id&gt;/extension/current-api.json', kind:'snapshot'},
+      {label:'runs/&lt;run-id&gt;/extension/test-baseline.json', kind:'snapshot'},
+      {label:'runs/&lt;run-id&gt;/extension/bench-baseline.txt', kind:'snapshot'},
+      {label:'runs/&lt;run-id&gt;/extension/ownership-map.json', kind:'snapshot'}
+    ],
+    loops:[],
+    local_lifecycle:'One-shot snapshot; no mutation of target SDK. Outputs persist for reference by later phases.',
+    global_lifecycle:'Updates state/ownership-cache.json (target-wide marker map, survives across runs).',
+    gates:[]
+  },
+  {
+    id:'p-design', type:'phase', order:'1', name:'Design',
+    path:'phases/DESIGN-PHASE.md',
+    subtitle:'API Design & Adversarial Review',
+    desc:'Turn canonical TPRD into implementation-ready API design. Five design agents in parallel, then up to seven devil reviews, then a bounded review-fix loop.',
+    role_local:'API contract hardening. Catch painful APIs, unjustified deps, breaking changes, convention violations, and security gaps before any implementation.',
+    role_global:'Gates downstream implementation on design soundness. No persistent writes; design phase is forward-only within the run.',
+    triggers:'After H1 approval (Mode B/C: after Phase 0.5). Every run has a design phase.',
+    when_needed:'Every run.',
+    budget:{tokens:'500 K', time:'~45–60 min'},
+    waves:[
+      ['D1','5 design agents in parallel — designer, interface-designer, algorithm-designer, concurrency-designer, pattern-advisor'],
+      ['D2','Mechanical checks — guardrail-validator runs G30–G38 (stub compiles, signatures well-formed, no breaking-change, Config struct present)'],
+      ['D3','Up to 7 devils in parallel — design, semver, convention, security, dep-vet (+ breaking-change, constraint for Mode B/C)'],
+      ['D4','Review-fix loop — per-finding retry ≤5, stuck at 2, global ≤10 per run; re-run ALL devils after each rework batch'],
+      ['D5','HITL gates — H4 breaking-change confirm (B/C), H6 dep-vet conditional, H5 overall design approval']
+    ],
+    agents:['sdk-design-lead','sdk-designer','interface-designer','algorithm-designer','concurrency-designer','pattern-advisor','sdk-design-devil','sdk-semver-devil','sdk-convention-devil','sdk-security-devil','sdk-dep-vet-devil','sdk-breaking-change-devil','sdk-constraint-devil','guardrail-validator'],
+    mcps:['context7','exa','serena','code-graph'],
+    guardrails:['G30','G31','G32','G33','G34','G38','G07','G01','G04'],
+    inputs:[
+      {label:'runs/&lt;run-id&gt;/tprd.md', kind:'spec'},
+      {label:'runs/&lt;run-id&gt;/extension/current-api.json', kind:'snapshot (B/C)'},
+      {label:'runs/&lt;run-id&gt;/extension/ownership-map.json', kind:'snapshot (B/C)'},
+      {label:'$SDK_TARGET_DIR tree (read-only)', kind:'codebase'},
+      {label:'.claude/skills/**', kind:'skill library'}
+    ],
+    outputs:[
+      {label:'design/api.go.stub', kind:'compilable stub'},
+      {label:'design/package-layout.md', kind:'artifact'},
+      {label:'design/interfaces.md', kind:'artifact'},
+      {label:'design/algorithms.md', kind:'artifact'},
+      {label:'design/concurrency.md', kind:'artifact'},
+      {label:'design/dependencies.md', kind:'artifact'},
+      {label:'design/patterns.md', kind:'artifact'},
+      {label:'design/reviews/*.md', kind:'devil verdicts'},
+      {label:'design/design-summary.md', kind:'phase report'}
+    ],
+    loops:[
+      {name:'Review-fix sub-loop (D4)', caps:'≤5 retries/finding · 2 stuck detection · ≤10 global/run · deterministic-first gate'},
+      {name:'Re-run-all mandate (CLAUDE rule 13)', caps:'after every rework batch, ALL devils re-run — no partial re-runs'}
+    ],
+    local_lifecycle:'Writes to runs/<run-id>/design/ and design/reviews/. Context summaries (≤200 lines) written per agent.',
+    global_lifecycle:'No persistent writes to baselines or evolution. Forward-only within the run.',
+    gates:['H4','H5','H6']
+  },
+  {
+    id:'p-impl', type:'phase', order:'2', name:'Implementation',
+    path:'phases/IMPLEMENTATION-PHASE.md',
+    subtitle:'TDD Development + Marker-Aware Merge (B/C)',
+    desc:'Compilable, tested Go code satisfying the design. TDD (red/green/refactor/docs) with marker-aware merging in Mode B/C to preserve MANUAL-marked existing code.',
+    role_local:'Transform design into executable code. Every TPRD §7 API symbol gets (impl, test, godoc, bench if hot-path, Example_*, [traces-to:] marker).',
+    role_global:'Creates branch sdk-pipeline/<run-id> on $SDK_TARGET_DIR. Branch persists until H10 user decides to merge/keep/delete. Never touches main.',
+    triggers:'After H5 design approval. Creates dedicated git branch on target repo.',
+    when_needed:'Every run.',
+    budget:{tokens:'1000 K', time:'~70 min'},
+    waves:[
+      ['M1','Red — sdk-test-spec-generator writes failing table-driven tests per TPRD §4 FRs'],
+      ['M2','Merge plan (Mode B/C) — sdk-merge-planner outputs per-symbol strategy (preserve/regenerate/surface-at-H7b)'],
+      ['M3','Green — sdk-implementor writes minimum code to pass tests; adds markers'],
+      ['M4','Constraint proofs (Mode B/C) — sdk-constraint-devil runs bench before/after for [constraint] markers'],
+      ['M5','Refactor — refactoring-agent removes duplication, applies simplify patterns'],
+      ['M6','Docs — documentation-agent adds godocs, Example_* functions, README'],
+      ['M7','Devils (parallel) — code-reviewer, overengineering-critic, api-ergonomics-devil, leak-hunter, marker-hygiene-devil (B/C), security-devil'],
+      ['M8','Review-fix sub-loop — same caps as D4'],
+      ['M9','Guardrails — guardrail-validator runs G40–G52, G95–G103 (marker ownership, byte-hash validation)'],
+      ['M10','HITL H7 — user approves diff; H7b surfaces co-owned symbols for decision']
+    ],
+    agents:['sdk-impl-lead','sdk-test-spec-generator','sdk-merge-planner','sdk-implementor','sdk-constraint-devil','refactoring-agent','documentation-agent','code-reviewer','sdk-overengineering-critic','sdk-api-ergonomics-devil','sdk-leak-hunter','sdk-marker-hygiene-devil','sdk-security-devil','guardrail-validator'],
+    mcps:['serena','code-graph','context7'],
+    guardrails:['G40','G41','G42','G43','G48','G95','G96','G97','G98','G99','G100','G101','G102','G103','G07','G01'],
+    inputs:[
+      {label:'runs/&lt;run-id&gt;/design/*', kind:'all design artifacts'},
+      {label:'runs/&lt;run-id&gt;/tprd.md', kind:'spec'},
+      {label:'runs/&lt;run-id&gt;/extension/ownership-map.json', kind:'ownership (B/C)'},
+      {label:'$SDK_TARGET_DIR tree', kind:'read/write via branch'},
+      {label:'baselines/performance-baselines.json', kind:'constraint baseline (B/C)'}
+    ],
+    outputs:[
+      {label:'$SDK_TARGET_DIR/&lt;new-pkg&gt;/*.go', kind:'code on branch'},
+      {label:'$SDK_TARGET_DIR/&lt;new-pkg&gt;/*_test.go', kind:'tests on branch'},
+      {label:'$SDK_TARGET_DIR/&lt;new-pkg&gt;/README.md', kind:'docs on branch'},
+      {label:'impl/merge-plan.md (B/C)', kind:'artifact'},
+      {label:'impl/constraint-proofs.md (B/C)', kind:'benchstat artifact'},
+      {label:'impl/reviews/*.md', kind:'devil verdicts'},
+      {label:'impl/base-sha.txt', kind:'metadata'},
+      {label:'impl/impl-summary.md', kind:'phase report'}
+    ],
+    loops:[
+      {name:'Review-fix (M8)', caps:'≤5/finding, 2 stuck, ≤10 global — same caps as Design'},
+      {name:'TDD cycle (M1→M6)', caps:'Red → Green → Refactor → Docs; each step commits to branch'}
+    ],
+    local_lifecycle:'Creates branch sdk-pipeline/<run-id>. All code writes on that branch (never main). Runs dir artifacts persist.',
+    global_lifecycle:'Branch persists on target SDK until H10 user verdict. No baseline/evolution writes in this phase.',
+    gates:['H7','H7b']
+  },
+  {
+    id:'p-testing', type:'phase', order:'3', name:'Testing',
+    path:'phases/TESTING-PHASE.md',
+    subtitle:'Exhaustive verification — unit, integration, bench, leak, fuzz, supply-chain',
+    desc:'Quality-assurance gate beyond TDD tests. Unit ≥90%, integration via testcontainers, benchmarks vs baseline, goleak, fuzz, govulncheck/osv-scanner.',
+    role_local:'Numeric NFR verification. Benchmark regression is BLOCKER by design (>5% hot, >10% shared). No vuln HIGH/CRITICAL.',
+    role_global:'First-run: writes initial baseline to baselines/performance-baselines.json. Subsequent runs: compares against baseline.',
+    triggers:'After H7 impl approval. Reads from branch sdk-pipeline/<run-id>.',
+    when_needed:'Every run.',
+    budget:{tokens:'500 K', time:'~40–50 min'},
+    waves:[
+      ['T1','Coverage audit — unit-test-agent fills gaps to ≥90% branch coverage'],
+      ['T2','Integration — integration-test-agent spins testcontainers per backend'],
+      ['T3','Flake hunt — sdk-integration-flake-hunter runs -count=3; halt on any flake'],
+      ['T4','Benchmarks — performance-test-agent writes + runs benches'],
+      ['T5','Bench compare — sdk-benchmark-devil benchstats vs baseline (HITL H8 on regression)'],
+      ['T6','Leak hunt — sdk-leak-hunter goleak + -race -count=5'],
+      ['T7','Fuzz — fuzz-agent FuzzXxx if TPRD §11 declares'],
+      ['T8','Supply chain — govulncheck, osv-scanner, license allowlist'],
+      ['T9','Observability — observability-test-agent span/metric conformance (if TPRD §8 required)'],
+      ['T10','Mutation — mutation-test-agent optional, 70%+ target'],
+      ['T11','HITL H9 — user approves test verdicts']
+    ],
+    agents:['sdk-testing-lead','unit-test-agent','integration-test-agent','sdk-integration-flake-hunter','performance-test-agent','sdk-benchmark-devil','sdk-leak-hunter','fuzz-agent','guardrail-validator','observability-test-agent','mutation-test-agent'],
+    mcps:['context7','code-graph'],
+    guardrails:['G60','G61','G63','G65','G69','G07','G01','G04'],
+    inputs:[
+      {label:'$SDK_TARGET_DIR/&lt;new-pkg&gt;/*.go on branch', kind:'source'},
+      {label:'runs/&lt;run-id&gt;/design/*', kind:'NFR reference'},
+      {label:'baselines/performance-baselines.json', kind:'baseline to compare'}
+    ],
+    outputs:[
+      {label:'testing/coverage.txt', kind:'report'},
+      {label:'testing/bench-raw.txt', kind:'report'},
+      {label:'testing/bench-compare.md', kind:'benchstat vs baseline'},
+      {label:'testing/govulncheck.txt', kind:'report'},
+      {label:'testing/osv-scan.txt', kind:'report'},
+      {label:'testing/testing-summary.md', kind:'phase report'}
+    ],
+    loops:[
+      {name:'Flake hunt loop (T3)', caps:'on flake, loop back to Phase 2 implementer; re-run T1–T8'},
+      {name:'Perf regression (T5)', caps:'HITL H8 — user accepts waiver or rejects'}
+    ],
+    local_lifecycle:'Test files written to branch; test artifacts to runs/<run-id>/testing/.',
+    global_lifecycle:'FIRST run of package: creates baseline in baselines/performance-baselines.json. Later runs: compares (>5%/>10% regression = BLOCKER).',
+    gates:['H8','H9']
+  },
+  {
+    id:'p-feedback', type:'phase', order:'4', name:'Feedback & Self-Learning',
+    path:'phases/FEEDBACK-PHASE.md',
+    subtitle:'Telemetry · Drift · Golden regression · Learning-engine patches',
+    desc:'Close the loop. Metrics, defect tracing, skill drift, golden regression, then learning-engine applies safe patches to existing prompts/skills. Never creates new skills/guardrails/agents.',
+    role_local:'Produce metrics, retros, golden-regression verdict, drift report. Categorize findings into prompt-patch / skill-patch / new-skill-proposal / new-guardrail-proposal.',
+    role_global:'THIS is the cross-run loop. Writes to evolution/, .claude/skills/<name>/SKILL.md (minor bumps), baselines/, docs/PROPOSED-*.md. Feeds the NEXT run.',
+    triggers:'After H9 testing approval. Reads the entire run.',
+    when_needed:'Every run.',
+    budget:{tokens:'200 K', time:'~20–30 min (first run ~30–60 min due to baseline creation)'},
+    waves:[
+      ['F1','Metrics — metrics-collector computes quality_score (CLAUDE §12), per-phase + per-run metrics'],
+      ['F2','Retrospectives — phase-retrospector writes retro-intake.md, retro-design.md, retro-impl.md, retro-testing.md'],
+      ['F3','Root causes — defect-analyzer categorizes defects, root-cause-tracer traces backward through phases'],
+      ['F4','Drift + coverage — sdk-skill-drift-detector (D13) + sdk-skill-coverage-reporter (D14)'],
+      ['F5','Golden regression — sdk-golden-regression-runner re-runs canonical fixtures; FAIL halts F7 auto-apply'],
+      ['F6','Planning — improvement-planner categorizes findings (prompt-patch / skill-patch / new-skill-proposal / new-guardrail-proposal + confidence)'],
+      ['F7','Learning — learning-engine auto-applies high-confidence prompt patches (≤10) + existing-skill body patches (≤3 minor bumps, golden-gated); files new-skill/guardrail proposals (D15)'],
+      ['F8','Baselines — baseline-manager raises on improvement >10%, keeps on regression, resets every 5 runs'],
+      ['F9','Finalize — write run-summary.md; HITL H10 merge verdict']
+    ],
+    agents:['metrics-collector','phase-retrospector','defect-analyzer','root-cause-tracer','sdk-skill-drift-detector','sdk-skill-coverage-reporter','sdk-golden-regression-runner','improvement-planner','learning-engine','baseline-manager'],
+    mcps:['neo4j-memory','neo4j-cypher'],
+    guardrails:['G80','G82','G03','G01','G04'],
+    inputs:[
+      {label:'runs/&lt;run-id&gt;/decision-log.jsonl', kind:'all-phase audit log'},
+      {label:'runs/&lt;run-id&gt;/{intake,design,impl,testing}/*', kind:'all phase artifacts'},
+      {label:'baselines/*.json', kind:'prior baselines'},
+      {label:'golden-corpus/*', kind:'canonical fixtures'},
+      {label:'evolution/knowledge-base/*.jsonl', kind:'cross-run state'}
+    ],
+    outputs:[
+      {label:'feedback/metrics.json + metrics-summary.md', kind:'artifact'},
+      {label:'feedback/retro-*.md (one per phase)', kind:'artifacts'},
+      {label:'feedback/root-causes.md', kind:'artifact (if defects)'},
+      {label:'feedback/skill-drift.md + skill-coverage.md', kind:'artifacts'},
+      {label:'feedback/golden-regression.json', kind:'verdict'},
+      {label:'evolution/improvement-plan-&lt;run-id&gt;.md', kind:'plan'},
+      {label:'evolution/prompt-patches/&lt;agent&gt;.md (appended)', kind:'patches'},
+      {label:'.claude/skills/&lt;name&gt;/SKILL.md (minor bumped)', kind:'skill update'},
+      {label:'.claude/skills/&lt;name&gt;/evolution-log.md (appended)', kind:'history'},
+      {label:'docs/PROPOSED-SKILLS.md (appended)', kind:'backlog'},
+      {label:'docs/PROPOSED-GUARDRAILS.md (appended)', kind:'backlog'},
+      {label:'baselines/{quality,coverage,performance,skill-health}.json', kind:'updated'},
+      {label:'neo4j-memory entities/relations (or JSONL fallback)', kind:'cross-run graph'},
+      {label:'runs/&lt;run-id&gt;/run-summary.md', kind:'final report'}
+    ],
+    loops:[
+      {name:'Golden regression gate (F5→F7)', caps:'on FAIL, F7 (learning-engine) HALTS auto-apply; user must triage'},
+      {name:'Baseline reset cycle', caps:'every 5 runs, clear baseline and capture fresh'}
+    ],
+    local_lifecycle:'Writes runs/<run-id>/feedback/*, evolution/improvement-plan-<run-id>.md, evolution/evolution-reports/<run-id>.md.',
+    global_lifecycle:'Persists across runs: prompt-patches (append), skill bodies (minor bumps + evolution-log.md), baselines (raise-only), PROPOSED-*.md (append), neo4j-memory entities. THIS is the self-evolution mechanism.',
+    gates:['H10']
+  }
+];
+</script>
+<script id="data-agents">
+const A = (id,name,model,role,phase,inv_by,invokes,cost,when,local,global,path)=>({
+  id:'a-'+id, type:'agent', name, model, role, phase, invoked_by:inv_by, invokes,
+  cost, when_needed:when, local_lifecycle:local, global_lifecycle:global,
+  path: path || '.claude/agents/'+id+'.md'
+});
+
+DATA.agents = [
+  A('sdk-intake-agent','sdk-intake-agent','opus',
+    'Phase 0 intake. Converts NL request or partial TPRD to canonical TPRD via AskUserQuestion clarifications. Enforces 14-section TPRD schema, detects Mode A/B/C, runs spec-completeness guardrails, gates H1.',
+    'Intake',['user (via /run-sdk-addition)'],['AskUserQuestion','guardrails G20–G24','spec-driven-development skill','context7 (optional)'],
+    '~8 K tokens','Every pipeline invocation',
+    'Creates run directory. Asks ≤5 clarifying questions (escalates on 6th).',
+    'Auto-files missing skills to docs/PROPOSED-SKILLS.md.'),
+  A('sdk-existing-api-analyzer','sdk-existing-api-analyzer','sonnet',
+    'Phase 0.5 (Mode B/C only). Snapshots existing API surface, test baseline, benchmark baseline, caller map.',
+    'Extension',['sdk-intake-agent (if mode B/C)'],['Bash (go doc, go test, go test -bench)','serena (opt)','code-graph (opt)'],
+    '~3 K tokens','Mode B (extend) or Mode C (incremental update)',
+    'One-shot snapshot; no code modification.',
+    'No persistent writes outside run dir.'),
+  A('sdk-marker-scanner','sdk-marker-scanner','sonnet',
+    'Scans target SDK for provenance markers ([traces-to:], [constraint:], [owned-by:], [do-not-regenerate], [stable-since:], [deprecated-in:]). Produces ownership-map.json.',
+    'Extension',['sdk-existing-api-analyzer'],['Bash (grep)','state/ownership-cache.json updates'],
+    '~2.5 K tokens','Mode B/C; ownership map required for merge planning and constraint verification',
+    'Per-run marker parse.',
+    'Updates state/ownership-cache.json (target-wide marker map, persists across runs).'),
+  A('sdk-design-lead','sdk-design-lead','opus',
+    'Orchestrator for Phase 1. Runs 5 design agents in parallel → mechanical checks (G30–G38) → 7 devils in parallel → review-fix loop → HITL gates H4/H5/H6.',
+    'Design',['sdk-intake-agent / sdk-marker-scanner'],['5 design agents','6–7 devil agents','guardrail-validator','review-fix-protocol skill'],
+    '~25 K tokens (orchestration only)','Every run',
+    'Coordinates wave state; manages review-fix loop; resolves findings to owner agents.',
+    'No persistent writes.'),
+  A('sdk-designer','sdk-designer','opus',
+    'Design-lead sub-agent. Outputs api.go.stub, package-layout.md, dependencies.md.',
+    'Design',['sdk-design-lead (D1)'],['context7 (doc lookup)'],
+    '~12 K tokens','Every run'),
+  A('interface-designer','interface-designer','sonnet',
+    'Designs port/adapter interfaces and error types per hexagonal architecture.',
+    'Design',['sdk-design-lead (D1)'],['go-hexagonal-architecture skill','go-error-handling-patterns skill'],
+    '~8 K tokens','Every run'),
+  A('algorithm-designer','algorithm-designer','opus',
+    'Designs retry/backoff, circuit breaker, pool, health-check algorithms and parameters.',
+    'Design',['sdk-design-lead (D1)'],['circuit-breaker-policy','network-error-classification','connection-pool-tuning'],
+    '~10 K tokens','Every run'),
+  A('concurrency-designer','concurrency-designer','opus',
+    'Designs goroutine ownership, context cancellation, graceful close.',
+    'Design',['sdk-design-lead (D1)'],['go-concurrency-patterns','client-shutdown-lifecycle','context-deadline-patterns'],
+    '~8 K tokens','Every run'),
+  A('pattern-advisor','pattern-advisor','sonnet',
+    'Documents functional-options vs Config+New rationale; hexagonal layering.',
+    'Design',['sdk-design-lead (D1)'],['sdk-config-struct-pattern','go-hexagonal-architecture'],
+    '~5 K tokens','Every run'),
+  A('sdk-design-devil','sdk-design-devil','opus',
+    'READ-ONLY adversary. Finds painful APIs: params > 4, exposed internals, mutable shared state, non-idiomatic naming, goroutine ownership ambiguity. DD-* findings.',
+    'Design',['sdk-design-lead (D3)'],['design/reviews/design-devil.md'],
+    '~4 K tokens','Every run'),
+  A('sdk-semver-devil','sdk-semver-devil','sonnet',
+    'Classifies every proposed API change as patch/minor/major. Mode B/C delegates cross-API comparison to breaking-change-devil.',
+    'Design',['sdk-design-lead (D3)'],['sdk-semver-governance skill'],
+    '~2 K tokens','Every run'),
+  A('sdk-convention-devil','sdk-convention-devil','sonnet',
+    'Verifies design matches target SDK conventions (Config+New primary, otel/, pool/, circuitbreaker/, error sentinel style, dir layout).',
+    'Design',['sdk-design-lead (D3)'],['target SDK tree sample'],
+    '~2 K tokens','Every run'),
+  A('sdk-security-devil','sdk-security-devil','opus',
+    'READ-ONLY. PARANOID. Reviews TLS defaults, credential handling, log-PII, input validation, SSRF, timing attacks.',
+    'Design + Impl',['sdk-design-lead (D3), sdk-impl-lead (M7)'],['gosec (if avail)','credential-provider-pattern skill'],
+    '~3 K tokens/phase','Every run (two passes: D3 design, M7 impl)'),
+  A('sdk-dep-vet-devil','sdk-dep-vet-devil','sonnet',
+    'Vets every new go dependency: license allowlist, govulncheck, osv-scanner, size, last-commit-age. Verdict ACCEPT / CONDITIONAL / REJECT.',
+    'Design',['sdk-design-lead (D3)'],['govulncheck','osv-scanner','go-dependency-vetting skill'],
+    '~3.5 K tokens','Every run; triggers HITL H6 on CONDITIONAL'),
+  A('sdk-breaking-change-devil','sdk-breaking-change-devil','opus',
+    'Mode B/C ONLY. Compares proposed API vs current-api.json. Flags removals/renames/signature changes as breaking. BLOCKER unless TPRD §12 accepts.',
+    'Design',['sdk-design-lead (D3, B/C only)'],['current-api.json','ownership-map.json'],
+    '~5 K tokens','Only Mode B/C; triggers HITL H4'),
+  A('sdk-constraint-devil','sdk-constraint-devil','opus',
+    'Verifies [constraint:] invariants survive every change. Runs bench before AND after, benchstats. Any violation = BLOCKER.',
+    'Design + Impl',['sdk-design-lead (D3), sdk-impl-lead (M4)'],['bash (benchmark + benchstat)'],
+    '~4 K tokens/constraint','Only Mode B/C when [constraint:] markers present'),
+  A('sdk-impl-lead','sdk-impl-lead','opus',
+    'Orchestrator for Phase 2. Creates branch sdk-pipeline/<run-id>, runs TDD waves M1–M10, manages marker-aware merge in B/C, review-fix loop, HITL H7/H7b.',
+    'Implementation',['sdk-design-lead (end of P1)'],['10 waves: 5+ impl agents, 5+ devils','tdd-patterns','review-fix-protocol'],
+    '~30 K tokens','Every run'),
+  A('sdk-test-spec-generator','sdk-test-spec-generator','sonnet',
+    'Wave M1 (Red). Writes failing table-driven tests per TPRD §4 functional requirements.',
+    'Implementation',['sdk-impl-lead (M1)'],['table-driven-tests','tdd-patterns'],
+    '~8 K tokens','Every run (M1)',''),
+  A('sdk-merge-planner','sdk-merge-planner','opus',
+    'Mode B/C only (Wave M2). Per-symbol merge plan: preserve / regenerate / surface-for-user. Honors ownership-map.',
+    'Implementation',['sdk-impl-lead (M2, B/C)'],['merge-plan.md output'],
+    '~3 K tokens','Only Mode B/C (triggers HITL H7b for co-owned symbols)'),
+  A('sdk-implementor','sdk-implementor','opus',
+    'Wave M3 (Green). Writes minimum code to pass tests; adds [traces-to:] markers.',
+    'Implementation',['sdk-impl-lead (M3)'],['Edit tool','all SDK skills per TPRD §Skills-Manifest'],
+    '~40 K tokens','Every run (M3)'),
+  A('refactoring-agent','refactoring-agent','opus',
+    'Wave M5. Applies refactorings from code-review findings (dedup, oversized splits, complexity, error wrapping) with build+test verification.',
+    'Implementation',['sdk-impl-lead (M5)'],['Edit','Bash (go build / go test)'],
+    '~6 K tokens','Every run (M5)'),
+  A('documentation-agent','documentation-agent','sonnet',
+    'Wave M6. Generates godoc on exported symbols, Example_* functions, package README.',
+    'Implementation',['sdk-impl-lead (M6)'],['go-example-function-patterns','Edit','Bash (go build)'],
+    '~4 K tokens','Every run (M6)'),
+  A('sdk-marker-hygiene-devil','sdk-marker-hygiene-devil','sonnet',
+    'READ-ONLY Wave M7. Verifies every pipeline-authored symbol has [traces-to: TPRD-*]; MANUAL symbols byte-identical; no forged markers.',
+    'Implementation',['sdk-impl-lead (M7, B/C)'],['bash (hash computation)','ownership-map.json'],
+    '~2.5 K tokens','Mode B/C primarily; BLOCKER on violations'),
+  A('sdk-overengineering-critic','sdk-overengineering-critic','sonnet',
+    'READ-ONLY. Flags unnecessary abstractions, speculative interfaces, unused options, premature optimization.',
+    'Implementation',['sdk-impl-lead (M7)'],['pattern scanning'],
+    '~2.5 K tokens','Every run (M7)'),
+  A('sdk-api-ergonomics-devil','sdk-api-ergonomics-devil','opus',
+    'READ-ONLY. SDK-consumer POV. Finds boilerplate-heavy callsites, surprising defaults, missing Example_*, forced error handling.',
+    'Implementation',['sdk-impl-lead (M7)'],['api-ergonomics-audit skill'],
+    '~3 K tokens','Every run (M7)'),
+  A('sdk-leak-hunter','sdk-leak-hunter','sonnet',
+    'READ-ONLY (runs tests). Hunts goroutine leaks via goleak + -race -count=5. Any leak = BLOCKER.',
+    'Impl + Testing',['sdk-impl-lead (M7), sdk-testing-lead (T6)'],['goleak','bash'],
+    '~3 K tokens','Every run (M7 + T6)'),
+  A('code-reviewer','code-reviewer','opus',
+    'Wave M7 adversarial reviewer. READ-ONLY. Reviews Go idioms, error wrapping, concurrency safety, naming, package structure, test quality.',
+    'Implementation',['sdk-impl-lead (M7)'],['code analysis'],
+    '~6 K tokens','Every run (M7)'),
+  A('sdk-testing-lead','sdk-testing-lead','opus',
+    'Orchestrator for Phase 3. Runs T1–T10: coverage, integration, flake hunt, bench, leak, fuzz, supply-chain scans. HITL H8 on regression.',
+    'Testing',['sdk-impl-lead (end of P2)'],['10 test agents','testcontainers-setup','testing-patterns'],
+    '~25 K tokens','Every run'),
+  A('unit-test-agent','unit-test-agent','sonnet',
+    'Wave T1. Audits coverage; writes table-driven tests to fill gaps to ≥90% branch coverage.',
+    'Testing',['sdk-testing-lead (T1)'],['table-driven-tests','testing-patterns'],
+    '~6 K tokens','Every run (T1)'),
+  A('integration-test-agent','integration-test-agent','sonnet',
+    'Wave T2. testcontainers-go recipes per backend (Dragonfly, MinIO, Kafka, RabbitMQ, etc).',
+    'Testing',['sdk-testing-lead (T2)'],['testcontainers-setup'],
+    '~8 K tokens','Every run if TPRD §11 declares integration tests'),
+  A('sdk-integration-flake-hunter','sdk-integration-flake-hunter','sonnet',
+    'READ-ONLY (runs tests). Re-runs integration -count=3. Any failure = flaky; BLOCKER until investigated.',
+    'Testing',['sdk-testing-lead (T3)'],['bash'],
+    '~4 K tokens','Every run (T3)'),
+  A('performance-test-agent','performance-test-agent','sonnet',
+    'Wave T4. Writes benchmarks and runs -bench=. -benchmem -count=5.',
+    'Testing',['sdk-testing-lead (T4)'],['bash'],
+    '~5 K tokens','Every run (T4)'),
+  A('sdk-benchmark-devil','sdk-benchmark-devil','sonnet',
+    'READ-ONLY. Compares bench results vs baselines/performance-baselines.json. Gates hot-path +5%, shared +10%. Triggers HITL H8.',
+    'Testing',['sdk-testing-lead (T5)'],['benchstat'],
+    '~2 K tokens','Every run (T5)'),
+  A('fuzz-agent','fuzz-agent','sonnet',
+    'Wave T7. Writes FuzzXxx tests and runs them for TPRD §11-declared targets (parsers, API handlers, query builders).',
+    'Testing',['sdk-testing-lead (T7)'],['fuzz-patterns','bash'],
+    '~4 K tokens','Every run where TPRD §11 declares fuzz targets'),
+  A('observability-test-agent','observability-test-agent','sonnet',
+    'Wave T9. Span/metric conformance tests (if TPRD §8 declares required spans).',
+    'Testing',['sdk-testing-lead (T9)'],['otel-instrumentation','sdk-otel-hook-integration'],
+    '~3 K tokens','Every run where TPRD §8 declares observability requirements'),
+  A('mutation-test-agent','mutation-test-agent','sonnet',
+    'Wave T10 (optional). Targets ≥70% mutation score via gremlins.',
+    'Testing',['sdk-testing-lead (T10)'],['go-mutesting or similar'],
+    '~5 K tokens','Opt-in; not every run'),
+  A('guardrail-validator','guardrail-validator','sonnet',
+    'Runs mechanical automated checks (G01–G103). Invoked at phase boundaries as a gate.',
+    'All phases',['phase leads'],['scripts/guardrails/G*.sh'],
+    '~4 K tokens/phase','Every phase exit'),
+  A('metrics-collector','metrics-collector','sonnet',
+    'F1. Computes per-agent quality_score (CLAUDE §12 formula), per-phase and per-run metrics. Adds skill-coverage-pct and manifest-miss-rate signals.',
+    'Feedback',['end of every phase (via phase lead)'],['decision-log parsing','review file analysis','neo4j-memory (opt)'],
+    '~4 K tokens','Every phase completion'),
+  A('phase-retrospector','phase-retrospector','sonnet',
+    'F2. Writes retro-<phase>.md at end of each phase (what went well / patterns / surprises / coordination).',
+    'Feedback',['phase leads'],['decision-log analysis'],
+    '~3 K tokens','Every phase completion'),
+  A('defect-analyzer','defect-analyzer','sonnet',
+    'F3. Classifies test failures by severity + category; logs to defect-log.jsonl with regression-risk assessment.',
+    'Feedback',['Phase 4 entry (after testing)'],['test result analysis'],
+    '~3 K tokens','Phase 4'),
+  A('root-cause-tracer','root-cause-tracer','opus',
+    'F3. For HIGH/CRITICAL defects: traces backward through phases to identify introduction point + which phase should have caught it.',
+    'Feedback',['after defect-analyzer'],['all phase artifacts','neo4j-memory (opt)'],
+    '~5 K tokens','Phase 4 when defects present'),
+  A('sdk-skill-drift-detector','sdk-skill-drift-detector','opus',
+    'F4. Compares each invoked skill\'s PRESCRIPTION against what the generated code ACTUALLY does.',
+    'Feedback',['metrics-collector / improvement-planner'],['.claude/skills/*.md','generated code'],
+    '~4 K tokens','Phase 4'),
+  A('sdk-skill-coverage-reporter','sdk-skill-coverage-reporter','sonnet',
+    'F4. Reports invoked vs declared skills per TPRD §Skills-Manifest. Unused-but-relevant = trigger gap.',
+    'Feedback',['metrics-collector'],['decision-log.jsonl'],
+    '~2 K tokens','Phase 4'),
+  A('sdk-golden-regression-runner','sdk-golden-regression-runner','opus',
+    'F5. Re-runs canonical fixtures from golden-corpus/ at deterministic seed. FAIL halts F7 learning-engine auto-apply.',
+    'Feedback',['learning-engine (before auto-apply) OR user (--golden-only)'],['bash (full pipeline re-run)'],
+    '~15 K tokens/fixture','Phase 4, before F7; also on-demand via /run-sdk-addition --golden-only'),
+  A('improvement-planner','improvement-planner','opus',
+    'F6. Categorizes findings into prompt-patch / skill-patch / new-skill-proposal / new-guardrail-proposal with confidence levels.',
+    'Feedback',['after F3–F5'],['backpatch-log','retrospectives','metrics'],
+    '~8 K tokens','Phase 4'),
+  A('learning-engine','learning-engine','opus',
+    'F7. Applies high-confidence prompt patches (≤10/run) + existing-skill body patches (≤3/run, minor bump, golden-gated). NEVER creates new skills/agents/guardrails.',
+    'Feedback',['improvement-planner'],['Edit','neo4j-memory','golden-regression gate'],
+    '~6 K tokens','Phase 4; halts on golden-regression FAIL'),
+  A('baseline-manager','baseline-manager','opus',
+    'F8. Quality/coverage/performance/skill-health baselines. Raise-only on improvement >10%. Reset every 5 runs.',
+    'Feedback',['metrics-collector'],['baselines/*.json','neo4j-memory (opt)'],
+    '~2 K tokens','Phase 4')
+];
+</script>
+
+<script id="data-skills">
+DATA.skill_categories = [
+  {id:'sdk-native', name:'SDK-native patterns', desc:'Built specifically for motadata-go-sdk conventions (Config+New, OTel hook, marker protocol, semver governance).'},
+  {id:'resilience', name:'Client resilience & error handling', desc:'Retry, cancellation, pooling, leak prevention, backpressure, rate limiting, circuit breaker.'},
+  {id:'testing', name:'Testing patterns', desc:'TDD, table-driven, testcontainers, mocks, fuzzing, Example_* examples.'},
+  {id:'go', name:'Go language patterns', desc:'Concurrency, errors, struct/interface design, module paths, dep vetting.'},
+  {id:'meta', name:'Pipeline meta & process', desc:'Decision logging, guardrail validation, review-fix protocol, lifecycle events, context summaries, conflict resolution, feedback analysis.'},
+  {id:'mcp', name:'MCP integration', desc:'Read/write cross-run state via neo4j-memory with JSONL fallback.'}
+];
+
+const S = (id,ver,status,cat,desc,triggers)=>({id:'s-'+id,type:'skill',name:id,version:ver,status,category:cat,desc,triggers, path:'.claude/skills/'+id+'/SKILL.md'});
+
+DATA.skills = [
+  // SDK-native
+  S('sdk-config-struct-pattern','1.0.0','draft','sdk-native','Target SDK convention: Config struct + New(cfg). When to use functional options instead.','pattern-advisor when authoring §6'),
+  S('sdk-semver-governance','1.0.0','draft','sdk-native','Public API diff between proposed and current surface. Classifies breaking changes and forces correct semver bump.','sdk-semver-devil'),
+  S('sdk-marker-protocol','1.0.0','stable','sdk-native','Code provenance markers — [traces-to:], [constraint:], [stable-since:], [owned-by:]. Drives marker-scanner + constraint-devil.','sdk-marker-scanner, sdk-implementor, sdk-marker-hygiene-devil'),
+  S('sdk-otel-hook-integration','1.0.0','stable','sdk-native','Wire new clients into motadatagosdk/otel (not raw OTel). Span names, attribute conventions.','observability-test-agent, sdk-implementor'),
+  // Resilience
+  S('network-error-classification','1.0.0','stable','resilience','Taxonomy for retryable / permanent / transient errors. Wraps sentinels with retry intent.','algorithm-designer'),
+  S('context-deadline-patterns','1.0.0','stable','resilience','ctx.Deadline() inheritance, cancellation safety, deadline-to-timeout bridging.','concurrency-designer'),
+  S('connection-pool-tuning','1.0.0','stable','resilience','Sizing heuristics for motadatagosdk/core/pool — min/max, idle timeout, healthcheck cadence.','algorithm-designer'),
+  S('goroutine-leak-prevention','1.0.0','stable','resilience','goleak patterns, -race hygiene, ctx-cancelled goroutine exits. Drives sdk-leak-hunter.','sdk-leak-hunter'),
+  S('client-shutdown-lifecycle','1.0.0','stable','resilience','Close() / Stop() contract — drain in-flight, cancel loops, close sub-resources in order.','concurrency-designer'),
+  S('idempotent-retry-safety','1.0.0','stable','resilience','Retries that don\'t duplicate effects. Idempotency keys, at-least-once vs exactly-once.','algorithm-designer'),
+  S('client-tls-configuration','1.0.0','stable','resilience','TLS defaults (min version, cipher suites, cert verification), system trust-store integration.','sdk-security-devil'),
+  S('credential-provider-pattern','1.0.0','stable','resilience','Pluggable credential source — static, env, file, provider-chain. No creds in config literal.','sdk-security-devil, sdk-implementor'),
+  S('backpressure-flow-control','1.0.0','stable','resilience','Bounded channels, semaphores, token buckets. Preventing unbounded queueing under slow consumers.','algorithm-designer'),
+  S('client-rate-limiting','1.0.0','stable','resilience','Client-side rate limit (token bucket). Per-method vs per-client, shared across requests.','algorithm-designer'),
+  S('circuit-breaker-policy','1.0.0','stable','resilience','Thresholds, open/half-open/close transitions, integration with motadatagosdk/core/circuitbreaker.','algorithm-designer'),
+  // Testing
+  S('testing-patterns','1.0.0','stable','testing','Go testing fundamentals — table-driven, testcontainers, gomock, httptest, fixtures, benchmarks, coverage enforcement.','sdk-testing-lead'),
+  S('table-driven-tests','1.0.0','stable','testing','Go table-driven test structure — test struct, t.Run subtests, t.Cleanup, t.Parallel, naming, require/assert, gomock per-test.','unit-test-agent, sdk-test-spec-generator'),
+  S('tdd-patterns','1.0.0','stable','testing','Red → Green → Refactor → Verify cycle, interface-driven test design, mock-based TDD.','sdk-impl-lead'),
+  S('fuzz-patterns','1.0.0','stable','testing','Go native fuzzing — FuzzXxx signature, corpus seeding, crash triage.','fuzz-agent'),
+  S('mock-patterns','1.0.0','stable','testing','gomock usage — mockgen, controller lifecycle, EXPECT chaining, custom matchers, ordered expectations.','sdk-implementor'),
+  S('testcontainers-setup','1.0.0','stable','testing','testcontainers-go patterns — PostgreSQL, NATS, Redis, shared TestMain, sync.Once reuse. + Dragonfly/MinIO/LocalStack/Kafka/RabbitMQ recipes.','integration-test-agent'),
+  S('client-mock-strategy','1.0.0','stable','testing','Interface boundaries for client tests, when to use gomock / hand-rolled fakes / testcontainers real backends.','sdk-implementor'),
+  S('go-example-function-patterns','1.0.1','stable','testing','Example_* testable godoc examples — output: comments, Ordered variants, naming.','documentation-agent'),
+  // Go language
+  S('go-concurrency-patterns','1.0.0','stable','go','goroutines, errgroup, channels, context cancellation, worker pools, sync.Pool, race detection.','concurrency-designer'),
+  S('go-error-handling-patterns','1.0.1','stable','go','Error wrapping with fmt.Errorf %w, sentinel errors, errors.Is/As, error catalog, PII-safe messages.','code-reviewer, sdk-implementor'),
+  S('go-struct-interface-design','1.0.0','stable','go','Struct tags, constructor functions, godoc, interface design (accept interfaces, return structs), -er suffix, acronym casing, no-stutter.','interface-designer'),
+  S('go-hexagonal-architecture','1.0.0','stable','go','Go hexagonal (ports & adapters) — cmd/, internal/domain/, internal/application/, internal/ports/, internal/adapters/.','pattern-advisor'),
+  S('go-module-paths','1.0.0','stable','go','Go module import path derivation, monorepo layouts, Dockerfile COPY context, common mistakes.','sdk-designer'),
+  S('go-dependency-vetting','1.0.0','stable','go','License, CVE, maintenance, size gate for every new go get. Drives sdk-dep-vet-devil verdicts.','sdk-dep-vet-devil'),
+  // Meta
+  S('decision-logging','1.1.0','stable','meta','Canonical JSON schemas + entry limits for runs/<run-id>/decision-log.jsonl. Adds skill-evolution and budget entry types.','every agent (MANDATORY)'),
+  S('guardrail-validation','1.1.0','stable','meta','Mechanical PASS/FAIL checks at phase exits. G01–G103 including supply-chain, benchmark-regression, marker-ownership, dependency-vetting.','guardrail-validator'),
+  S('review-fix-protocol','1.1.0','stable','meta','Per-issue retry cap 5, stuck detection 2, dedup, findings schema, deterministic-first gate, guardrail re-run, convergence criteria.','sdk-design-lead, sdk-impl-lead'),
+  S('lifecycle-events','1.0.0','stable','meta','Agent lifecycle event logging — startup, completion, failure. duration_seconds calculation.','every agent'),
+  S('context-summary-writing','1.0.0','stable','meta','Context summary file format — 200-line max, Generated/Run header, revision history, ASSUMPTION and DRAFT markers.','every agent'),
+  S('conflict-resolution','1.0.0','stable','meta','Ownership-matrix lookup, escalation message format, assumption marking, phase-lead resolution procedure.','phase leads'),
+  S('feedback-analysis','1.0.0','stable','meta','Quality scoring, defect pattern detection, root-cause tracing, baseline comparison, prompt evolution.','metrics-collector, root-cause-tracer, learning-engine, improvement-planner'),
+  S('spec-driven-development','1.0.0','stable','meta','TPRD-to-symbol mapping — every §7 API symbol gets (impl, test, godoc, bench, Example_*, [traces-to] marker).','sdk-intake-agent, sdk-impl-lead'),
+  S('environment-prerequisites-check','1.0.0','stable','meta','Phase-start runtime tool checklist — Go, gcc, golangci-lint, gosec + govulncheck, osv-scanner, staticcheck, benchstat, Docker, jq, git.','every phase lead'),
+  S('sdk-config-struct-pattern','1.0.0','draft','sdk-native','(duplicate — tracked above)',''),
+  // SDK resilience (continued)
+  S('api-ergonomics-audit','1.0.0','stable','sdk-native','Consumer POV checklist: parameter count, surprising defaults, error handling boilerplate, missing examples.','sdk-api-ergonomics-devil'),
+  // MCP
+  S('mcp-knowledge-graph','1.0.0','stable','mcp','Read/write pipeline cross-run state via neo4j-memory MCP. Entity/relation/observation patterns for Run, Agent, Skill, Pattern, Defect, Baseline, Patch. Includes fallback-to-JSONL.','learning-engine, root-cause-tracer, baseline-manager, metrics-collector')
+].filter((x,i,a)=>a.findIndex(y=>y.name===x.name)===i); // dedupe
+</script>
+
+<script id="data-mcps-stores-etc">
+DATA.mcps = [
+  {id:'mcp-context7', type:'mcp', name:'context7', command:'npx -y @upstash/context7-mcp',
+    purpose:'Current library/framework/SDK docs lookup. Used for TPRD §6 dependency validation (intake) and design research (design).',
+    tools:['resolve-library-id','query-docs'],
+    used_by:['Phase 0 Intake','Phase 1 Design','Phase 3 Testing (opt)'],
+    local_lifecycle:'Per-invocation; stateless.',
+    global_lifecycle:'Stateless; no cross-run state.',
+    config:'No API key required (Upstash public API).',
+    status:'ACTIVE; scoped heavier in v0.5.0',
+    cost:'network call, ~few K tokens per doc fetch'},
+  {id:'mcp-exa', type:'mcp', name:'exa', command:'npx -y exa-mcp-server',
+    purpose:'General-purpose web search. Fallback when context7 is insufficient or for cross-SDK comparisons.',
+    tools:['web_search_exa','get_code_context_exa','crawling_exa'],
+    used_by:['Optional in all phases; not mandatory'],
+    local_lifecycle:'Per-invocation; ~15min TTL cache.',
+    global_lifecycle:'Stateless.',
+    config:'EXA_API_KEY required (from .env; empty in .env.example).',
+    status:'ACTIVE (optional)',
+    cost:'network call + Exa API cost'},
+  {id:'mcp-neo4j-cypher', type:'mcp', name:'neo4j-cypher', command:'uvx mcp-neo4j-cypher@0.6.0 --transport stdio',
+    purpose:'Raw Cypher queries against the knowledge graph — used when neo4j-memory CRUD is insufficient.',
+    tools:['get_neo4j_schema','read_neo4j_cypher','write_neo4j_cypher'],
+    used_by:['Phase 4 Feedback (metrics-collector, root-cause-tracer, improvement-planner)'],
+    local_lifecycle:'Per-invocation query.',
+    global_lifecycle:'Reads/writes persistent cross-run graph.',
+    config:'NEO4J_URI bolt://localhost:7687, neo4j/neo4jneo4j (via .mcp.json).',
+    status:'ACTIVE (v0.3.0+)',
+    cost:'local call'},
+  {id:'mcp-neo4j-memory', type:'mcp', name:'neo4j-memory', command:'uvx mcp-neo4j-memory@0.4.5',
+    purpose:'Typed CRUD for the cross-run knowledge graph. Primary writer: metrics-collector. Primary readers: root-cause-tracer, improvement-planner, baseline-manager, learning-engine.',
+    tools:['create_entities','add_observations','create_relations','find_memories_by_name','search_memories','read_graph','delete_entities','delete_observations','delete_relations'],
+    used_by:['Phase 3 Testing (opt)','Phase 4 Feedback (primary)'],
+    local_lifecycle:'Per-invocation CRUD; all writes append/upsert (no delete-heavy ops).',
+    global_lifecycle:'Persistent graph across runs. Entities: Run, Agent, Skill, Phase, Defect, Pattern, Baseline, Patch.',
+    config:'NEO4J_URL bolt://localhost:7687. G04 health-checks reachability; JSONL fallback if unavailable.',
+    status:'ACTIVE (v0.3.0)',
+    cost:'local call'},
+  {id:'mcp-code-graph', type:'mcp', name:'code-graph', command:'cgc mcp start',
+    purpose:'Symbol-level code analysis: callers, callees, dead code, complexity, class hierarchies. Enables marker-aware 3-way merge (B/C) and call-graph refactoring.',
+    tools:['add_code_to_graph','analyze_code_relationships','calculate_cyclomatic_complexity','find_code','find_most_complex_functions','find_dead_code','get_repository_stats','watch_directory','visualize_graph_query','execute_cypher_query'],
+    used_by:['Phase 0.5','Phase 1','Phase 2','Phase 3','Phase 4'],
+    local_lifecycle:'Watches $SDK_TARGET_DIR for file changes, updates symbol graph incrementally.',
+    global_lifecycle:'Persistent symbol index in Neo4j; shared across phases within a run.',
+    config:'Neo4j @ bolt://localhost:7687; cgc binary.',
+    status:'scoped for v0.4.0 rollout (available, not fully integrated)',
+    cost:'local call + Neo4j query cost'},
+  {id:'mcp-serena', type:'mcp', name:'serena', command:'serena start-mcp-server --context=claude-code',
+    purpose:'LSP-backed symbol lookup, rename refactoring, file editing, project-aware search. Central to marker-aware 3-way merges (B/C).',
+    tools:['activate_project','find_symbol','find_referencing_symbols','rename_symbol','replace_symbol_body','insert_before_symbol','insert_after_symbol','get_symbols_overview','read_memory','write_memory'],
+    used_by:['Phase 0.5','Phase 1 (opt)','Phase 2 (mandatory for B/C)','Phase 4 (skill-drift-detector)'],
+    local_lifecycle:'Per-invocation LSP queries; local cache in .serena/cache/.',
+    global_lifecycle:'Project-scoped memories in .serena/memories/.',
+    config:'.serena/project.yml; LSP backend per language.',
+    status:'ACTIVE',
+    cost:'local call'}
+];
+
+DATA.scripts = [
+  {id:'scr-migrate', type:'script', name:'migrate-jsonl-to-neo4j.py',
+    path:'scripts/migrate-jsonl-to-neo4j.py', language:'Python 3',
+    purpose:'Idempotent ETL: reads evolution/knowledge-base/{agent-performance,prompt-evolution-log}.jsonl and emits neo4j-seed.json for batch neo4j-memory calls.',
+    invoked_by:'Phase 4 learning-engine (implicit) or human post-run',
+    inputs:'agent-performance.jsonl, prompt-evolution-log.jsonl, .migrated-offsets.json',
+    outputs:'neo4j-seed.json (entities + relations), updated offsets',
+    role_local:'Per-run state migration; idempotent',
+    role_global:'Bridges per-run JSONL logs into cross-run knowledge graph substrate'},
+  {id:'scr-guardrails', type:'script', name:'scripts/guardrails/ (40+ scripts)',
+    path:'scripts/guardrails/G*.sh + run-all.sh', language:'Bash + embedded Python',
+    purpose:'40+ mechanical PASS/FAIL gates at phase checkpoints. G01–G103: completeness, conformance, security, performance, marker hygiene, supply chain.',
+    invoked_by:'guardrail-validator agent (any phase); human via bash scripts/guardrails/run-all.sh <phase> <run-dir> <target>',
+    inputs:'Per-guardrail: run directory, target SDK directory, input files',
+    outputs:'Exit code 0 (PASS) or 1 (FAIL) + stdout message + detailed report under runs/<id>/<phase>/reviews/',
+    role_local:'Per-run, per-phase validation; non-destructive',
+    role_global:'Quality gates definition; baselines recorded separately'}
+];
+
+DATA.stores = [
+  {id:'store-runs', type:'store', name:'runs/', path:'runs/<run-id>/',
+    purpose:'Per-run execution state, phase outputs, decision logs, HITL artifacts — the raw material for retrospectives and learning-engine.',
+    size:'~748 KB per run (sample: sdk-dragonfly-s2)',
+    structure:'tprd.md · run-summary.md · decision-log.jsonl · state/run-manifest.json · intake/ · design/ · impl/ · testing/ · feedback/',
+    produced_by:['Phase 0 Intake','Phase 0.5 Extension','Phase 1 Design','Phase 2 Impl','Phase 3 Testing','Phase 4 Feedback'],
+    consumed_by:['learning-engine (F7)','phase-retrospector','root-cause-tracer','next run agents (read prior run-summary)'],
+    local_lifecycle:'Built up wave-by-wave within one run. decision-log.jsonl appends continuously.',
+    global_lifecycle:'Runs accumulate. Read-only after H10. Currently no pruning policy.'},
+  {id:'store-baselines', type:'store', name:'baselines/', path:'baselines/',
+    purpose:'Persistent numeric + qualitative baselines (performance, coverage, quality, skill-health). Gate regressions across runs.',
+    size:'~64 KB',
+    structure:'performance-baselines.json · quality-baselines.json · coverage-baselines.json · skill-health-baselines.json · baseline-history.jsonl · stable-signatures.json · do-not-regenerate-hashes.json · regression-report-<run-id>.md',
+    produced_by:['Phase 3 Testing (first run)','Phase 4 baseline-manager (F8)'],
+    consumed_by:['Phase 3 Testing (G60, G61, G63 compare)','Phase 4 learning-engine (reset logic)','Future: visualization dashboards'],
+    local_lifecycle:'Not local — baselines are global.',
+    global_lifecycle:'Raise-only on improvement >10%; reset every 5 runs (settings.json: baseline_reset_every_n_runs=5). Append-only history.'},
+  {id:'store-golden', type:'store', name:'golden-corpus/', path:'golden-corpus/',
+    purpose:'Canonical regression fixtures — pipeline-output snapshots approved as "golden" after H10 sign-off. Used to detect capability degradation across runs.',
+    size:'~8 KB (0 fixtures seeded yet)',
+    structure:'<addition-name>-v<N>/ { tprd.md, gate-answers.yaml, expected/, metadata.json }',
+    produced_by:['sdk-golden-regression-runner after H10 approval'],
+    consumed_by:['sdk-golden-regression-runner (F5 and --golden-only)','learning-engine (mandatory check before major skill bumps)'],
+    local_lifecycle:'Not local — fixtures are permanent once created.',
+    global_lifecycle:'Append-only. Retired entries tracked in retired.jsonl (never deleted).'},
+  {id:'store-evolution', type:'store', name:'evolution/', path:'evolution/',
+    purpose:'Learning-engine state — cross-run patterns, skill/prompt evolution, human-review inbox for new skills/guardrails.',
+    size:'~180 KB',
+    structure:'knowledge-base/{agent-performance,prompt-evolution-log,neo4j-seed}.{jsonl,json} · prompt-patches/<agent>.md · skill-candidates/<name>/SKILL.md · evolution-reports/<run-id>.md · improvement-plan-<run-id>.md',
+    produced_by:['metrics-collector (F1)','improvement-planner (F6)','learning-engine (F7)'],
+    consumed_by:['Next run\'s agents (read patched prompts)','learning-engine (recurrence detection)','Humans (PR review of skill-candidates/)'],
+    local_lifecycle:'Not local — evolution state is global.',
+    global_lifecycle:'Append-only. Prompts and skill bodies are patched with minor bumps; evolution-log.md keeps per-version history.'},
+  {id:'store-docs', type:'store', name:'docs/', path:'docs/',
+    purpose:'Pipeline documentation + backlogs for human-authored items (new skills, guardrails, MCP roadmap).',
+    size:'~60 KB',
+    structure:'MCP-INTEGRATION-PROPOSAL.md · NEO4J-KNOWLEDGE-GRAPH.md · PROPOSED-GUARDRAILS.md · PROPOSED-SKILLS.md',
+    produced_by:['improvement-planner (F6) appends proposals','humans author new SKILL.md / guardrail scripts via PR'],
+    consumed_by:['Human PR reviewers','Pipeline v0.3.0+ (MCP roadmap)','Promotion workflow: author .claude/skills/<name>/SKILL.md + update skill-index.json'],
+    local_lifecycle:'N/A',
+    global_lifecycle:'Append-only. Entries marked "promoted" when moved to .claude/skills/ or scripts/guardrails/.'}
+];
+
+DATA.gates = [
+  {id:'h0', type:'gate', name:'H0 — Preflight', when:'Before pipeline starts', decision:'Tooling + target-dir + MCP reachability check', timeout:'N/A',
+    desc:'Runs /preflight-tprd (optional) or is bundled in Phase 0 start. Verifies Go toolchain, $SDK_TARGET_DIR is a git repo, baseline MCPs reachable (via G04).'},
+  {id:'h1', type:'gate', name:'H1 — TPRD approval', when:'End of Phase 0', decision:'Approve canonical TPRD · Revise · Cancel', timeout:'24 h → Revise',
+    desc:'User reviews canonicalized TPRD + clarification answers + mode detection. Approves to proceed to design.'},
+  {id:'h4', type:'gate', name:'H4 — Breaking-change confirmation', when:'Phase 1 D3 (Mode B/C only)', decision:'Accept breaking changes · Reject', timeout:'48 h → Reject',
+    desc:'If sdk-breaking-change-devil flags removals/renames/signature changes, user must explicitly accept.'},
+  {id:'h5', type:'gate', name:'H5 — Design approval', when:'End of Phase 1', decision:'Approve design · Revise · Cancel', timeout:'48 h → Continue (with warnings)',
+    desc:'User reviews design-summary.md + all devil verdicts before implementation begins.'},
+  {id:'h6', type:'gate', name:'H6 — Dep-vet conditional', when:'Phase 1 D3', decision:'Accept CONDITIONAL deps · Swap · Reject', timeout:'48 h → Reject',
+    desc:'Triggered only if sdk-dep-vet-devil emits CONDITIONAL (license grey-area, old commit, high transitive count).'},
+  {id:'h7', type:'gate', name:'H7 — Impl sign-off', when:'End of Phase 2', decision:'Approve diff · Revise · Cancel', timeout:'48 h → Continue',
+    desc:'User reviews code diff on branch sdk-pipeline/<run-id>, devil verdicts, merge-plan (B/C).'},
+  {id:'h7b', type:'gate', name:'H7b — Co-owned symbols', when:'Phase 2 M2 (Mode B/C only)', decision:'Per-symbol approve/reject', timeout:'48 h → Reject',
+    desc:'Surfaces each co-owned symbol (pipeline + MANUAL) from merge-plan for explicit per-symbol user decision.'},
+  {id:'h8', type:'gate', name:'H8 — Perf regression waiver', when:'Phase 3 T5 (if regression)', decision:'Accept waiver · Reject', timeout:'48 h → Reject',
+    desc:'Triggered only on bench regression >5% hot-path or >10% shared. User accepts revised baseline or rejects.'},
+  {id:'h9', type:'gate', name:'H9 — Testing approval', when:'End of Phase 3', decision:'Approve test verdicts · Revise', timeout:'48 h → Continue',
+    desc:'User reviews coverage, bench-compare, leak, fuzz, vulncheck reports.'},
+  {id:'h10', type:'gate', name:'H10 — Merge verdict', when:'End of Phase 4', decision:'Merge to main · Keep branch · Delete', timeout:'72 h → Keep branch',
+    desc:'Final: user decides what to do with branch sdk-pipeline/<run-id>. Pipeline never merges or pushes itself.'}
+];
+
+DATA.loops = [
+  {id:'loop-clarify', type:'loop', name:'Clarification loop', scope:'local (Phase 0 I4)',
+    trigger:'[ambiguous] / TBD / ? markers or missing info in TPRD', caps:'max 5 AskUserQuestion → escalate on 6th',
+    carry:'Q&A history in intake/clarifications.jsonl', exit:'all [ambiguous] resolved OR 5-question cap hit → halt',
+    desc:'Ask user until TPRD is complete. Detailed TPRDs typically exit at 0 questions; NL one-liners at ~5 minutes.'},
+  {id:'loop-completeness', type:'loop', name:'Completeness retry', scope:'local (Phase 0 I6→I4)',
+    trigger:'I6 detects remaining [ambiguous] / TBD / ? after I4', caps:'contributes to 5-question cap',
+    carry:'partial TPRD state', exit:'completeness check passes',
+    desc:'If I6 (completeness) fails, loop back to I4 (clarify) without user re-approval of same ground.'},
+  {id:'loop-review-fix', type:'loop', name:'Review-fix loop', scope:'local (Phase 1 D4 + Phase 2 M8)',
+    trigger:'Any devil agent emits NEEDS-FIX finding',
+    caps:'≤5 retries/finding · 2 stuck detection · ≤10 global per run · deterministic-first gate (build/vet/fmt/race/marker-hash bypass devil fleet when green)',
+    carry:'findings, dedup state', exit:'all findings ACCEPT or cap hit → escalate to phase lead',
+    desc:'After every rework batch passing the deterministic-first gate, phase-lead re-runs ALL devils (CLAUDE rule 13). Prevents fix-one-break-another.'},
+  {id:'loop-flake', type:'loop', name:'Flake hunt loop', scope:'local (Phase 3 T3) — can re-trigger Phase 2',
+    trigger:'Integration test -count=3 fails any iteration', caps:'re-run -count=3 up to 10 total iterations (CLAUDE rule 11)',
+    carry:'flaky test identity', exit:'all tests pass 3× OR cap hit → halt Phase 3',
+    desc:'If a flake is detected, may loop back to Phase 2 implementor for fixes, then re-run T1–T8.'},
+  {id:'loop-evolution', type:'loop', name:'Cross-run evolution', scope:'global (every run\'s Phase 4 → next run)',
+    trigger:'End of Phase 4 — every completed run writes to persistent state',
+    caps:'≤10 prompt patches/run · ≤3 skill body patches/run · 0 new skills/guardrails/agents/run · 2+ run recurrence for auto-apply · golden-regression gate · baseline reset every 5 runs',
+    carry:'prompt patches, skill patches, baselines, evolution knowledge-base, neo4j-memory entities',
+    exit:'No termination condition yet defined (system-level). Per-run converges at H10.',
+    desc:'The big outer loop. Every run refines agent prompts and existing skill bodies; files new-skill/guardrail proposals for humans.'}
+];
+
+DATA.commands = [
+  {id:'cmd-run-sdk-addition', type:'command', name:'/run-sdk-addition',
+    path:'commands/run-sdk-addition.md',
+    desc:'Launch the full NFR-driven SDK-addition pipeline. All 5 phases (+ Phase 0.5 if Mode B/C) in sequence with 7 HITL gates. Produces code branch, test reports, metrics. Never commits to main or pushes.',
+    invokes:'Phase 0 → Phase 0.5 (if B/C) → Phase 1 → Phase 2 → Phase 3 → Phase 4',
+    args:'--spec <path> (TPRD) · --target <path> · --phases <list> · --resume <run-id> · --dry-run · --accept-perf-regression <n> · --auto-approve-tprd · --skip-design-gate · --skip-impl-gate · --budget-tokens <n> · --seed <int> · --golden-only',
+    role_local:'Entry point; orchestrates all 5 phases. Manages run_id, branch creation (sdk-pipeline/<run-id>), HITL gates, checkpointing.',
+    role_global:'Creates durable run record in runs/<run-id>/. Updates baselines and evolution state. Files new-skill/guardrail proposals if missing.'},
+  {id:'cmd-preflight-tprd', type:'command', name:'/preflight-tprd',
+    path:'commands/preflight-tprd.md',
+    desc:'Validate TPRD against current skill + guardrail library WITHOUT running pipeline. §Skills-Manifest (WARN) + §Guardrails-Manifest (BLOCKER), TPRD structure, mode coherence, open-question blockers. No state mutation.',
+    invokes:'sdk-intake-agent (I1 + I2 + I3 only, --dry-run mode)',
+    args:'--spec <file> (required) · --strict · --output <path>',
+    role_local:'Pre-run TPRD sanity check. Surfaces skill WARNs + guardrail BLOCKERs.',
+    role_global:'No global effects. Safe to run any time; zero state mutation.'}
+];
+
+DATA.externals = [
+  {id:'ext-user', type:'external', name:'Human user', desc:'Initiates runs via /run-sdk-addition, answers clarifications at I4, approves HITL gates H1–H10.'},
+  {id:'ext-tprd', type:'external', name:'TPRD file', desc:'Human-authored Technical Product Requirements Document. 14 sections + §Skills-Manifest + §Guardrails-Manifest. Primary seed for every run. Can also be one-line NL request.'},
+  {id:'ext-sdk', type:'external', name:'$SDK_TARGET_DIR', desc:'Target Go SDK repo (e.g. motadata-go-sdk/src/motadatagosdk). Must be a git repo. Pipeline creates branch sdk-pipeline/<run-id>, never touches main.'},
+  {id:'ext-neo4j', type:'external', name:'Neo4j docker (claude-neo4j)', desc:'Local Neo4j 5 container. bolt://localhost:7687 · creds neo4j/neo4jneo4j. Backs neo4j-memory, neo4j-cypher, code-graph MCPs.'},
+  {id:'ext-testcontainers', type:'external', name:'testcontainers-go backends', desc:'Spun up per-test by integration-test-agent: PostgreSQL, Redis, Dragonfly, Kafka, NATS, MinIO, LocalStack, RabbitMQ.'},
+  {id:'ext-upstash', type:'external', name:'Upstash context7', desc:'Public API for current library/framework docs. Used by context7 MCP.'},
+  {id:'ext-exa', type:'external', name:'Exa cloud', desc:'Web search API. Used by exa MCP. Requires EXA_API_KEY.'},
+  {id:'ext-github', type:'external', name:'GitHub / git', desc:'Source control for $SDK_TARGET_DIR. Pipeline reads diff, creates branches, reads history.'},
+  {id:'ext-omc', type:'external', name:'.omc/', desc:'Opus Memory Cache — local IDE context cache. Tooling-adjacent, not pipeline-core. Regenerated on session open.'},
+  {id:'ext-serena-config', type:'external', name:'.serena/', desc:'Serena LSP project config + memories + cache. Central to symbol-aware ops in P2. project.yml declares languages: [bash] currently.'}
+];
+
+DATA.configs = [
+  {id:'cfg-sdk', type:'config', name:'SDK_TARGET_DIR', required:true, required_by:'All phases (Phase 0 H0 check)', example:'/path/to/motadata-go-sdk/src/motadatagosdk'},
+  {id:'cfg-exa', type:'config', name:'EXA_API_KEY', required:false, required_by:'exa MCP (optional)', example:'(empty in .env.example)'},
+  {id:'cfg-neo-uri', type:'config', name:'NEO4J_URI', required:false, required_by:'neo4j-cypher, neo4j-memory, code-graph MCPs', example:'bolt://localhost:7687'},
+  {id:'cfg-neo-user', type:'config', name:'NEO4J_USERNAME', required:false, required_by:'Neo4j MCPs', example:'neo4j'},
+  {id:'cfg-neo-pwd', type:'config', name:'NEO4J_PASSWORD', required:false, required_by:'Neo4j MCPs', example:'neo4jneo4j (dev only)'},
+  {id:'cfg-dragonfly-addr', type:'config', name:'DRAGONFLY_ADDR', required:false, required_by:'integration tests (Phase 3)', example:'localhost:6379'},
+  {id:'cfg-dragonfly-pwd', type:'config', name:'DRAGONFLY_PASSWORD', required:false, required_by:'integration tests', example:'fake (commit-safe)'},
+  {id:'cfg-s3-endpoint', type:'config', name:'S3_ENDPOINT', required:false, required_by:'integration tests', example:'http://localhost:9000'},
+  {id:'cfg-s3-key', type:'config', name:'S3_ACCESS_KEY', required:false, required_by:'integration tests', example:'fake'},
+  {id:'cfg-s3-secret', type:'config', name:'S3_SECRET_KEY', required:false, required_by:'integration tests', example:'fake'},
+  {id:'cfg-kafka', type:'config', name:'KAFKA_BROKERS', required:false, required_by:'integration tests', example:'localhost:9092'},
+  {id:'cfg-version', type:'config', name:'PIPELINE_VERSION', required:false, required_by:'metadata', example:'0.2.0'}
+];
+</script>
+
+<script id="data-glossary">
+DATA.glossary = [
+  ['TPRD','Technical Product Requirements Document. 14-section human-authored contract that seeds every run. Contains §Skills-Manifest (WARN) and §Guardrails-Manifest (BLOCKER).'],
+  ['§Skills-Manifest','TPRD section listing required skills + minimum versions. Missing skills are WARN (non-blocking) and get filed to docs/PROPOSED-SKILLS.md.'],
+  ['§Guardrails-Manifest','TPRD section listing required guardrail scripts. Missing script is BLOCKER — pipeline exits 6.'],
+  ['Mode A','Greenfield — new package, no existing code to merge with.'],
+  ['Mode B','Extension — adding to an existing package. Requires Phase 0.5 snapshot + marker-aware merge.'],
+  ['Mode C','Incremental update — smaller surgical changes to existing code. Like Mode B but smaller scope.'],
+  ['HITL gate','Human-In-The-Loop checkpoint. User must approve/reject/waive. 10 gates total (H0–H10).'],
+  ['Devil (agent)','Read-only adversarial reviewer. Emits NEEDS-FIX findings that trigger the review-fix loop. Examples: sdk-design-devil, sdk-security-devil, sdk-benchmark-devil.'],
+  ['Review-fix loop','Bounded iteration: per-finding retry ≤5, stuck detection at 2, global ≤10 per run. After any rework batch, ALL devils re-run (CLAUDE rule 13).'],
+  ['Deterministic-first gate','Mini-gate inside review-fix (v1.1.0): fixes that pass build/vet/fmt/race/marker-hash bypass the devil fleet; devils re-run once gate is green.'],
+  ['Wave','Named phase sub-step (I1, D3, M7, T5, F1 …). Phases have 5–11 waves each.'],
+  ['Marker','Code provenance annotation in Go comments. Enforced by sdk-marker-hygiene-devil. Six kinds:'],
+  ['[traces-to:]','Pipeline-authored symbol links back to a TPRD requirement ID. BLOCKER if missing on new exports.'],
+  ['[owned-by:]','Ownership declaration — MANUAL (human-edited, preserved byte-identical) or pipeline (regenerable).'],
+  ['[constraint:]','Invariant tied to a named benchmark/test. sdk-constraint-devil runs proof before+after any change.'],
+  ['[stable-since:]','API-stability marker. Signature changes require major semver bump + TPRD §12 declaration.'],
+  ['[do-not-regenerate]','Hard lock. Symbol must be byte-identical to baseline SHA-256 (G100).'],
+  ['[deprecated-in:]','Version marker for sunset path.'],
+  ['ownership-map.json','Per-symbol ownership snapshot built in Phase 0.5 (B/C). Input to merge planning and constraint verification.'],
+  ['merge-plan.md','Phase 2 M2 artifact (B/C). Per-symbol strategy: preserve / regenerate / surface-at-H7b.'],
+  ['run-id','UUIDv4 stamped on every run. Every log entry, artifact, branch carries it.'],
+  ['sdk-pipeline/<run-id>','Git branch name on $SDK_TARGET_DIR where Phase 2 writes code. Never touches main.'],
+  ['decision-log.jsonl','Append-only audit trail of every agent decision, lifecycle event, failure, refactor, skill-evolution, budget-tracking entry. 8 entry types. ≤15 per agent per run.'],
+  ['run-manifest.json','Checkpoint file in runs/<run-id>/state/ — wave/agent status. Read on --resume to know which waves are in-progress / completed / failed.'],
+  ['Baseline','Persistent performance/coverage/quality/skill-health reference. Raise-only on >10% improvement; keep on regression; reset every 5 runs.'],
+  ['Golden corpus','Canonical run fixtures captured post-H10. Re-run at deterministic seed to detect capability regression. Mandatory check before major skill bumps.'],
+  ['Evolution','Cross-run learning state. prompt-patches/, skill-candidates/, knowledge-base/, evolution-reports/. Never deletes; always appends.'],
+  ['Learning-engine','Phase 4 F7 agent. Applies ≤10 prompt patches + ≤3 skill-body patches per run (golden-gated). NEVER creates new skills/agents/guardrails.'],
+  ['Recurrence rule','Pattern must appear in ≥2 runs before promotion to auto-apply (unless CRITICAL severity).'],
+  ['neo4j-memory','MCP holding typed cross-run knowledge graph: Run, Agent, Skill, Phase, Defect, Pattern, Baseline, Patch entities and their relations.'],
+  ['Quality score','Per-agent float 0.0–1.0 derived from 7 factors: completeness, review_severity, guardrail_pass_rate, rework_score, communication_health, failure_recovery, downstream_impact.'],
+  ['Benchstat','Go stdlib tool comparing two benchmark runs. Used by sdk-benchmark-devil to verdict perf regression.'],
+  ['Guardrail G-number','G01–G103 mechanical shell scripts. Each declares phases it applies to + severity (BLOCKER/HIGH/MEDIUM/WARN/INFO).'],
+  ['Waiver','User accepts a BLOCKER via H8 (perf) or --accept-perf-regression <n>. Logged in decision-log.'],
+  ['Dry-run','--dry-run flag: no writes to $SDK_TARGET_DIR. Produces preview.md instead of branch commits.'],
+  ['Resume','--resume <run-id>: restart from last checkpoint in state/run-manifest.json.']
+];
+</script>
+
+<script id="data-sample">
+// moved: sample data follows
+DATA.sample = {
+  id:'sdk-dragonfly-s2', date:'2026-04-18', duration:'~10 h 7 m', mode:'A (greenfield; overridden from B)',
+  target:'motadata-go-sdk/src/motadatagosdk/core/l2cache/dragonfly',
+  branch:'sdk-pipeline/sdk-dragonfly-s2 (off l2Cache)',
+  outcome:'All phases PASS; H10 KEEP-BRANCH-NO-MERGE (user directive). Pipeline quality score 0.95.',
+  phases:[
+    {p:'P0 Intake', span:'05:53–06:00', notes:'94 expected exports; 19/27 skills in manifest present; 38/38 guardrails present; 0 clarifications needed'},
+    {p:'P1 Design', span:'06:00–12:20', notes:'5 parallel designers + 5 devils; 1 rework iter (tool unavailability on govulncheck/osv-scanner at D2); H5/H6 approved'},
+    {p:'P2 Impl', span:'12:20–14:00', notes:'6 commits on branch (testcontainers+otel bump, red tests, green code, refactor -336 LOC, docs, gofmt); all devils PASS; H7 approved'},
+    {p:'P3 Testing', span:'14:00–14:45', notes:'coverage 90.4%; Get 26.6µs / Set 26.7µs / HExpire 25.0µs; 0 leaks, 0 races; fuzz 839k execs clean; H8 allocs waiver approved (target ≤35)'},
+    {p:'P4 Feedback', span:'14:45–16:00', notes:'4 prompt patches applied; 2 skill patches (go-error-handling-patterns v1.0.1, go-example-function-patterns v0.1.1); 3 new-skill + 7 new-guardrail proposals filed'}
+  ],
+  numbers:{
+    decision_log_entries:129,
+    total_size:'748 KB',
+    token_footprint:'~80–120 K tokens',
+    commits:6,
+    exports_created:94,
+    tests_passing:'71/72 (1 skip)',
+    coverage:'90.4%',
+    govulncheck_new:'0',
+    prompt_patches_applied:4,
+    skill_patches_applied:2,
+    new_skill_proposals_filed:3,
+    new_guardrail_proposals_filed:7
+  }
+};
+</script>
+
+<script id="render">
+/* ================================================================
+   INDEX — fast lookup by id/name for drawer + search
+   ================================================================ */
+const INDEX = new Map();
+function indexEntities(){
+  for (const p of DATA.phases) INDEX.set(p.id, p);
+  for (const a of DATA.agents) INDEX.set(a.id, a);
+  for (const s of DATA.skills) INDEX.set(s.id, s);
+  for (const m of DATA.mcps) INDEX.set(m.id, m);
+  for (const s of DATA.scripts) INDEX.set(s.id, s);
+  for (const s of DATA.stores) INDEX.set(s.id, s);
+  for (const g of DATA.gates) INDEX.set(g.id, g);
+  for (const l of DATA.loops) INDEX.set(l.id, l);
+  for (const c of DATA.commands) INDEX.set(c.id, c);
+  for (const e of DATA.externals) INDEX.set(e.id, e);
+  for (const c of DATA.configs) INDEX.set(c.id, c);
+}
+
+function findByName(name){
+  for (const e of INDEX.values()){
+    if (e.name === name) return e;
+  }
+  return null;
+}
+
+/* ================================================================
+   SHARED HELPERS
+   ================================================================ */
+function pill(entity, labelOverride){
+  if (!entity) return '';
+  const lbl = labelOverride || entity.name;
+  return `<span class="pill" data-t="${entity.type}" data-id="${entity.id}" onclick="event.stopPropagation();showDrawer('${entity.id}')"><span class="dot"></span>${escapeHtml(lbl)}</span>`;
+}
+function pillByName(name, fallbackType){
+  const e = findByName(name);
+  if (e) return pill(e);
+  const t = fallbackType || 'artifact';
+  return `<span class="pill" data-t="${t}" style="cursor:default"><span class="dot"></span>${escapeHtml(name)}</span>`;
+}
+function pillByType(label, type){
+  return `<span class="pill" data-t="${type}" style="cursor:default"><span class="dot"></span>${escapeHtml(label)}</span>`;
+}
+function escapeHtml(s){return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function qs(s,r){return (r||document).querySelector(s)}
+function qsa(s,r){return Array.from((r||document).querySelectorAll(s))}
+
+/* ================================================================
+   HERO + STATS + TOC + FILTERS
+   ================================================================ */
+function renderHero(){
+  const m = DATA.meta;
+  qs('#heroBadges').innerHTML = [
+    `<span class="badge">Version · <b>${m.version}</b></span>`,
+    `<span class="badge">Phases · <b>${m.phases}</b></span>`,
+    `<span class="badge">Agents · <b>${m.agents}</b></span>`,
+    `<span class="badge">Skills · <b>${m.skills}</b></span>`,
+    `<span class="badge">MCPs · <b>${m.mcps}</b></span>`,
+    `<span class="badge">Guardrails · <b>${m.guardrails}</b></span>`,
+    `<span class="badge">HITL gates · <b>${m.gates}</b></span>`,
+    `<span class="badge">Data stores · <b>${m.data_stores}</b></span>`,
+    `<span class="badge">Budget · <b>${m.budget_tokens}</b></span>`,
+    `<span class="badge">Wall-clock · <b>${m.budget_time}</b></span>`
+  ].join('');
+}
+function renderStats(){
+  const m = DATA.meta;
+  qs('#stats').innerHTML = [
+    stat('Phases', m.phases),
+    stat('Agents', m.agents),
+    stat('Skills', m.skills),
+    stat('MCP servers', m.mcps),
+    stat('Guardrails', m.guardrails),
+    stat('HITL gates', m.gates),
+    stat('Data stores', m.data_stores),
+    stat('Loops', DATA.loops.length),
+    stat('Commands', DATA.commands.length),
+    stat('Token budget', m.budget_tokens),
+    stat('Wall budget', m.budget_time)
+  ].join('');
+}
+function stat(k,v){return `<div class="stat"><span>${k}</span><b>${v}</b></div>`}
+
+function renderToc(){
+  const items = [
+    ['#sec-overview','Pipeline overview',1],
+    ['#sec-phases','Phases',1],
+    ...DATA.phases.map(p=>[`#phase-${p.id}`, `P${p.order} · ${p.name}`, 2]),
+    ['#sec-gates','HITL gates',1],
+    ['#sec-loops','Loops',1],
+    ['#sec-agents','Agents',1],
+    ['#sec-skills','Skills',1],
+    ['#sec-mcps','MCPs',1],
+    ['#sec-scripts','Scripts & guardrails',1],
+    ['#sec-stores','Data stores',1],
+    ['#sec-evolution','Cross-run evolution',1],
+    ['#sec-commands','Entry commands',1],
+    ['#sec-ext','External systems',1],
+    ['#sec-sample','Sample run',1],
+    ['#sec-glossary','Glossary',1]
+  ];
+  qs('#toc').innerHTML = items.map(([h,t,d])=>`<a href="${h}" class="depth-${d}">${escapeHtml(t)}</a>`).join('');
+}
+
+function renderFilters(){
+  qs('#filters').innerHTML = Object.entries(DATA.types).map(([k,v])=>
+    `<span class="chip active" data-t="${k}" onclick="toggleFilter('${k}')"><span class="dot"></span>${v}</span>`
+  ).join('');
+}
+
+/* ================================================================
+   PIPELINE OVERVIEW SVG DIAGRAM
+   — hand-laid-out flow diagram, click-through, loop arcs
+   ================================================================ */
+function renderOverview(){
+  const W = 1240, H = 1820;
+  const PHASE_W = 340, PHASE_X = 420;
+  const phases = DATA.phases;
+  const rows = [
+    {y: 210, h: 110, p: phases[0]},   // intake
+    {y: 340, h: 90,  p: phases[1]},   // extension (conditional)
+    {y: 450, h: 150, p: phases[2]},   // design
+    {y: 620, h: 180, p: phases[3]},   // impl
+    {y: 820, h: 150, p: phases[4]},   // testing
+    {y: 990, h: 180, p: phases[5]}    // feedback
+  ];
+  const gates = DATA.gates;
+  const stores = DATA.stores;
+  const mcps = DATA.mcps;
+
+  const svgBits = [];
+  svgBits.push(`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img">
+    <defs>
+      <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+        <path d="M0,0 L10,5 L0,10 Z" class="e-arrow"/>
+      </marker>
+      <marker id="arrLoop" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+        <path d="M0,0 L10,5 L0,10 Z" fill="${getVar('--loop')}"/>
+      </marker>
+      <marker id="arrGate" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+        <path d="M0,0 L10,5 L0,10 Z" fill="${getVar('--gate')}"/>
+      </marker>
+    </defs>`);
+
+  // Top: external inputs row
+  svgBits.push(`<text x="30" y="30" class="e-lbl">External inputs</text>`);
+  const extInputs = [
+    {id:'ext-user', x:30,  y:50, w:160, label:'Human user', sub:'runs command · HITL decisions'},
+    {id:'ext-tprd', x:30,  y:110, w:160, label:'TPRD file', sub:'14 §+manifests · primary seed'},
+    {id:'ext-sdk',  x:210, y:50, w:200, label:'$SDK_TARGET_DIR', sub:'target Go SDK repo'},
+    {id:'cmd-run-sdk-addition', x:210, y:110, w:200, label:'/run-sdk-addition', sub:'entry slash-command'}
+  ];
+  extInputs.forEach(n=>{
+    const e = INDEX.get(n.id);
+    const stroke = e ? `e-${e.type==='external'?'store':e.type==='command'?'store':'phase'}` : 'e-phase';
+    svgBits.push(nodeBox(n.x, n.y, n.w, 50, n.label, n.sub, e ? e.id : null, typeColor(e?.type || 'external')));
+  });
+
+  // MCP layer — top floating
+  svgBits.push(`<text x="${PHASE_X}" y="30" class="e-lbl">MCP servers · optional enhancements (never correctness-critical)</text>`);
+  mcps.forEach((m,i)=>{
+    const x = PHASE_X + (i%3)*230;
+    const y = 50 + Math.floor(i/3)*60;
+    svgBits.push(nodeBox(x, y, 220, 50, m.name, m.status||'', m.id, typeColor('mcp')));
+  });
+
+  // Stores on the right
+  svgBits.push(`<text x="${W-280}" y="30" class="e-lbl">Data stores</text>`);
+  stores.forEach((s,i)=>{
+    const y = 50 + i*40;
+    svgBits.push(nodeBox(W-280, y, 260, 34, s.name, s.size || '', s.id, typeColor('store')));
+  });
+
+  // Phases column
+  let prevBottom = null;
+  rows.forEach((row, i) => {
+    const p = row.p;
+    const x = PHASE_X;
+    const y = row.y;
+    // phase box
+    const phaseLabel = `P${p.order} · ${p.name}`;
+    const costStr = (p.budget && p.budget.tokens) ? `${p.budget.tokens} · ${p.budget.time}` : '';
+    svgBits.push(`<g class="phase-svg" style="cursor:pointer" onclick="showDrawer('${p.id}')">
+      <rect x="${x}" y="${y}" width="${PHASE_W}" height="${row.h}" rx="10" class="e-phase" stroke-width="2"/>
+      <text x="${x+16}" y="${y+26}" class="e-lbl">${escapeHtml(phaseLabel)}</text>
+      <text x="${x+16}" y="${y+46}" class="e-sub">${escapeHtml(p.subtitle||'')}</text>
+      <text x="${x+PHASE_W-16}" y="${y+26}" class="e-cost" text-anchor="end">${escapeHtml(costStr)}</text>
+      ${renderPhaseGuts(p, x, y, PHASE_W, row.h)}
+    </g>`);
+
+    // arrow from previous bottom to this top
+    if (prevBottom !== null){
+      svgBits.push(line(x + PHASE_W/2, prevBottom, x + PHASE_W/2, y, 'arr'));
+    }
+
+    // HITL gates to the left of each phase (if phase has them)
+    const gateIds = (p.gates||[]).map(g=>'h'+g.toLowerCase().replace(/^h/,''));
+    gateIds.forEach((gid, gi)=>{
+      const g = INDEX.get(gid); if(!g) return;
+      const gx = x - 160, gy = y + 10 + gi*30;
+      svgBits.push(`<g style="cursor:pointer" onclick="showDrawer('${gid}')">
+        <rect x="${gx}" y="${gy}" width="140" height="24" rx="5" class="e-gate" stroke-width="1.5"/>
+        <text x="${gx+8}" y="${gy+16}" class="e-sub" fill="${getVar('--gate')}">${escapeHtml(g.name)}</text>
+      </g>`);
+      svgBits.push(line(gx+140, gy+12, x, gy+12, 'arrGate', 'e-loop').replace('e-loop','e-line'));
+    });
+
+    prevBottom = y + row.h;
+  });
+
+  // Exit box
+  const exitY = prevBottom + 30;
+  svgBits.push(`<g>
+    <rect x="${PHASE_X}" y="${exitY}" width="${PHASE_W}" height="60" rx="10" fill="${getVar('--panel2')}" stroke="${getVar('--border2')}" stroke-width="1"/>
+    <text x="${PHASE_X+16}" y="${exitY+24}" class="e-lbl">Exit code 0 (PASS) or 1–6 (failure modes)</text>
+    <text x="${PHASE_X+16}" y="${exitY+44}" class="e-sub">branch sdk-pipeline/&lt;run-id&gt; ready on target SDK · never merged by pipeline</text>
+  </g>`);
+  svgBits.push(line(PHASE_X+PHASE_W/2, prevBottom, PHASE_X+PHASE_W/2, exitY, 'arr'));
+
+  // Cross-run evolution arc
+  const evY = exitY + 90;
+  svgBits.push(`<text x="30" y="${evY}" class="e-lbl" fill="${getVar('--loop')}">Cross-run evolution loop</text>`);
+  svgBits.push(`<text x="30" y="${evY+22}" class="e-sub">Phase 4 writes → evolution/, .claude/skills/<name>/SKILL.md (minor bump), baselines/, docs/PROPOSED-*.md</text>`);
+  svgBits.push(`<text x="30" y="${evY+38}" class="e-sub">→ consumed by next run's agent prompts + skill bodies + baseline gates</text>`);
+  // big arc from exit back to top-left (P0 inputs)
+  const arcStart = `M${PHASE_X+PHASE_W} ${exitY+30}`;
+  const arcEnd = `${PHASE_X-20} 180`;
+  svgBits.push(`<path d="${arcStart} C ${W-20} ${exitY+30}, ${W-20} 80, ${arcEnd}" class="e-loop" marker-end="url(#arrLoop)"/>`);
+
+  // MCP connector lines (curved, subtle)
+  // Connect a few representative MCP→phase lines
+  const mcpConnections = [
+    ['mcp-context7','p-intake'],
+    ['mcp-context7','p-design'],
+    ['mcp-serena','p-impl'],
+    ['mcp-code-graph','p-impl'],
+    ['mcp-neo4j-memory','p-feedback'],
+    ['mcp-neo4j-cypher','p-feedback'],
+    ['mcp-exa','p-design']
+  ];
+  mcpConnections.forEach(([mid,pid])=>{
+    // source: find MCP box
+    const idx = mcps.findIndex(m=>m.id===mid);
+    if (idx<0) return;
+    const sx = PHASE_X + (idx%3)*230 + 110;
+    const sy = 50 + Math.floor(idx/3)*60 + 50;
+    const prow = rows.find(r=>r.p.id===pid);
+    if (!prow) return;
+    const tx = PHASE_X + PHASE_W/2;
+    const ty = prow.y;
+    svgBits.push(`<path d="M ${sx} ${sy} Q ${sx} ${(sy+ty)/2} ${tx} ${ty}" stroke="${getVar('--mcp')}" stroke-opacity="0.35" stroke-width="1" fill="none" stroke-dasharray="3 3"/>`);
+  });
+
+  // Stores connector lines
+  const storeConnections = [
+    ['store-runs','p-intake'],['store-runs','p-design'],['store-runs','p-impl'],['store-runs','p-testing'],['store-runs','p-feedback'],
+    ['store-baselines','p-testing'],['store-baselines','p-feedback'],
+    ['store-golden','p-feedback'],
+    ['store-evolution','p-feedback'],
+    ['store-docs','p-intake'],['store-docs','p-feedback']
+  ];
+  storeConnections.forEach(([sid,pid])=>{
+    const idx = stores.findIndex(s=>s.id===sid);
+    if (idx<0) return;
+    const sx = W-280;
+    const sy = 50 + idx*40 + 17;
+    const prow = rows.find(r=>r.p.id===pid);
+    if (!prow) return;
+    const tx = PHASE_X + PHASE_W;
+    const ty = prow.y + prow.h/2;
+    svgBits.push(`<path d="M ${tx} ${ty} Q ${(tx+sx)/2} ${ty} ${sx} ${sy}" stroke="${getVar('--store')}" stroke-opacity="0.35" stroke-width="1" fill="none" stroke-dasharray="3 3"/>`);
+  });
+
+  // Input→P0 connectors
+  svgBits.push(line(130, 160, PHASE_X, 240, 'arr'));
+  svgBits.push(line(310, 160, PHASE_X, 230, 'arr'));
+
+  // Inner loop indicator on Design and Impl (review-fix)
+  rows.forEach((row,i)=>{
+    const p = row.p;
+    if ((p.loops||[]).some(l=>/review-fix/i.test(l.name))){
+      const cx = PHASE_X + PHASE_W + 18, cy = row.y + row.h/2;
+      svgBits.push(`<circle cx="${cx}" cy="${cy}" r="14" fill="none" stroke="${getVar('--loop')}" stroke-width="1.5" stroke-dasharray="3 3"/>`);
+      svgBits.push(`<text x="${cx+20}" y="${cy-2}" class="e-sub" fill="${getVar('--loop')}">review-fix</text>`);
+      svgBits.push(`<text x="${cx+20}" y="${cy+12}" class="e-sub" fill="${getVar('--ink3')}">5/finding · 2 stuck · ≤10</text>`);
+    }
+  });
+
+  svgBits.push('</svg>');
+  qs('#overview').innerHTML = svgBits.join('');
+}
+
+function renderPhaseGuts(p, x, y, w, h){
+  // Show a few agents/MCPs inside the phase box
+  const bits = [];
+  const agentCt = (p.agents||[]).length;
+  const mcpCt = (p.mcps||[]).length;
+  const guardCt = (p.guardrails||[]).length;
+  const loopCt = (p.loops||[]).length;
+  const info = `${agentCt} agents · ${mcpCt} MCPs · ${guardCt} guardrails · ${loopCt} loops`;
+  bits.push(`<text x="${x+16}" y="${y+66}" class="e-sub">${escapeHtml(info)}</text>`);
+  if (p.waves && p.waves.length){
+    const waveLine = p.waves.map(w=>w[0]).filter(w=>w!=='—').join(' → ');
+    bits.push(`<text x="${x+16}" y="${y+h-14}" class="e-sub" fill="${getVar('--accent')}">${escapeHtml(waveLine)}</text>`);
+  }
+  return bits.join('');
+}
+
+function nodeBox(x,y,w,h,label,sub,id,color){
+  const onClick = id ? `onclick="showDrawer('${id}')" style="cursor:pointer"` : '';
+  return `<g ${onClick}>
+    <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="${getVar('--panel2')}" stroke="${color}" stroke-width="1.5"/>
+    <text x="${x+10}" y="${y+18}" class="e-lbl" style="font-size:12px">${escapeHtml(label)}</text>
+    <text x="${x+10}" y="${y+34}" class="e-sub">${escapeHtml(sub||'')}</text>
+  </g>`;
+}
+function line(x1,y1,x2,y2,marker,cls){
+  const m = marker ? `marker-end="url(#${marker})"` : '';
+  return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="${cls||'e-line'}" ${m}/>`;
+}
+function getVar(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+function typeColor(t){return getVar('--'+t);}
+
+/* ================================================================
+   PHASE CARDS (detailed view)
+   ================================================================ */
+function renderPhases(){
+  qs('#phases').innerHTML = DATA.phases.map(p => `
+    <article class="phase-card" id="phase-${p.id}" data-type="phase">
+      <header class="phase-head" onclick="togglePhase(this)">
+        <div class="phase-num">P${p.order}</div>
+        <div class="phase-title">
+          <h2>${escapeHtml(p.name)}</h2>
+          <div class="desc">${escapeHtml(p.subtitle||'')}</div>
+        </div>
+        <div class="phase-cost">
+          <div>${escapeHtml(p.budget?.tokens||'')}</div>
+          <div class="small">${escapeHtml(p.budget?.time||'')}</div>
+        </div>
+        <span class="twist">▸</span>
+      </header>
+      <div class="phase-body">
+        <p style="color:var(--ink2)">${escapeHtml(p.desc)}</p>
+
+        <h3>Role</h3>
+        <div class="lifecycle">
+          <div><h4>Local</h4><p>${escapeHtml(p.role_local)}</p></div>
+          <div><h4>Global</h4><p>${escapeHtml(p.role_global)}</p></div>
+        </div>
+
+        <h3>Triggers &amp; when needed</h3>
+        <p><b>Triggers:</b> ${escapeHtml(p.triggers)}</p>
+        <p><b>When needed:</b> ${escapeHtml(p.when_needed)}</p>
+
+        <h3>Waves</h3>
+        <div class="waves">
+          ${(p.waves||[]).map(w=>`<div class="wave"><span class="wid">${escapeHtml(w[0])}</span><span class="wbody">${escapeHtml(w[1])}</span></div>`).join('')}
+        </div>
+
+        <h3>Agents invoked</h3>
+        <div class="pills">${(p.agents||[]).map(a=>pillByName(a,'agent')).join('')}</div>
+
+        <h3>MCPs touched</h3>
+        <div class="pills">${(p.mcps||[]).map(m=>pillByName(m,'mcp')).join('') || '<span class="small">none</span>'}</div>
+
+        <h3>Guardrails enforced</h3>
+        <div class="pills">${(p.guardrails||[]).map(g=>pillByType(g,'script')).join('')}</div>
+
+        <h3>Inputs / Outputs</h3>
+        <div class="iolist">
+          <div>
+            <h4>Inputs</h4>
+            <ul>${(p.inputs||[]).map(i=>`<li><code>${i.label}</code> <span class="small">— ${escapeHtml(i.kind||'')}</span></li>`).join('')}</ul>
+          </div>
+          <div>
+            <h4>Outputs</h4>
+            <ul>${(p.outputs||[]).map(o=>`<li><code>${o.label}</code> <span class="small">— ${escapeHtml(o.kind||'')}</span></li>`).join('')}</ul>
+          </div>
+        </div>
+
+        ${(p.loops||[]).length ? `
+          <h3>Loops</h3>
+          ${p.loops.map(l=>`<div class="loop-box"><h4>${escapeHtml(l.name)}</h4><div class="cap">caps: ${escapeHtml(l.caps||'')}</div></div>`).join('')}
+        ` : ''}
+
+        <h3>Lifecycle</h3>
+        <div class="lifecycle">
+          <div><h4>Local (within one run)</h4><p>${escapeHtml(p.local_lifecycle||'')}</p></div>
+          <div><h4>Global (across runs)</h4><p>${escapeHtml(p.global_lifecycle||'')}</p></div>
+        </div>
+
+        ${(p.gates||[]).length ? `
+          <h3>HITL gates</h3>
+          <div class="pills">${p.gates.map(g=>pillByName(g,'gate') || pillByType(g,'gate')).join('')}</div>
+        ` : ''}
+
+        <div class="small" style="margin-top:10px">Source: <code>${escapeHtml(p.path)}</code></div>
+      </div>
+    </article>
+  `).join('');
+}
+function togglePhase(h){h.parentNode.classList.toggle('open');}
+
+/* ================================================================
+   HITL GATES
+   ================================================================ */
+function renderGates(){
+  qs('#gates').innerHTML = DATA.gates.map(g => `
+    <div class="card" data-type="gate" onclick="showDrawer('${g.id}')">
+      <div class="hd"><span class="dot" style="background:var(--gate)"></span><b>${escapeHtml(g.name)}</b></div>
+      <div class="sub">${escapeHtml(g.when)}</div>
+      <div class="desc">${escapeHtml(g.desc)}</div>
+      <div class="small" style="margin-top:6px"><b>decision:</b> ${escapeHtml(g.decision)}</div>
+      <div class="small"><b>timeout:</b> ${escapeHtml(g.timeout)}</div>
+    </div>
+  `).join('');
+}
+
+/* ================================================================
+   LOOPS
+   ================================================================ */
+function renderLoops(){
+  qs('#loops').innerHTML = DATA.loops.map(l => `
+    <div class="card" data-type="loop" onclick="showDrawer('${l.id}')">
+      <div class="hd"><span class="dot" style="background:var(--loop)"></span><b>${escapeHtml(l.name)}</b></div>
+      <div class="sub">${escapeHtml(l.scope)}</div>
+      <div class="desc">${escapeHtml(l.desc)}</div>
+      <div class="small" style="margin-top:6px"><b>trigger:</b> ${escapeHtml(l.trigger)}</div>
+      <div class="small"><b>caps:</b> ${escapeHtml(l.caps)}</div>
+    </div>
+  `).join('');
+}
+
+/* ================================================================
+   AGENTS
+   ================================================================ */
+function renderAgents(){
+  // Group by phase for visual structure
+  const byPhase = {};
+  DATA.agents.forEach(a=>{
+    const k = a.phase || 'Other';
+    (byPhase[k]=byPhase[k]||[]).push(a);
+  });
+  const phaseOrder = ['Intake','Extension','Design','Design + Impl','Implementation','Impl + Testing','Testing','Feedback','All phases'];
+  let html = '';
+  phaseOrder.forEach(p=>{
+    if (!byPhase[p]) return;
+    html += `<h3 style="margin-top:16px">${escapeHtml(p)} <span class="small">— ${byPhase[p].length} agents</span></h3>`;
+    html += '<div class="card-grid">';
+    byPhase[p].forEach(a=>{
+      html += `<div class="card" data-type="agent" onclick="showDrawer('${a.id}')">
+        <div class="hd"><span class="dot" style="background:var(--agent)"></span><b>${escapeHtml(a.name)}</b></div>
+        <div class="sub">${escapeHtml(a.model||'')} · ${escapeHtml(a.cost||'')}</div>
+        <div class="desc">${escapeHtml(a.role||'')}</div>
+      </div>`;
+    });
+    html += '</div>';
+  });
+  qs('#agents').innerHTML = html;
+}
+
+/* ================================================================
+   SKILLS (grouped by category)
+   ================================================================ */
+function renderSkills(){
+  let html = '';
+  DATA.skill_categories.forEach(cat=>{
+    const inCat = DATA.skills.filter(s=>s.category===cat.id);
+    if (!inCat.length) return;
+    html += `<h3 style="margin-top:16px">${escapeHtml(cat.name)} <span class="small">— ${inCat.length}</span></h3>`;
+    html += `<p class="small" style="margin:-4px 0 8px">${escapeHtml(cat.desc)}</p>`;
+    html += '<div class="card-grid">';
+    inCat.forEach(s=>{
+      html += `<div class="card" data-type="skill" onclick="showDrawer('${s.id}')">
+        <div class="hd"><span class="dot" style="background:var(--skill)"></span><b>${escapeHtml(s.name)}</b></div>
+        <div class="sub">v${escapeHtml(s.version)} · ${escapeHtml(s.status)}</div>
+        <div class="desc">${escapeHtml(s.desc)}</div>
+      </div>`;
+    });
+    html += '</div>';
+  });
+  qs('#skills').innerHTML = html;
+}
+
+/* ================================================================
+   MCPs
+   ================================================================ */
+function renderMcps(){
+  qs('#mcps').innerHTML = DATA.mcps.map(m=>`
+    <div class="card" data-type="mcp" onclick="showDrawer('${m.id}')">
+      <div class="hd"><span class="dot" style="background:var(--mcp)"></span><b>${escapeHtml(m.name)}</b></div>
+      <div class="sub">${escapeHtml(m.status||'')}</div>
+      <div class="desc">${escapeHtml(m.purpose)}</div>
+    </div>
+  `).join('');
+}
+
+/* ================================================================
+   SCRIPTS
+   ================================================================ */
+function renderScripts(){
+  qs('#scripts').innerHTML = DATA.scripts.map(s=>`
+    <div class="card" data-type="script" onclick="showDrawer('${s.id}')">
+      <div class="hd"><span class="dot" style="background:var(--script)"></span><b>${escapeHtml(s.name)}</b></div>
+      <div class="sub">${escapeHtml(s.language||'')}</div>
+      <div class="desc">${escapeHtml(s.purpose)}</div>
+    </div>
+  `).join('');
+}
+
+/* ================================================================
+   STORES
+   ================================================================ */
+function renderStores(){
+  qs('#stores').innerHTML = DATA.stores.map(s=>`
+    <div class="card" data-type="store" onclick="showDrawer('${s.id}')">
+      <div class="hd"><span class="dot" style="background:var(--store)"></span><b>${escapeHtml(s.name)}</b></div>
+      <div class="sub">${escapeHtml(s.size||'')}</div>
+      <div class="desc">${escapeHtml(s.purpose)}</div>
+    </div>
+  `).join('');
+}
+
+/* ================================================================
+   COMMANDS
+   ================================================================ */
+function renderCommands(){
+  qs('#commands').innerHTML = DATA.commands.map(c=>`
+    <div class="card" data-type="command" onclick="showDrawer('${c.id}')">
+      <div class="hd"><span class="dot" style="background:var(--command)"></span><b>${escapeHtml(c.name)}</b></div>
+      <div class="sub">${escapeHtml(c.path||'')}</div>
+      <div class="desc">${escapeHtml(c.desc)}</div>
+    </div>
+  `).join('');
+}
+
+/* ================================================================
+   EXTERNALS + CONFIG
+   ================================================================ */
+function renderExternals(){
+  const extHtml = DATA.externals.map(e=>`
+    <div class="card" data-type="external" onclick="showDrawer('${e.id}')">
+      <div class="hd"><span class="dot" style="background:var(--external)"></span><b>${escapeHtml(e.name)}</b></div>
+      <div class="desc">${escapeHtml(e.desc)}</div>
+    </div>
+  `).join('');
+  const cfgHtml = DATA.configs.map(c=>`
+    <div class="card" data-type="config" onclick="showDrawer('${c.id}')">
+      <div class="hd"><span class="dot" style="background:var(--config)"></span><b>${escapeHtml(c.name)}</b></div>
+      <div class="sub">${c.required?'<span class="err">required</span>':'<span class="warn">optional</span>'}</div>
+      <div class="desc">${escapeHtml(c.required_by||'')}</div>
+      <div class="small mono" style="margin-top:4px">eg. ${escapeHtml(c.example||'')}</div>
+    </div>
+  `).join('');
+  qs('#externals').innerHTML = extHtml + `<div style="grid-column:1/-1"><h3 style="margin-top:14px">Config / env vars</h3></div>` + cfgHtml;
+}
+
+/* ================================================================
+   EVOLUTION (cross-run loop special section)
+   ================================================================ */
+function renderEvolution(){
+  qs('#evolution').innerHTML = `
+    <div class="twocol">
+      <div>
+        <h3>What feeds back into the next run</h3>
+        <ul>
+          <li><code>evolution/prompt-patches/&lt;agent&gt;.md</code> — appended "## Learned Patterns" sections; read by next run's agents</li>
+          <li><code>.claude/skills/&lt;name&gt;/SKILL.md</code> — minor-bumped by learning-engine (≤3/run, golden-gated)</li>
+          <li><code>.claude/skills/&lt;name&gt;/evolution-log.md</code> — append-only version history</li>
+          <li><code>baselines/*.json</code> — raise-only on improvement >10%; reset every 5 runs</li>
+          <li><code>neo4j-memory</code> entities (Run, Agent, Skill, Phase, Defect, Pattern, Baseline, Patch) · JSONL fallback</li>
+          <li><code>docs/PROPOSED-SKILLS.md</code> + <code>docs/PROPOSED-GUARDRAILS.md</code> — human-review backlog (pipeline NEVER auto-promotes)</li>
+        </ul>
+        <h3>Safety caps (CLAUDE §10)</h3>
+        <ul>
+          <li>Prompt patches per run: <b>≤10</b> auto-apply</li>
+          <li>Existing-skill body patches per run: <b>≤3</b> (high-confidence + 2-run recurrence + golden PASS)</li>
+          <li>New skills per run: <b>0</b> (file to PROPOSED-SKILLS.md only)</li>
+          <li>New guardrails per run: <b>0</b> (file to PROPOSED-GUARDRAILS.md only)</li>
+          <li>New agents per run: <b>0</b> (human PR required)</li>
+          <li>Recurrence required: <b>2+ runs</b> (except CRITICAL)</li>
+          <li>Golden regression: auto-revert on FAIL</li>
+          <li>Baseline reset: every <b>5</b> runs</li>
+          <li>Golden-corpus refresh cadence: every <b>25</b> runs</li>
+        </ul>
+      </div>
+      <div>
+        <h3>The full loop</h3>
+        <svg viewBox="0 0 500 520" style="width:100%;height:auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="${getVar('--border2')}"/></marker>
+            <marker id="arr2Loop" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="${getVar('--loop')}"/></marker>
+          </defs>
+          <rect x="40" y="20"  width="420" height="60" rx="10" fill="${getVar('--panel2')}" stroke="${getVar('--phase')}" stroke-width="2"/>
+          <text x="60" y="42" class="e-lbl">Run N — Phase 4 Feedback</text>
+          <text x="60" y="62" class="e-sub">metrics → retros → drift → golden → plan → patches → baselines</text>
+
+          <rect x="40" y="110" width="200" height="56" rx="10" fill="${getVar('--panel2')}" stroke="${getVar('--store')}" stroke-width="2"/>
+          <text x="60" y="132" class="e-lbl">evolution/</text>
+          <text x="60" y="150" class="e-sub">prompt-patches · skill-candidates · knowledge-base</text>
+
+          <rect x="260" y="110" width="200" height="56" rx="10" fill="${getVar('--panel2')}" stroke="${getVar('--store')}" stroke-width="2"/>
+          <text x="280" y="132" class="e-lbl">baselines/</text>
+          <text x="280" y="150" class="e-sub">performance · coverage · quality · skill-health</text>
+
+          <rect x="40" y="196" width="200" height="56" rx="10" fill="${getVar('--panel2')}" stroke="${getVar('--skill')}" stroke-width="2"/>
+          <text x="60" y="218" class="e-lbl">.claude/skills/*/SKILL.md</text>
+          <text x="60" y="236" class="e-sub">minor bumped · evolution-log.md appended</text>
+
+          <rect x="260" y="196" width="200" height="56" rx="10" fill="${getVar('--panel2')}" stroke="${getVar('--store')}" stroke-width="2"/>
+          <text x="280" y="218" class="e-lbl">docs/PROPOSED-*.md</text>
+          <text x="280" y="236" class="e-sub">new-skill / new-guardrail backlog</text>
+
+          <rect x="40" y="282" width="200" height="56" rx="10" fill="${getVar('--panel2')}" stroke="${getVar('--mcp')}" stroke-width="2"/>
+          <text x="60" y="304" class="e-lbl">neo4j-memory</text>
+          <text x="60" y="322" class="e-sub">Run/Agent/Skill/Phase/Defect/Pattern/Baseline/Patch</text>
+
+          <rect x="260" y="282" width="200" height="56" rx="10" fill="${getVar('--panel2')}" stroke="${getVar('--external')}" stroke-width="2"/>
+          <text x="280" y="304" class="e-lbl">Humans (PR)</text>
+          <text x="280" y="322" class="e-sub">author new skills/guardrails/agents · review patches</text>
+
+          <rect x="40" y="380" width="420" height="60" rx="10" fill="${getVar('--panel2')}" stroke="${getVar('--phase')}" stroke-width="2"/>
+          <text x="60" y="402" class="e-lbl">Run N+1 — starts fresh</text>
+          <text x="60" y="422" class="e-sub">reads updated agent prompts + skill bodies + baselines + graph</text>
+
+          <line x1="140" y1="80"  x2="140" y2="110" stroke="${getVar('--border2')}" stroke-width="1.5" marker-end="url(#arr2)"/>
+          <line x1="360" y1="80"  x2="360" y2="110" stroke="${getVar('--border2')}" stroke-width="1.5" marker-end="url(#arr2)"/>
+          <line x1="140" y1="166" x2="140" y2="196" stroke="${getVar('--border2')}" stroke-width="1.5" marker-end="url(#arr2)"/>
+          <line x1="360" y1="166" x2="360" y2="196" stroke="${getVar('--border2')}" stroke-width="1.5" marker-end="url(#arr2)"/>
+          <line x1="140" y1="252" x2="140" y2="282" stroke="${getVar('--border2')}" stroke-width="1.5" marker-end="url(#arr2)"/>
+          <line x1="360" y1="252" x2="360" y2="282" stroke="${getVar('--border2')}" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+          <path d="M 140 338 Q 140 380 250 380" class="e-loop" marker-end="url(#arr2Loop)"/>
+          <path d="M 360 338 Q 360 380 250 380" class="e-loop" marker-end="url(#arr2Loop)"/>
+
+          <text x="250" y="475" class="e-sub" text-anchor="middle" fill="${getVar('--loop')}">every 5 runs → baseline reset · every 25 runs → golden refresh</text>
+          <text x="250" y="495" class="e-sub" text-anchor="middle">system-level termination: not yet defined</text>
+        </svg>
+      </div>
+    </div>
+  `;
+}
+
+/* ================================================================
+   SAMPLE RUN
+   ================================================================ */
+function renderSample(){
+  const s = DATA.sample;
+  qs('#sample').innerHTML = `
+    <div class="card" style="background:var(--panel);border-color:var(--border2);padding:14px 18px;margin-bottom:12px">
+      <div><b>Run ID:</b> <code>${s.id}</code> · <b>Date:</b> ${s.date} · <b>Duration:</b> ${s.duration}</div>
+      <div style="margin-top:4px"><b>Mode:</b> ${escapeHtml(s.mode)} · <b>Target:</b> <code>${escapeHtml(s.target)}</code></div>
+      <div><b>Branch:</b> <code>${escapeHtml(s.branch)}</code></div>
+      <div style="margin-top:4px"><b>Outcome:</b> <span class="ok">${escapeHtml(s.outcome)}</span></div>
+    </div>
+    <h3>Phase-by-phase timeline</h3>
+    <div class="waves">
+      ${s.phases.map(p=>`<div class="wave"><span class="wid">${escapeHtml(p.p)}</span><span class="wbody"><b>${escapeHtml(p.span)}</b> — ${escapeHtml(p.notes)}</span></div>`).join('')}
+    </div>
+    <h3>By the numbers</h3>
+    <div class="card-grid">
+      ${Object.entries(s.numbers).map(([k,v])=>`<div class="card" style="cursor:default"><div class="sub">${escapeHtml(k.replace(/_/g,' '))}</div><div style="font-size:16px;font-weight:600;color:var(--accent)">${escapeHtml(String(v))}</div></div>`).join('')}
+    </div>
+  `;
+}
+
+/* ================================================================
+   GLOSSARY
+   ================================================================ */
+function renderGlossary(){
+  qs('#glossaryGrid').innerHTML = DATA.glossary.map(([t,d])=>`
+    <div class="gterm" data-term="${escapeHtml(t)}">
+      <b>${escapeHtml(t)}</b>
+      <p>${escapeHtml(d)}</p>
+    </div>
+  `).join('');
+}
+
+/* ================================================================
+   DRAWER
+   ================================================================ */
+function showDrawer(id){
+  const e = INDEX.get(id);
+  if (!e) return;
+  const body = qs('#drawerBody');
+  body.innerHTML = drawerFor(e);
+  qs('#drawer').classList.add('open');
+  qs('#backdrop').classList.add('on');
+  qs('#drawer').setAttribute('aria-hidden','false');
+}
+function closeDrawer(){
+  qs('#drawer').classList.remove('open');
+  qs('#backdrop').classList.remove('on');
+  qs('#drawer').setAttribute('aria-hidden','true');
+}
+function drawerFor(e){
+  const type = e.type;
+  const label = DATA.types[type] || type;
+  let body = `<span class="type-chip" data-t="${type}">${escapeHtml(label)}</span>`;
+  body += `<h2>${escapeHtml(e.name)}</h2>`;
+  if (e.path) body += `<div class="path">${escapeHtml(e.path)}</div>`;
+  if (e.desc) body += `<div class="desc">${escapeHtml(e.desc)}</div>`;
+  if (e.role) body += `<section><h3>Role</h3><p>${escapeHtml(e.role)}</p></section>`;
+  if (e.subtitle) body += `<section><h3>Also known as</h3><p>${escapeHtml(e.subtitle)}</p></section>`;
+
+  // Type-specific details
+  if (type === 'phase'){
+    body += drawerPhase(e);
+  } else if (type === 'agent'){
+    body += drawerAgent(e);
+  } else if (type === 'skill'){
+    body += drawerSkill(e);
+  } else if (type === 'mcp'){
+    body += drawerMcp(e);
+  } else if (type === 'script'){
+    body += drawerScript(e);
+  } else if (type === 'store'){
+    body += drawerStore(e);
+  } else if (type === 'gate'){
+    body += drawerGate(e);
+  } else if (type === 'loop'){
+    body += drawerLoop(e);
+  } else if (type === 'command'){
+    body += drawerCommand(e);
+  } else if (type === 'external' || type === 'config'){
+    body += drawerSimple(e);
+  }
+
+  return body;
+}
+function drawerPhase(p){
+  let out = '';
+  out += `<dl class="meta">`;
+  out += `<dt>Order</dt><dd>P${p.order}</dd>`;
+  if (p.budget) { out += `<dt>Token budget</dt><dd>${escapeHtml(p.budget.tokens||'')}</dd>`;
+                  out += `<dt>Wall-clock</dt><dd>${escapeHtml(p.budget.time||'')}</dd>`; }
+  out += `</dl>`;
+  out += `<section><h3>Role — Local</h3><p>${escapeHtml(p.role_local)}</p></section>`;
+  out += `<section><h3>Role — Global</h3><p>${escapeHtml(p.role_global)}</p></section>`;
+  out += `<section><h3>Triggers</h3><p>${escapeHtml(p.triggers)}</p></section>`;
+  out += `<section><h3>When needed</h3><p>${escapeHtml(p.when_needed)}</p></section>`;
+  if (p.waves) out += `<section><h3>Waves</h3><ul>${p.waves.map(w=>`<li><b>${escapeHtml(w[0])}</b> — ${escapeHtml(w[1])}</li>`).join('')}</ul></section>`;
+  if (p.agents) out += `<section><h3>Agents</h3><div class="pills">${p.agents.map(a=>pillByName(a,'agent')).join('')}</div></section>`;
+  if (p.mcps && p.mcps.length) out += `<section><h3>MCPs</h3><div class="pills">${p.mcps.map(m=>pillByName(m,'mcp')).join('')}</div></section>`;
+  if (p.guardrails && p.guardrails.length) out += `<section><h3>Guardrails</h3><div class="pills">${p.guardrails.map(g=>pillByType(g,'script')).join('')}</div></section>`;
+  if (p.inputs) out += `<section><h3>Inputs</h3><ul>${p.inputs.map(i=>`<li><code>${escapeHtml(i.label)}</code> — ${escapeHtml(i.kind||'')}</li>`).join('')}</ul></section>`;
+  if (p.outputs) out += `<section><h3>Outputs</h3><ul>${p.outputs.map(o=>`<li><code>${escapeHtml(o.label)}</code> — ${escapeHtml(o.kind||'')}</li>`).join('')}</ul></section>`;
+  if (p.loops && p.loops.length) out += `<section><h3>Loops</h3>${p.loops.map(l=>`<div class="loop-box"><h4>${escapeHtml(l.name)}</h4><div class="cap">${escapeHtml(l.caps||'')}</div></div>`).join('')}</section>`;
+  out += `<section><h3>Lifecycle — Local</h3><p>${escapeHtml(p.local_lifecycle||'')}</p></section>`;
+  out += `<section><h3>Lifecycle — Global</h3><p>${escapeHtml(p.global_lifecycle||'')}</p></section>`;
+  if (p.gates && p.gates.length) out += `<section><h3>HITL gates</h3><div class="pills">${p.gates.map(g=>pillByName(g,'gate')).join('')}</div></section>`;
+  return out;
+}
+function drawerAgent(a){
+  let out = '';
+  out += `<dl class="meta">`;
+  out += `<dt>Model</dt><dd>${escapeHtml(a.model||'')}</dd>`;
+  out += `<dt>Phase</dt><dd>${escapeHtml(a.phase||'')}</dd>`;
+  out += `<dt>Est. cost</dt><dd>${escapeHtml(a.cost||'')}</dd>`;
+  out += `</dl>`;
+  out += `<section><h3>Role</h3><p>${escapeHtml(a.role||'')}</p></section>`;
+  if (a.when_needed) out += `<section><h3>When needed</h3><p>${escapeHtml(a.when_needed)}</p></section>`;
+  if (a.invoked_by) out += `<section><h3>Invoked by</h3><ul>${a.invoked_by.map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul></section>`;
+  if (a.invokes) out += `<section><h3>Invokes / uses</h3><ul>${a.invokes.map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul></section>`;
+  if (a.local_lifecycle) out += `<section><h3>Lifecycle — Local</h3><p>${escapeHtml(a.local_lifecycle)}</p></section>`;
+  if (a.global_lifecycle) out += `<section><h3>Lifecycle — Global</h3><p>${escapeHtml(a.global_lifecycle)}</p></section>`;
+  return out;
+}
+function drawerSkill(s){
+  let out = '';
+  out += `<dl class="meta"><dt>Version</dt><dd>${escapeHtml(s.version)}</dd><dt>Status</dt><dd>${escapeHtml(s.status)}</dd><dt>Category</dt><dd>${escapeHtml(s.category)}</dd></dl>`;
+  out += `<section><h3>Description</h3><p>${escapeHtml(s.desc)}</p></section>`;
+  if (s.triggers) out += `<section><h3>Invoked by</h3><p>${escapeHtml(s.triggers)}</p></section>`;
+  out += `<section><h3>Lifecycle</h3><p>Read by agents per TPRD §Skills-Manifest. Body may be minor-bumped by learning-engine (F7) with golden-regression gate. Evolution-log.md kept alongside SKILL.md.</p></section>`;
+  return out;
+}
+function drawerMcp(m){
+  let out = '';
+  out += `<dl class="meta"><dt>Command</dt><dd>${escapeHtml(m.command)}</dd><dt>Status</dt><dd>${escapeHtml(m.status||'')}</dd></dl>`;
+  out += `<section><h3>Purpose</h3><p>${escapeHtml(m.purpose)}</p></section>`;
+  if (m.tools) out += `<section><h3>Tools exposed</h3><ul>${m.tools.map(t=>`<li><code>${escapeHtml(t)}</code></li>`).join('')}</ul></section>`;
+  if (m.used_by) out += `<section><h3>Used by</h3><ul>${m.used_by.map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul></section>`;
+  if (m.config) out += `<section><h3>Config</h3><p>${escapeHtml(m.config)}</p></section>`;
+  if (m.local_lifecycle) out += `<section><h3>Lifecycle — Local</h3><p>${escapeHtml(m.local_lifecycle)}</p></section>`;
+  if (m.global_lifecycle) out += `<section><h3>Lifecycle — Global</h3><p>${escapeHtml(m.global_lifecycle)}</p></section>`;
+  out += `<section><h3>Fallback</h3><p>G04 checks reachability at phase start. Agents degrade to JSONL/Grep fallback on unavailability. Pipeline never halts on MCP failure (CLAUDE rule 31).</p></section>`;
+  return out;
+}
+function drawerScript(s){
+  let out = '';
+  out += `<dl class="meta"><dt>Language</dt><dd>${escapeHtml(s.language||'')}</dd></dl>`;
+  out += `<section><h3>Purpose</h3><p>${escapeHtml(s.purpose)}</p></section>`;
+  if (s.invoked_by) out += `<section><h3>Invoked by</h3><p>${escapeHtml(s.invoked_by)}</p></section>`;
+  if (s.inputs) out += `<section><h3>Inputs</h3><p>${escapeHtml(s.inputs)}</p></section>`;
+  if (s.outputs) out += `<section><h3>Outputs</h3><p>${escapeHtml(s.outputs)}</p></section>`;
+  if (s.role_local) out += `<section><h3>Role — Local</h3><p>${escapeHtml(s.role_local)}</p></section>`;
+  if (s.role_global) out += `<section><h3>Role — Global</h3><p>${escapeHtml(s.role_global)}</p></section>`;
+  return out;
+}
+function drawerStore(s){
+  let out = '';
+  out += `<dl class="meta"><dt>Size</dt><dd>${escapeHtml(s.size||'')}</dd></dl>`;
+  out += `<section><h3>Purpose</h3><p>${escapeHtml(s.purpose)}</p></section>`;
+  if (s.structure) out += `<section><h3>Structure</h3><p>${escapeHtml(s.structure)}</p></section>`;
+  if (s.produced_by) out += `<section><h3>Produced by</h3><ul>${s.produced_by.map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul></section>`;
+  if (s.consumed_by) out += `<section><h3>Consumed by</h3><ul>${s.consumed_by.map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul></section>`;
+  if (s.local_lifecycle) out += `<section><h3>Lifecycle — Local</h3><p>${escapeHtml(s.local_lifecycle)}</p></section>`;
+  if (s.global_lifecycle) out += `<section><h3>Lifecycle — Global</h3><p>${escapeHtml(s.global_lifecycle)}</p></section>`;
+  return out;
+}
+function drawerGate(g){
+  let out = '';
+  out += `<dl class="meta"><dt>Fires at</dt><dd>${escapeHtml(g.when)}</dd><dt>Timeout</dt><dd>${escapeHtml(g.timeout)}</dd></dl>`;
+  out += `<section><h3>Decision</h3><p>${escapeHtml(g.decision)}</p></section>`;
+  out += `<section><h3>Context</h3><p>${escapeHtml(g.desc)}</p></section>`;
+  out += `<section><h3>Role</h3><p>Human checkpoint. Blocks pipeline progression until user approves, rejects, or times out to default action. Never bypassed without explicit CLI flag.</p></section>`;
+  return out;
+}
+function drawerLoop(l){
+  let out = '';
+  out += `<dl class="meta"><dt>Scope</dt><dd>${escapeHtml(l.scope)}</dd></dl>`;
+  out += `<section><h3>Trigger</h3><p>${escapeHtml(l.trigger)}</p></section>`;
+  out += `<section><h3>Caps</h3><p>${escapeHtml(l.caps)}</p></section>`;
+  out += `<section><h3>What carries across iterations</h3><p>${escapeHtml(l.carry||'')}</p></section>`;
+  out += `<section><h3>Exit condition</h3><p>${escapeHtml(l.exit||'')}</p></section>`;
+  out += `<section><h3>Context</h3><p>${escapeHtml(l.desc)}</p></section>`;
+  return out;
+}
+function drawerCommand(c){
+  let out = '';
+  out += `<dl class="meta"><dt>Path</dt><dd>${escapeHtml(c.path||'')}</dd></dl>`;
+  out += `<section><h3>What it does</h3><p>${escapeHtml(c.desc)}</p></section>`;
+  out += `<section><h3>Invokes</h3><p>${escapeHtml(c.invokes||'')}</p></section>`;
+  out += `<section><h3>Args</h3><p class="small mono">${escapeHtml(c.args||'')}</p></section>`;
+  if (c.role_local) out += `<section><h3>Role — Local</h3><p>${escapeHtml(c.role_local)}</p></section>`;
+  if (c.role_global) out += `<section><h3>Role — Global</h3><p>${escapeHtml(c.role_global)}</p></section>`;
+  return out;
+}
+function drawerSimple(e){
+  let out = '';
+  if (e.required_by) out += `<dl class="meta"><dt>Required by</dt><dd>${escapeHtml(e.required_by)}</dd><dt>Required?</dt><dd>${e.required?'yes':'optional'}</dd><dt>Example</dt><dd>${escapeHtml(e.example||'')}</dd></dl>`;
+  out += `<section><p>${escapeHtml(e.desc||'')}</p></section>`;
+  return out;
+}
+
+/* ================================================================
+   FILTERS + SEARCH + LOOPS-ONLY
+   ================================================================ */
+const FILTER_STATE = {active: new Set(Object.keys(DATA.types)), loopsOnly: false, search: ''};
+function toggleFilter(t){
+  if (FILTER_STATE.active.has(t)) FILTER_STATE.active.delete(t);
+  else FILTER_STATE.active.add(t);
+  applyFilters();
+  qs(`.chip[data-t="${t}"]`).classList.toggle('active');
+}
+function applyFilters(){
+  const q = FILTER_STATE.search.trim().toLowerCase();
+  qsa('.pill[data-t], .card[data-type], .phase-card[data-type], .gterm').forEach(el=>{
+    const type = el.dataset.t || el.dataset.type;
+    const gterm = el.dataset.term;
+    let show = true;
+    if (type && !FILTER_STATE.active.has(type)) show = false;
+    if (FILTER_STATE.loopsOnly && type && !['loop','gate','phase'].includes(type)) show = false;
+    if (q){
+      const txt = (el.innerText || el.textContent || '').toLowerCase();
+      if (!txt.includes(q)) show = false;
+    }
+    el.classList.toggle('hidden', !show);
+  });
+}
+
+/* ================================================================
+   BOOT
+   ================================================================ */
+function boot(){
+  indexEntities();
+  renderFilters();
+  renderHero();
+  renderStats();
+  renderToc();
+  renderOverview();
+  renderPhases();
+  renderGates();
+  renderLoops();
+  renderAgents();
+  renderSkills();
+  renderMcps();
+  renderScripts();
+  renderStores();
+  renderCommands();
+  renderExternals();
+  renderEvolution();
+  renderSample();
+  renderGlossary();
+
+  // Open first phase by default
+  const first = qs('.phase-card');
+  if (first) first.classList.add('open');
+
+  qs('#searchInput').addEventListener('input', e=>{
+    FILTER_STATE.search = e.target.value;
+    applyFilters();
+  });
+  qs('#backdrop').addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', e=>{ if (e.key === 'Escape') closeDrawer(); });
+  qs('#btnLoops').addEventListener('click', ()=>{
+    FILTER_STATE.loopsOnly = !FILTER_STATE.loopsOnly;
+    qs('#btnLoops').classList.toggle('on', FILTER_STATE.loopsOnly);
+    applyFilters();
+  });
+  qs('#btnReset').addEventListener('click', ()=>{
+    FILTER_STATE.active = new Set(Object.keys(DATA.types));
+    FILTER_STATE.loopsOnly = false;
+    FILTER_STATE.search = '';
+    qs('#searchInput').value = '';
+    qsa('.chip').forEach(c=>c.classList.add('active'));
+    qs('#btnLoops').classList.remove('on');
+    applyFilters();
+  });
+}
+document.addEventListener('DOMContentLoaded', boot);
+</script>
+
+</body>
+</html>
