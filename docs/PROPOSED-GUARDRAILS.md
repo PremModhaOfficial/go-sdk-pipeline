@@ -26,7 +26,7 @@ Entries from pipeline runs are auto-filed here by `improvement-planner` (Wave F6
 
 - **No auto-promotion.** Pipeline emits entries; does not write guardrail scripts.
 - **No runtime creation.** `new_guardrails_per_run = 0` per `settings.json § safety_caps`.
-- **Golden regression on first use.** Newly promoted guardrails should be exercised against `golden-corpus/` before counting as stable.
+- **Devil-fleet gate on first use.** Newly promoted guardrails should be exercised on the next pipeline run before counting as stable (pipeline does not run golden-corpus full-replay regression).
 
 ---
 

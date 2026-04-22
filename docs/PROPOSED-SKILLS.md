@@ -50,7 +50,7 @@ These are **not auto-promoted**. A human reviewer must (a) audit per `SKILL-CREA
 
 - **No auto-synthesis.** Pipeline emits entries; does not write `SKILL.md` bodies.
 - **No runtime promotion.** Moving a draft into `.claude/skills/` is a human PR action.
-- **Golden regression on first use.** Newly promoted skills must pass `sdk-golden-regression-runner` on the next pipeline run before counting as stable.
+- **Devil-fleet gate on first use.** Newly promoted skills must pass the devil fleet on the next pipeline run before counting as stable (pipeline does not run golden-corpus full-replay regression).
 
 ---
 

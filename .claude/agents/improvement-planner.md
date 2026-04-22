@@ -1,6 +1,6 @@
 ---
 name: improvement-planner
-description: Reads metrics, retros, root-causes, drift, coverage, golden-regression. Outputs categorized improvement plan (prompt patches, new skills, guardrails, process/threshold proposals) with confidence levels. Drops archive's HTTP/gRPC rejection clause; adds SDK-specific skill-evolution input.
+description: Reads metrics, retros, root-causes, drift, coverage. Outputs categorized improvement plan (prompt patches, new skills, guardrails, process/threshold proposals) with confidence levels. Drops archive's HTTP/gRPC rejection clause; adds SDK-specific skill-evolution input.
 model: opus
 tools: Read, Write, Glob, Grep
 ---
@@ -337,7 +337,6 @@ If you encounter an error that prevents completion:
 Read these:
 - `runs/<run-id>/feedback/skill-drift.md`
 - `runs/<run-id>/feedback/skill-coverage.md`
-- `runs/<run-id>/feedback/golden-regression.json`
 - `runs/<run-id>/impl/constraint-proofs.md` (Mode B/C)
 
 ### Delta 4: Mode-aware proposals

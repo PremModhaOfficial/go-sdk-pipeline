@@ -59,7 +59,7 @@ Given a detailed TPRD describing a new client (Mode A), an extension to an exist
 │  │   Phase 1   Design     ─ API + 7 devil reviews ─────── H5  │    │
 │  │   Phase 2   Impl       ─ TDD + marker-aware merge ── H7    │    │
 │  │   Phase 3   Testing    ─ unit/int/bench/leak/fuzz ── H9    │    │
-│  │   Phase 4   Feedback   ─ metrics + drift + golden ── H10   │    │
+│  │   Phase 4   Feedback   ─ metrics + drift + notify ── H10   │    │
 │  │                                                              │    │
 │  │      review-fix sub-loop inside each phase                  │    │
 │  │      (5 retries / finding · 10 global cap · auto-rerun      │    │
@@ -89,7 +89,7 @@ Forward-only. Phases run sequentially. No automatic backward jumps. The only loo
 ### Cross-run loop (one TPRD → next TPRD)
 At end of every Phase 4, `learning-engine` writes:
 - **Prompt patches** (≤10 / run, auto-applied, append-only)
-- **Existing skill body patches** (≤3 / run, auto-applied IF golden-corpus regression passes)
+- **Existing skill body patches** (≤3 / run, auto-applied with notification line per patch; user reviews `learning-notifications.md` at H10 and may revert)
 - **New-skill proposals** (filed to `docs/PROPOSED-SKILLS.md` for human PR; pipeline cannot author them)
 - **New-guardrail proposals** (same, filed to `docs/PROPOSED-GUARDRAILS.md`)
 
@@ -107,7 +107,7 @@ Effects materialize in subsequent runs. A pattern observed in Dragonfly + S3 (2-
 | Guardrail scripts | **Human** | PR-merge into `scripts/guardrails/` |
 | Implementation against contract | **Pipeline** | Phase 2 TDD |
 | Devil review verdicts | **Pipeline** (devil agents) | Block / approve per phase |
-| Skill body refinement | **Pipeline** (learning-engine) | Patch + minor bump (golden-gated) |
+| Skill body refinement | **Pipeline** (learning-engine) | Patch + minor bump + notify-user via `learning-notifications.md` (no golden-corpus gate) |
 | New skill creation | **Human** | PR (pipeline files proposals only) |
 | Final merge to main | **Human** | H10 gate |
 
@@ -136,7 +136,7 @@ Effects materialize in subsequent runs. A pattern observed in Dragonfly + S3 (2-
 | 1 Design | `sdk-design-lead` | `api.go.stub`, interfaces, dependency vetting, devil verdicts |
 | 2 Impl | `sdk-impl-lead` | Code + tests on `sdk-pipeline/<run-id>` branch |
 | 3 Testing | `sdk-testing-lead` | Coverage, benchmarks, leak/vuln/flake reports |
-| 4 Feedback | `learning-engine` | Metrics, drift, golden, baseline updates |
+| 4 Feedback | `learning-engine` | Metrics, drift, baseline updates, per-patch user notifications |
 
 ### Devil agents (adversarial review, read-only)
 
@@ -215,7 +215,7 @@ After every Phase 4:
 
   learning-engine:
     ✓ apply prompt patches  (≤10/run)
-    ✓ apply skill body patches  (≤3/run, golden-gated, minor version bump)
+    ✓ apply skill body patches  (≤3/run, minor version bump, notify user via learning-notifications.md)
     ✗ create new skills       (FILE TO BACKLOG instead — human PR required)
     ✗ create new agents       (same)
     ✗ create new guardrails   (same)
@@ -325,7 +325,7 @@ quality_score = completeness         × 0.20
 - **Per-run** (12): duration, tokens, rework, devil-block-rate, skill-coverage-pct, pipeline_quality, coverage, bench-delta, vuln-count, leak-count, flake-rate, determinism-diff
 - **Per-phase** (5): duration, tokens, rework_iterations, devil-block-rate, skill-coverage-pct
 - **Per-agent** (12): see formula above
-- **Pipeline-maturity** (rolling 10-run window, 6 metrics): `skill_stability` (target <0.3), `existing_skill_patch_accept_rate` (≥0.8), `manifest_miss_rate` (→0), `golden_regression_rate` (=1.0), `mean_time_to_green_sec` (↘), `user_intervention_rate` (↘)
+- **Pipeline-maturity** (rolling 10-run window, 6 metrics): `skill_stability` (target <0.3), `existing_skill_patch_accept_rate` (≥0.8), `manifest_miss_rate` (→0), `learning_patches_reverted_by_user` (↘, trending down = notifications are well-calibrated), `mean_time_to_green_sec` (↘), `user_intervention_rate` (↘)
 
 ---
 
@@ -351,7 +351,7 @@ quality_score = completeness         × 0.20
 [00:45] Phase 1 Design (~10 min) ................... 7 devils run; ~1 NEEDS-FIX expected
 [09:00] Phase 2 Impl (~20 min) ..................... 5 slices, ~30 files, TDD
 [27:00] Phase 3 Testing (~15 min) .................. testcontainers Dragonfly + miniredis
-[39:00] Phase 4 Feedback (~6 min) .................. golden-corpus first-run capture
+[39:00] Phase 4 Feedback (~6 min) .................. metrics + drift + notifications
 [45:00] Exit 0 — branch sdk-pipeline/dragonfly-p0 ready
 ```
 
@@ -383,7 +383,6 @@ quality_score = completeness         × 0.20
 ### Immediate (next run)
 - Add 2 minimum manifest sections to the Dragonfly TPRD (already done in current branch)
 - First production run: Dragonfly Slices 2–6
-- Capture golden-corpus baseline for Dragonfly skill class
 
 ### Q1 (next 3 months)
 - 5 more SDK additions: NATS, S3, Kafka, MinIO, RabbitMQ
@@ -408,13 +407,13 @@ quality_score = completeness         × 0.20
 |---|---|---|---|
 | Pipeline produces wrong code | Low | Medium | 7 HITL gates; final diff reviewed before merge |
 | Devil agents over-reject | Medium | Low | Stuck-detection at 2 iterations; human can override at gate |
-| Skill drift over time | Medium | Medium | drift-detector + coverage-reporter run every Phase 4; golden-corpus regression catches |
+| Skill drift over time | Medium | Medium | drift-detector + coverage-reporter run every Phase 4; user reviews `learning-notifications.md` at H10 and may revert bad patches |
 | Pipeline breaks existing code (Mode B/C) | Low | High | Marker protocol (G95-G103); MANUAL symbols byte-hash-checked; cannot modify |
 | Bench regression on shared paths | Medium | High | G65 BLOCKER at 10% on shared, 5% on hot; explicit override required |
 | Pipeline runs forever / consumes runaway tokens | Low | Medium | Per-phase soft + hard token caps; user confirms past hard cap |
 | Determinism breaks | Medium | Low | Same TPRD + seed produces byte-equivalent; variance is a learning signal, not a failure |
-| Auto-applied skill patch breaks future runs | Low | High | Golden-corpus regression auto-reverts; baseline-manager flags |
-| Human authors a bad skill | Medium | Medium | Human PR review; first-use golden regression catches regressions |
+| Auto-applied skill patch breaks future runs | Low | High | Append-only evolution-log makes every patch revertible; per-patch notification line at H10; baseline-manager flags quality regressions next run |
+| Human authors a bad skill | Medium | Medium | Human PR review; first-use devil fleet catches regressions on the live run |
 | `learning-engine` over-patches | Low | Medium | ≤3 skill-body patches per run; high-confidence + 2-run recurrence required |
 
 ---

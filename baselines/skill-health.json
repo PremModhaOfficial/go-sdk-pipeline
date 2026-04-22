@@ -7,7 +7,7 @@
   "metrics": {
     "skill_stability": 0.105,
     "existing_skill_patch_accept_rate": 1.0,
-    "golden_regression_rate": null,
+    "learning_patches_reverted_by_user": 0,
     "mean_time_to_green_sec": null,
     "user_intervention_rate": 2,
     "manifest_miss_rate": 0.0

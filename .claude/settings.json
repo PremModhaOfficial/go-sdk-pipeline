@@ -79,7 +79,6 @@
       "Write(.claude/**)",
       "Write(baselines/**)",
       "Write(evolution/**)",
-      "Write(golden-corpus/**)",
       "Write(state/**)"
     ],
     "deny_write_outside_target_or_runs": true,
@@ -100,6 +99,5 @@
     "0BSD",
     "MPL-2.0"
   ],
-  "golden_corpus_refresh_every_n_runs": 25,
   "skill_drift_check_every_n_runs": 10
 }

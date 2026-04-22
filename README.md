@@ -10,7 +10,7 @@ Given a **detailed** Technical PRD (TPRD) — including `§Skills-Manifest` and 
 2. **Designs** the API with adversarial review (design-devil, dep-vet-devil, semver-devil, convention-devil, security-devil, overengineering-critic)
 3. **Implements** via TDD with marker-aware merging (respects `[traces-to: MANUAL-*]` and `[constraint: ...]` blocks)
 4. **Tests** exhaustively (unit ≥90%, integration with testcontainers, bench + goleak + govulncheck)
-5. **Evolves** existing skills via learning-engine + drift-detector + golden-corpus regression (new skills are human-authored via PR only — see `docs/PROPOSED-SKILLS.md`)
+5. **Evolves** existing skills via learning-engine + drift-detector; every applied patch is recorded in a per-run `learning-notifications.md` file that the user reviews at H10 (new skills are human-authored via PR only — see `docs/PROPOSED-SKILLS.md`)
 
 This is an **NFR-driven pipeline**: §NFR and §Benchmarks in the TPRD are first-class numeric gates, not afterthoughts.
 
@@ -39,7 +39,7 @@ export SDK_TARGET_DIR=/path/to/motadata-go-sdk/src/motadatagosdk
 | 1 | Design | API design + devil review |
 | 2 | Implementation | TDD with marker-aware merge |
 | 3 | Testing | Unit + integration + bench + leak check |
-| 4 | Feedback | Drift + coverage + golden + learning-engine patches (existing skills only) |
+| 4 | Feedback | Drift + coverage + learning-engine patches (existing skills only) + per-patch user notifications |
 
 ## Request Modes
 
@@ -56,7 +56,6 @@ phases/                 — Phase docs
 commands/               — Slash commands
 runs/<run-id>/          — Per-run state + logs
 baselines/              — Quality/coverage/perf baselines
-golden-corpus/          — Canonical fixtures for regression
 evolution/              — Learning-engine state (patches, skill drafts)
 state/ownership-cache.json — Target-SDK-wide marker ownership map
 docs/                   — Pipeline docs (backlog, architecture notes)

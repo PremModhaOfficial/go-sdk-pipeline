@@ -55,7 +55,7 @@ create_entities([
     "started: 2026-04-18T09:00:00Z",
     "ended: 2026-04-18T09:47:00Z",
     "pipeline_quality: 0.87",
-    "golden_regression_rate: 1.0"
+    "learning_patches_applied: 2"
   ]},
   {name: "run-f47ac10b:intake", entityType: "Phase", observations: [...]},
   {name: "run-f47ac10b:design", entityType: "Phase", observations: [...]},
@@ -123,7 +123,7 @@ add_observations([{
     "confidence: high",
     "trigger: pattern-missing-goleak recurrence=2",
     "devil_verdict: ACCEPT",
-    "golden_regression: PASS"
+    "user_notified: true"
   ]
 }])
 ```

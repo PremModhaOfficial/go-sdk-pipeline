@@ -23,7 +23,7 @@ tags: [sdk, client, config, constructor]
 
 - Patch bump (1.0.0 → 1.0.1): append-only, no semantic change
 - Minor bump: new examples, extended scope
-- Major bump: breaking reinterpretation; requires user approval + golden-corpus regression
+- Major bump: breaking reinterpretation; requires user approval at H9 (no golden-corpus gate — the pipeline does not run full-replay regression; per-patch notifications in `learning-notifications.md` let the user revert)
 
 ### 2. Mandatory `evolution-log.md` sibling
 

@@ -710,7 +710,7 @@ Phase 0   Intake       — This TPRD + §Skills-Manifest + §Guardrails-Manifest
 Phase 1   Design       — api.go.stub, interfaces.md, algorithms.md, concurrency.md; H5 approval
 Phase 2   Impl         — TDD red/green/refactor/docs on branch sdk-pipeline/nats-v1; H7 approval
 Phase 3   Testing      — Integration + benchmarks + fuzz + leak hunt; H9 approval
-Phase 4   Feedback     — golden-corpus capture; skill drift check; learning-engine patches to existing skills; H10 merge verdict
+Phase 4   Feedback     — skill drift check; learning-engine patches to existing skills with per-patch notifications in learning-notifications.md; H10 merge verdict (user reviews and may revert patches)
 ```
 
 ### §Skills-Manifest (REQUIRED for a detailed TPRD)

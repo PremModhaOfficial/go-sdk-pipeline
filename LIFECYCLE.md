@@ -140,9 +140,6 @@ If anything is missing, **author it via PR first**. The pipeline will not synthe
 
 # Determinism verification (two runs → byte-compare)
 /run-sdk-addition --spec runs/my-tprd.md --seed 42
-
-# Golden regression only (post-skill-edit sanity check)
-/run-sdk-addition --golden-only
 ```
 
 ---
@@ -205,12 +202,17 @@ If anything is missing, **author it via PR first**. The pipeline will not synthe
 │                      F2: phase-retrospector                               │
 │                      F3: root-cause-tracer                                │
 │                      F4: drift-detector + coverage-reporter (parallel)    │
-│                      F5: golden-corpus regression  ← halts F7 on FAIL    │
+│                      F5: (retired — full-replay golden regression         │
+│                           dropped; safety now comes from append-only      │
+│                           patches + learning-notifications.md review)    │
 │                      F6: improvement-planner                              │
 │                      F7: learning-engine  (patches existing skills;      │
+│                          writes one line per applied patch to            │
+│                          feedback/learning-notifications.md;              │
 │                          files new-skill proposals to PROPOSED-SKILLS.md)│
 │                      F8: baseline-manager                                 │
-│                      ═══ HITL H10 ═══  merge / keep-branch / delete     │
+│                      ═══ HITL H10 ═══  review notifications + diff;      │
+│                                         merge / revert patch / keep-branch│
 │      │                                                                    │
 │      ▼                                                                    │
 │  runs/<run-id>/run-summary.md    Exit code                               │
@@ -297,10 +299,15 @@ Run N completes → Feedback phase:
       ├─ existing-skill body patches (≤3)    → auto-apply IF:
       │                                         - confidence=high
       │                                         - 2+ run recurrence
-      │                                         - golden-corpus PASS after patch
       │                                       writes: .claude/skills/<name>/SKILL.md
       │                                               bump version MINOR
       │                                               append evolution-log.md
+      │                                               append notification line
+      │                                                 to feedback/
+      │                                                 learning-notifications.md
+      │                                       (no golden-corpus gate — the
+      │                                        user reviews notifications at
+      │                                        H10 and can revert any patch)
       │
       ├─ new-skill proposals                 → NEVER auto-apply
       │                                       files: docs/PROPOSED-SKILLS.md
@@ -357,7 +364,7 @@ runs/<run-id>/
 │   ├── root-causes.md
 │   ├── skill-drift.md
 │   ├── skill-coverage.md
-│   └── golden-regression.json
+│   └── learning-notifications.md
 └── run-summary.md                  ← your top-level readout
 
 $SDK_TARGET_DIR                     ← branch sdk-pipeline/<run-id>
@@ -388,7 +395,6 @@ docs/
 | **0** | All phases PASS; branch `sdk-pipeline/<run-id>` ready | Review diff; merge or iterate |
 | **1** | HITL gate declined | Read rejection reason; revise; re-run subset with `--phases` |
 | **2** | Guardrail BLOCKER unresolved after review-fix | Read `reviews/<devil>.md`; fix root cause or mark `[constraint-exception]` |
-| **3** | Golden regression FAIL (learning-engine halted) | `--golden-only` diagnose; revert offending skill patch manually |
 | **4** | Supply-chain REJECT (vuln / license) | Read `design/dependencies.md`; swap or justify dep |
 | **5** | Target dir invalid | Set `SDK_TARGET_DIR`; `git init` if needed |
 | **6** | §Guardrails-Manifest validation FAIL (missing script) | Author missing guardrail script via PR; re-run. (Missing skills do NOT trigger exit 6 — they emit a WARN and the pipeline continues; misses land in `docs/PROPOSED-SKILLS.md`.) |
@@ -458,8 +464,8 @@ Terminal timeline (typical Mode A, mature pipeline, ~45 min wall-clock):
         metrics: quality_score 0.94 (baseline 0.91)
         drift: 0 skills drifted
         coverage: 12/13 declared skills invoked (1 unused flagged optional in TPRD)
-        golden-corpus: 3/3 PASS
         learning-engine: 2 prompt patches applied; 0 skill patches; 0 proposals
+        learning-notifications.md: 2 entries (user can revert at H10)
         baseline-manager: raised coverage baseline 91% → 92%
         ═══ H10 ═══ [user: merge recommendation]
 [45:00] Exit 0. Branch sdk-pipeline/s3-v1 ready.
@@ -497,6 +503,7 @@ Your between-run responsibilities:
 | Add a new skill | Write `.claude/skills/<name>/SKILL.md` offline, PR, merge. Then reference it in next TPRD |
 | Patch an existing skill | Let `learning-engine` do it (auto, Phase 4) OR edit + bump version + append evolution-log |
 | Audit what's stale | `/run-sdk-addition --phases feedback` reruns drift + coverage |
+| Revert a learning-engine patch | Open `runs/<run-id>/feedback/learning-notifications.md`; follow the per-patch revert pointer (git revert or restore from evolution-log.md predecessor) |
 | Emergency halt | Decline any HITL gate → exit 1 |
 
 The design bet: humans author the contract (TPRD + manifests + skills), the pipeline produces the code against it deterministically.

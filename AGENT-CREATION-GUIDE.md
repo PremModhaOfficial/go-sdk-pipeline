@@ -13,7 +13,7 @@ SDK pipeline has no system-decomposer, api-designer, database-architect, infrast
 - Phase 1 Design: `sdk-design-lead`, `sdk-designer`, `interface-designer`, `algorithm-designer`, `concurrency-designer`, `pattern-advisor`, `sdk-*-devil`
 - Phase 2 Impl: `sdk-impl-lead`, `sdk-implementor`, `code-generator`, `test-spec-generator`, `sdk-merge-planner`, `sdk-marker-hygiene-devil`, `refactoring-agent`, `documentation-agent`
 - Phase 3 Testing: `sdk-testing-lead`, `unit-test-agent`, `integration-test-agent`, `performance-test-agent`, `sdk-leak-hunter`, `sdk-integration-flake-hunter`, `sdk-benchmark-devil`
-- Phase 4 Feedback: `learning-engine`, `metrics-collector`, `phase-retrospector`, `root-cause-tracer`, `defect-analyzer`, `improvement-planner`, `baseline-manager`, `sdk-skill-drift-detector`, `sdk-skill-coverage-reporter`, `sdk-golden-regression-runner`
+- Phase 4 Feedback: `learning-engine`, `metrics-collector`, `phase-retrospector`, `root-cause-tracer`, `defect-analyzer`, `improvement-planner`, `baseline-manager`, `sdk-skill-drift-detector`, `sdk-skill-coverage-reporter`
 
 ### 2. Devil agent requirements
 
@@ -43,7 +43,7 @@ tools: Read, Write, Edit, Glob, Grep, Bash
 
 1. [delta-1]: Drop the NATS-compliance baseline tracking. Reason: SDK is a library, no inter-service communication.
 2. [delta-2]: Add skill-version-bump responsibility: when applying a prompt patch, if the patch affects a skill's prescribed behavior, bump that skill's version (patch/minor/major per the change scope).
-3. [delta-3]: Read additional inputs from `runs/<run-id>/feedback/skill-drift.md` and `runs/<run-id>/feedback/golden-regression.json`.
+3. [delta-3]: Read additional inputs from `runs/<run-id>/feedback/skill-drift.md` and `runs/<run-id>/feedback/skill-coverage.md`.
 
 ## Evolution patches
 

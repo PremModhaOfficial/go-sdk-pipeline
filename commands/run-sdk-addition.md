@@ -23,14 +23,12 @@ Launches the NFR-driven SDK-addition pipeline against `$SDK_TARGET_DIR` (Go SDK 
 | `--skip-impl-gate` | false | Skip H7 (CI only) |
 | `--budget-tokens <n>` | per settings.json | Override per-phase token budget |
 | `--seed <int>` | — | Determinism verification seed |
-| `--golden-only` | false | Re-run golden-corpus regression only, skip real work |
 
 ## Positional arg
 
 `<request-or-spec-path>` — one of:
 - NL string (`"add S3 client"`)
 - TPRD file path (`runs/my-tprd.md`)
-- Omitted when `--golden-only`
 
 ## Examples
 
@@ -40,8 +38,6 @@ Launches the NFR-driven SDK-addition pipeline against `$SDK_TARGET_DIR` (Go SDK 
 /run-sdk-addition --spec runs/s3-tprd.md
 
 /run-sdk-addition --dry-run "add Kafka consumer wrapper"
-
-/run-sdk-addition --golden-only
 
 /run-sdk-addition --phases intake,design "tighten dragonfly retry defaults"
 
@@ -62,7 +58,7 @@ Launches the NFR-driven SDK-addition pipeline against `$SDK_TARGET_DIR` (Go SDK 
    - Design
    - Implementation (on `sdk-pipeline/<run-id>` branch)
    - Testing
-   - Feedback (+ golden regression + learning-engine patches to existing skills)
+   - Feedback (learning-engine patches to existing skills + user notification file for H10 review)
 6. Emit `runs/<run-id>/run-summary.md` with metrics, decisions, branch name, next steps
 7. H10: user decides merge / keep branch / delete branch
 
@@ -85,7 +81,6 @@ Each lead orchestrates its phase per the phase doc in `phases/<PHASE>-PHASE.md`.
 - 0: all phases PASS, branch created, ready for user review
 - 1: HITL gate declined
 - 2: guardrail BLOCKER unresolved after review-fix loop
-- 3: golden regression FAIL (learning-engine halted auto-apply)
 - 4: supply-chain REJECT (govulncheck/osv-scanner or license violation)
 - 5: target dir invalid or not a git repo
 - 6: TPRD §Guardrails-Manifest validation FAIL (human action required before re-run). Missing skills do NOT trigger exit 6 — they emit a WARN and the pipeline continues; misses are filed to `docs/PROPOSED-SKILLS.md`.
