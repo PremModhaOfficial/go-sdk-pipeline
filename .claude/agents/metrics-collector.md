@@ -192,6 +192,22 @@ Apply the 7-component formula above (completeness, review_severity, guardrail_pa
 ### Step 8: Write Telemetry
 Append all entries to `.feedback/metrics/agent-telemetry.jsonl`.
 
+### Step 8.5: Output-shape hash + Example_* count (SDK-mode compensating baselines for retired golden-corpus)
+Identify the newly-authored or modified package under `$SDK_TARGET_DIR` (from run-manifest `target_package`). Run:
+```bash
+scripts/compute-shape-hash.sh "$SDK_TARGET_DIR/<pkg>"
+# emits: <sha256>  <export_count>
+```
+Count `Example_*` functions in the same package:
+```bash
+EXAMPLE_COUNT=$(grep -cE '^func Example' "$SDK_TARGET_DIR/<pkg>"/*_test.go 2>/dev/null | awk -F: '{s+=$2} END{print s+0}')
+```
+Append one line to `baselines/output-shape-history.jsonl`:
+```json
+{"run_id":"<uuid>","timestamp":"<ISO>","target_package":"<pkg>","skills_invoked":["<skill>","..."],"shape_hash":"<sha256>","export_count":<N>,"example_count":<M>,"pipeline_version":"<ver>"}
+```
+`skills_invoked` comes from the cross-reference the `sdk-skill-coverage-reporter` produces (read `feedback/skill-coverage.md` if ready; otherwise grep decision-log.jsonl for `type: skill-evolution` + skill invocation entries). If the coverage-reporter hasn't run yet (ordering varies by phase lead), leave `skills_invoked: []` and let the coverage-reporter append a follow-up entry.
+
 ### Step 9: Write Wave Summary
 Write `.feedback/metrics/wave-<phase>-<wave>-summary.md` with:
 
@@ -322,9 +338,9 @@ Zero inter-agent communications were logged across 5 consecutive phases (Archite
 
 #### Pipeline-maturity (NEW, rolling across last N=10 runs)
 - `skill_stability` — patches per skill per run
-- `existing_skill_patch_accept_rate` — % of auto-applied patches that survived golden-corpus gate
+- `existing_skill_patch_accept_rate` — % of auto-applied patches NOT reverted by the user at H10 (inverse of `learning_patches_reverted_by_user`)
 - `manifest_miss_rate` — % of runs where §Guardrails-Manifest validation halted the run (exit 6). §Skills-Manifest misses are WARN-only and do NOT count toward this rate; they are tracked separately as `manifest_misses_skills` (informational).
-- `golden_regression_rate`
+- `learning_patches_reverted_by_user` — count of patches reverted at H10 (↘ = notifications well-calibrated)
 - `mean_time_to_green_sec`
 - `user_intervention_rate`
 

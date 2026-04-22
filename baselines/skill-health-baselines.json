@@ -31,12 +31,12 @@
       "status_blocking": "PASS",
       "status_warn": "TRACKING-8-proposals-filed-to-PROPOSED-SKILLS.md"
     },
-    "golden_regression_rate": {
+    "learning_patches_reverted_by_user": {
       "value": null,
-      "computation_note": "Golden-corpus regression did not execute — F5 determined corpus empty. Per F7 deferral (seq 151), minor/major bumps held until human seeds dragonfly-v1/ from commit a4d5d7f. Cannot compute until ≥1 future run gates against a seeded corpus.",
-      "target_min": 1.0,
+      "computation_note": "Replaces the retired golden_regression_rate metric (full-replay regression retired post-sdk-dragonfly-s2 — dominated Phase 4 token spend with no signal beyond the devil fleet). Counts how many learning-engine patches the user reverted at H10 review of feedback/learning-notifications.md. Target: trending down (well-calibrated notifications).",
+      "target_max_per_run": 0,
       "rolling_window_runs": 5,
-      "status": "DEFERRED-corpus-empty"
+      "status": "first-measurement-pending"
     },
     "mean_time_to_green_sec": {
       "value": null,
@@ -110,7 +110,7 @@
   },
 
   "raise_policy": {
-    "description": "Skill-health is a mixed-direction dashboard: stability/accept-rate/golden-rate/green-time target improvement; miss-rate/intervention-rate target decrease. Baselines are locked at current values on first run; future runs are evaluated per-metric.",
+    "description": "Skill-health is a mixed-direction dashboard: stability/accept-rate/green-time target improvement; miss-rate/intervention-rate/learning_patches_reverted_by_user target decrease. Baselines are locked at current values on first run; future runs are evaluated per-metric.",
     "reset_interval_runs": 5
   }
 }

@@ -51,7 +51,7 @@ Read `.feedback/learning/baselines/` directory:
 - Read current quality score from `.feedback/metrics/agent-telemetry.jsonl`
 - Read baseline quality score from `quality-baselines.json`
 - Compute delta: `current - baseline`
-- Flag as **regression** if delta < -0.10 (quality dropped >10%)
+- Flag as **regression** if delta < -0.05 (quality dropped >5%). Tightened from 10% post-golden-corpus retirement to add earlier-warning sensitivity; see `CLAUDE.md` Rule 28 and `G86.sh`.
 - Flag as **improvement** if delta > +0.10 (quality improved >10%)
 - Flag as **stable** otherwise
 
@@ -214,7 +214,7 @@ The target is always 100% — any value below 100% indicates a communication con
 ## Quality Rules
 - NEVER lower baselines unless the learning-engine explicitly requests a reset
 - Reset baselines every 5 runs (configurable) to prevent normalization
-- Flag any metric that regresses >10% from baseline (quality), >5% (coverage), >20% (performance)
+- Flag any metric that regresses >5% from baseline (quality, tightened post-golden-corpus retirement), >5% (coverage), >20% (performance)
 - Flag event-driven compliance below 100% as a CRITICAL regression (zero tolerance)
 - Keep historical data — append to history arrays, never overwrite
 - All baseline files MUST be valid JSON
@@ -277,17 +277,20 @@ Zero inter-agent communications were logged across 5 consecutive phases (Archite
 **Why**: SDK pipeline evolves skills continuously. Need longitudinal signal.
 **How**: New baseline file `baselines/skill-health.json` tracking:
 - `skill_stability` — patches per skill per run (rolling 10-run avg)
-- `existing_skill_patch_accept_rate` — % of learning-engine body-patches that passed golden-corpus gate
+- `existing_skill_patch_accept_rate` — % of learning-engine body-patches that were NOT reverted by the user at H10 (inverse of `learning_patches_reverted_by_user`)
+- `output_shape_hash` — SHA256 of the sorted exported-symbol signature list, per-run, tracked in `baselines/output-shape-history.jsonl`. Compensating baseline for retired golden-corpus. A change between two runs that invoked overlapping skills is surfaced by `learning-engine` in `learning-notifications.md`.
+- `devil_verdict_stability` — per-skill `devil_fix_rate` + `devil_block_rate`, tracked in `baselines/devil-verdict-history.jsonl`. Rising rate after a skill auto-patch = patch likely regressed code quality; surfaced by `learning-engine`.
+- `example_count_per_package` — count of `Example_*` functions per generated package, tracked in `baselines/coverage-baselines.json`. Raise-only; drop vs baseline with ≥2 prior runs = WARN in notifications.
 - `manifest_miss_rate` — % of runs halted at intake for missing §Guardrails-Manifest entries (exit 6). §Skills-Manifest misses are WARN-only and tracked separately (non-blocking).
-- `golden_regression_rate` — % of latest 5 runs where golden-corpus PASS
+- `learning_patches_reverted_by_user` — count of patches the user reverted at H10 across latest 5 runs (↘ = notifications well-calibrated)
 - `mean_time_to_green_sec` — wall-clock from start to first passing test
 - `user_intervention_rate` — HITL overrides per run
 
 Update rules per metric (applied after each run):
 - `skill_stability`: target <0.3 after 10 runs; if rising for 3 consecutive runs → WARN, suggest skill consolidation
-- `existing_skill_patch_accept_rate`: target ≥0.8; below = learning-engine over-patching OR golden-corpus too brittle
+- `existing_skill_patch_accept_rate`: target ≥0.8; below = learning-engine over-patching (user frequently reverting at H10 — tune confidence thresholds)
 - `manifest_miss_rate`: target 0 after library stabilizes; rising = TPRD authors referencing skills that don't yet exist (file to `docs/PROPOSED-SKILLS.md`)
-- `golden_regression_rate`: target 1.0 across last 5 runs; below = safety net leaking
+- `learning_patches_reverted_by_user`: trending down; high or rising = notifications miscalibrated or learning-engine patches too aggressive
 - `mean_time_to_green_sec`: monitor trend (should decrease over time); flat for 5 runs = investigate
 - `user_intervention_rate`: target trending down; flat or up = gates poorly calibrated
 

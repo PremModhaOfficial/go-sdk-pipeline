@@ -1,6 +1,6 @@
 ---
 name: learning-engine
-description: At end of Phase 4, applies safe improvements (prompt patches, existing-skill body patches with minor version bump). Never creates new skills/agents/guardrails — those are human-authored via PR. Files new-skill proposals to docs/PROPOSED-SKILLS.md. Halts on golden regression FAIL. Never deletes; never lowers baselines.
+description: At end of Phase 4, applies safe improvements (prompt patches, existing-skill body patches with minor version bump). Never creates new skills/agents/guardrails — those are human-authored via PR. Files new-skill proposals to docs/PROPOSED-SKILLS.md. Notifies the user of every applied patch so they can inspect or revert. Never deletes; never lowers baselines.
 model: opus
 tools: Read, Write, Edit, Glob, Grep, Bash
 ---
@@ -70,7 +70,7 @@ Read all phase reports and agent telemetry. Build a run-level summary:
 Load `.feedback/learning/baselines/quality-baselines.json` (if exists).
 For each agent:
 - Compare current quality score against baseline
-- Flag agents whose quality dropped >10% as **"regression"**
+- Flag agents whose quality dropped >5% as **"regression"** (tightened from 10% post-golden-corpus retirement)
 - Flag agents whose quality improved >10% as **"notable improvement"**
 - Log regression flags as decision entries
 
@@ -353,7 +353,7 @@ Zero inter-agent communications were logged across 5 consecutive phases (Archite
 2. Bump that skill's version per semantics:
    - Patch (1.0.0 → 1.0.1): text-only, no semantic change
    - Minor (→ 1.1.0): new examples, extended scope
-   - Major (→ 2.0.0): breaking reinterpretation — requires user approval at H9 + golden-corpus regression
+   - Major (→ 2.0.0): breaking reinterpretation — requires user approval at H9 (no golden-corpus gate; pipeline does not run regression replay)
 3. Append entry to skill's `evolution-log.md`:
    ```md
    ## <new-version> — run-<run-id> — <date>
@@ -368,16 +368,42 @@ Zero inter-agent communications were logged across 5 consecutive phases (Archite
 Read these in addition to archive's input list:
 - `runs/<run-id>/feedback/skill-drift.md` (from `sdk-skill-drift-detector`)
 - `runs/<run-id>/feedback/skill-coverage.md` (from `sdk-skill-coverage-reporter`)
-- `runs/<run-id>/feedback/golden-regression.json` (from `sdk-golden-regression-runner`)
 
-### Delta 4: Halt auto-apply on golden regression FAIL
-**Why**: Golden corpus is the safety net — drift beyond it = learning loop must be manually reviewed.
-**How**: Before applying ANY patch in this run:
-1. Open `feedback/golden-regression.json`
-2. If ANY fixture = FAIL → HALT auto-apply
-3. Write `evolution/evolution-reports/<run-id>.md` with reason: "golden-regression-halted"
-4. Move all candidate patches to `evolution/prompt-patches/drafts/` (not applied)
-5. Escalate via ESCALATION: golden regression; user must triage at H9
+### Delta 4: Notify user on every applied patch + surface compensating-baseline regressions
+**Why**: The pipeline no longer runs golden-corpus regression replay (retired — it dominated Phase 4 token spend without catching bugs the devil fleet missed). Safety now comes from append-only semantics + minor-bump versioning + four compensating baselines + a user notification loop. The notification file is the user's H10 review surface.
+**How**: After applying ANY prompt patch or existing-skill body patch in this run:
+1. Append a single-line notification to `runs/<run-id>/feedback/learning-notifications.md`:
+   ```
+   - [<skill|agent>] <name> @ <new-version> — <one-line summary> — source: <finding-id> — revert: `git revert <commit>` or restore from evolution-log.md predecessor
+   ```
+2. Emit Teammate message to the lead agent: `NOTIFY: learning-engine applied <N> patches; see runs/<run-id>/feedback/learning-notifications.md before H10`
+3. Log `type: skill-evolution` in decision-log.jsonl as before
+4. Continue with remaining patches; failures of a single patch do not halt the batch (revert that one patch, log it, move on)
+
+**Compensating-baseline checks** (run AFTER all patches applied, BEFORE the NOTIFY message):
+
+Read these four baseline files and write additional WARN lines to `learning-notifications.md`:
+
+a) **Output-shape churn** (`baselines/output-shape-history.jsonl`)
+   - For each skill patched this run, find the most-recent prior run whose `skills_invoked` list contained that skill.
+   - If prior `shape_hash` ≠ current `shape_hash` AND `target_package` overlaps: prepend `⚠ shape-churn: <skill> patched; generated package shape changed from <prior-hash[:8]> → <curr-hash[:8]> (prior run <run-id>)` to the skill's notification line.
+   - No prior run with this skill = no signal (silently skip).
+
+b) **Devil-verdict regression** (`baselines/devil-verdict-history.jsonl`)
+   - For each skill patched this run, compute rolling-5 average `devil_fix_rate` from prior entries for that skill.
+   - If current `devil_fix_rate` > prior_avg + 0.20 (20pp jump): prepend `⚠ devil-regression: <skill> devil_fix_rate rose <prior_avg> → <current> after patch` to the notification line.
+   - Fewer than 2 prior entries = no signal (insufficient data).
+
+c) **Quality regression ≥5%** (from `.feedback/metrics/agent-telemetry.jsonl` vs `baselines/quality-baselines.json`)
+   - Already flagged in Step 2 as "regression". For each regressed agent: append a standalone line `⚠ quality-regression: <agent> score <prior> → <current> (Δ <delta>)` under a `## Regressions` subsection in `learning-notifications.md`.
+   - G86.sh enforces this as BLOCKER at phase exit when ≥3 prior runs exist; the notification line exists for user visibility whether or not G86 triggers.
+
+d) **Example-count drop** (`baselines/coverage-baselines.json` per-package `example_count`)
+   - If current run's `example_count` < baseline AND `runs_tracked ≥ 2`: append `⚠ example-drop: <pkg> Example_* count <baseline> → <current>` under a `## Regressions` subsection.
+   - Raise-only; if current > baseline, baseline-manager raises it in F8 (not learning-engine's job).
+
+If ANY of (a)–(d) fires, the NOTIFY Teammate message MUST include a `REGRESSION_SIGNALS` line listing the signals, so the lead agent knows H10 requires deeper review:
+`NOTIFY: learning-engine applied <N> patches; REGRESSION_SIGNALS: [shape-churn:<n>, devil-regression:<n>, quality-regression:<n>, example-drop:<n>]; see runs/<run-id>/feedback/learning-notifications.md before H10`
 
 ### Delta 5: Apply patches from evolution/prompt-patches/
 Prompt patches in archive live at `.feedback/learning/evolution/prompt-patches/<agent>.md`. In this pipeline they live at `evolution/prompt-patches/<agent>.md` (path rebased). Same append-only discipline.
@@ -405,21 +431,22 @@ This agent prefers `mcp__neo4j-memory__*` for cross-run state and falls back to 
 - Read pattern recurrence via `mcp__neo4j-memory__search_memories` (Patterns with ≥2 OBSERVED_IN Run relations in last 30 days)
 - Write every applied patch as a `Patch` entity via `mcp__neo4j-memory__create_entities`
 - Create `(Patch)-[:APPLIED_TO]->(Agent|Skill)`, `(Patch)-[:MOTIVATED_BY]->(Pattern)`, `(Patch)-[:REGRESSED_AGAINST]->(Baseline)` via `create_relations`
-- Append patch outcomes (confidence, golden-regression PASS/FAIL, rollback if any) as observations on the Patch entity
+- Append patch outcomes (confidence, user_notified: true, user_reverted: true/false once H10 decision is logged) as observations on the Patch entity
 
 **Fallback path (MCP unavailable):**
 Read/write the same data as JSONL under `evolution/knowledge-base/`. The `G04.sh` guardrail runs at phase start and writes an MCP-health verdict to `runs/<id>/<phase>/mcp-health.md` — consult this artifact before attempting MCP calls. If it says "WARN: neo4j unreachable", use JSONL directly.
 
 **Never halt on MCP failure.** MCP is a performance + queryability improvement, not a correctness dependency. The JSONL fallback remains the authoritative record.
 
-## Completion Protocol (SDK-mode, post-Phase-1-removal)
+## Completion Protocol (SDK-mode, post-Phase-1-removal, post-golden-corpus-retirement)
 
-1. If golden regression FAIL: halt auto-apply, emit ESCALATION, halt run
-2. Apply high-confidence prompt patches → `evolution/prompt-patches/<agent>.md`
-3. Apply high-confidence existing-skill body patches → bump minor version, append `evolution-log.md`, re-run golden-corpus; revert on FAIL
+1. Apply high-confidence prompt patches → `evolution/prompt-patches/<agent>.md` (append only)
+2. Apply high-confidence existing-skill body patches → bump minor version, append `evolution-log.md`
+3. For EACH applied patch, append a line to `runs/<run-id>/feedback/learning-notifications.md` (Delta 4). User reviews this file at H10 and may revert individual patches.
 4. File new-skill proposals → `docs/PROPOSED-SKILLS.md` (human review; never draft `SKILL.md`)
 5. File new-guardrail proposals → `docs/PROPOSED-GUARDRAILS.md`
-6. Write `evolution/evolution-reports/<run-id>.md` (≤500 lines)
+6. Write `evolution/evolution-reports/<run-id>.md` (≤500 lines) — include the notification table as a section
 7. Update `evolution/knowledge-base/prompt-evolution-log.jsonl`
-8. Log `lifecycle: completed`
-9. Hand off to `baseline-manager`
+8. Emit single NOTIFY Teammate message summarizing count + pointer to `learning-notifications.md`
+9. Log `lifecycle: completed`
+10. Hand off to `baseline-manager`

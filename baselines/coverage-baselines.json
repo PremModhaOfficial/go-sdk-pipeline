@@ -1,7 +1,7 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "pipeline_version": "sdk-pipeline@0.2.0",
-  "note": "Per-package branch coverage baselines. New packages default to 90% floor (CLAUDE.md Rule #14). Raise only if improvement >5%; regressions keep baseline and flag. Reset every 5 runs.",
+  "note": "Per-package branch coverage + Example_* count baselines. New packages default to 90% branch floor (CLAUDE.md Rule #14). Example count tracked per package as a compensating baseline for retired golden-corpus (Rule 28) — a drop vs baseline with ≥2 prior runs emits a WARN in learning-notifications.md. Raise only if improvement >5%; regressions keep baseline and flag. Reset every 5 runs.",
   "packages": {
     "core/l2cache/dragonfly": {
       "baseline_branch_coverage_pct": 90.4,
@@ -26,7 +26,9 @@
         {"run_id": "sdk-dragonfly-s2", "coverage_pct": 90.4}
       ],
       "floor_target_pct": 90.0,
-      "regression_threshold_pct": 5.0
+      "regression_threshold_pct": 5.0,
+      "example_count": null,
+      "example_count_baseline_note": "First baseline will be captured on the next run that touches this package — metrics-collector step 8.5 emits the count."
     }
   },
   "raise_policy": {
@@ -34,5 +36,9 @@
     "regression_flag_threshold_pct": 5,
     "description": "Raise baseline on >5% improvement. Flag >5% regression. Never lower without learning-engine authorization.",
     "reset_interval_runs": 5
+  },
+  "example_count_policy": {
+    "description": "Example_* count per package. Raise-only on increase. Drop vs baseline with ≥2 prior runs emits a WARN line in runs/<run-id>/feedback/learning-notifications.md (no gate; H10 reviewer decides). Compensating baseline for retired golden-corpus.",
+    "min_prior_runs_to_enforce": 2
   }
 }
