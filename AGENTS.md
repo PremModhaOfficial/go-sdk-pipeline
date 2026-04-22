@@ -8,13 +8,14 @@ This file is the single source of truth for every agent in this pipeline. Canoni
 |---|---|---|---|
 | TPRD canonicalization + manifest validation | `sdk-intake-agent` | — | `context7` |
 | New skill authorship | **human only** (PR merge) | — | — |
-| Existing skill body patches | `learning-engine` (Phase 4) | `sdk-golden-regression-runner`, `baseline-manager` | `neo4j-memory` |
+| Existing skill body patches | `learning-engine` (Phase 4) | `baseline-manager` | `neo4j-memory` |
 | Extension pre-design snapshot | `sdk-existing-api-analyzer` | — | `serena`, `code-graph` |
 | Target-SDK marker ownership map | `sdk-marker-scanner` | — | `serena`, `ast-grep` |
 | API design | `sdk-design-lead` | `pattern-advisor`, `sdk-designer` | `context7` |
 | Interface signatures | `interface-designer` | `sdk-designer` | — |
 | Retry/backoff/CB algorithms | `algorithm-designer` | `sdk-designer` | — |
 | Concurrency patterns | `concurrency-designer` | — | — |
+| Performance-budget declaration (oracle, floor, MMD, big-O, allocs, drift signals) | `sdk-perf-architect` | `algorithm-designer`, `concurrency-designer` | `context7`, `exa` |
 | Dependency vetting | `sdk-dep-vet-devil` | — | — |
 | Semver verdict | `sdk-semver-devil` | `sdk-breaking-change-devil` (Mode B/C) | — |
 | Target SDK convention conformance | `sdk-convention-devil` | — | — |
@@ -23,12 +24,16 @@ This file is the single source of truth for every agent in this pipeline. Canoni
 | Merge planning (marker-aware) | `sdk-merge-planner` | `sdk-marker-scanner` | `serena` |
 | Marker hygiene | `sdk-marker-hygiene-devil` | — | `ast-grep` |
 | Constraint proof execution | `sdk-constraint-devil` | — | — |
+| pprof profile audit (CPU/heap/block/mutex; alloc-budget G104; profile no-surprise G109) | `sdk-profile-auditor` | — | — |
 | Leak hunt | `sdk-leak-hunter` | — | — |
 | API ergonomics (consumer POV) | `sdk-api-ergonomics-devil` | — | — |
 | Refactoring | `refactoring-agent` | — | — |
 | Documentation | `documentation-agent` | — | — |
 | Testing lead | `sdk-testing-lead` | `unit-test-agent`, `integration-test-agent`, `performance-test-agent` | — |
-| Benchmark regression verdict | `sdk-benchmark-devil` | `baseline-manager` | — |
+| Benchmark regression + oracle-margin verdict | `sdk-benchmark-devil` | `baseline-manager`, `sdk-perf-architect` | — |
+| Complexity scaling verdict (declared-vs-measured big-O; G107) | `sdk-complexity-devil` | `sdk-perf-architect` | — |
+| Soak test launch (background harness + state file) | `sdk-soak-runner` | `sdk-perf-architect` | — |
+| Soak drift verdict (trend detection; MMD G105; drift G106) | `sdk-drift-detector` | `sdk-soak-runner` | — |
 | Integration flake hunt | `sdk-integration-flake-hunter` | — | — |
 | Metrics collection | `metrics-collector` | — | `neo4j-memory` |
 | Phase retrospective | `phase-retrospector` | — | — |
@@ -37,7 +42,6 @@ This file is the single source of truth for every agent in this pipeline. Canoni
 | Learning + patch application | `learning-engine` | `baseline-manager` | `neo4j-memory` |
 | Skill drift detection | `sdk-skill-drift-detector` | — | `serena`, `ast-grep`, `neo4j-memory` |
 | Skill coverage reporting | `sdk-skill-coverage-reporter` | — | `neo4j-memory` |
-| Golden-corpus regression | `sdk-golden-regression-runner` | — | — |
 | Mechanical guardrail checks | `guardrail-validator` | — | — |
 | Baseline management | `baseline-manager` | — | `neo4j-memory` |
 
@@ -52,13 +56,13 @@ This file is the single source of truth for every agent in this pipeline. Canoni
 - `learning-engine` — Phase 4 (skill-patch scope narrowed)
 
 ### Design agents (SDK-specific)
-- `sdk-designer`, `interface-designer`, `algorithm-designer`, `concurrency-designer`, `pattern-advisor`
+- `sdk-designer`, `interface-designer`, `algorithm-designer`, `concurrency-designer`, `pattern-advisor`, `sdk-perf-architect`
 
 ### Implementation agents
-- `sdk-implementor`, `code-generator` (adapted scope), `test-spec-generator` (adapted), `refactoring-agent`, `documentation-agent`
+- `sdk-implementor`, `code-generator` (adapted scope), `test-spec-generator` (adapted), `refactoring-agent`, `documentation-agent`, `sdk-profile-auditor`
 
 ### Testing agents
-- `unit-test-agent`, `integration-test-agent`, `performance-test-agent`, `mutation-test-agent`, `observability-test-agent`, `fuzz-agent` (new minimal)
+- `unit-test-agent`, `integration-test-agent`, `performance-test-agent`, `mutation-test-agent`, `observability-test-agent`, `fuzz-agent` (new minimal), `sdk-soak-runner`, `sdk-drift-detector`
 
 ### Feedback agents (feedback-track)
 - `metrics-collector`, `phase-retrospector`, `root-cause-tracer`, `defect-analyzer`, `improvement-planner`, `baseline-manager`, `learning-engine`
@@ -76,10 +80,12 @@ This file is the single source of truth for every agent in this pipeline. Canoni
 - `sdk-benchmark-devil` (D12)
 - `sdk-skill-drift-detector` (D13)
 - `sdk-skill-coverage-reporter` (D14)
-- `sdk-golden-regression-runner` (D15)
 - `guardrail-validator` (D16, ported)
 - `sdk-constraint-devil` (D17)
 - `sdk-marker-hygiene-devil` (D18)
+- `sdk-complexity-devil` (D19)
+- `sdk-profile-auditor` (D20, impl-phase M3.5 — adversarial profile audit; READ-ONLY)
+- `sdk-drift-detector` (D21, testing-phase T-SOAK observer; READ-ONLY)
 
 D1 (`sdk-skill-devil`) and D2 (`sdk-agent-devil`) REMOVED with Phase -1.
 

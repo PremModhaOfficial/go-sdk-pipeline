@@ -389,16 +389,16 @@ const DATA = {
 <script id="data-meta">
 /* meta + hero badges */
 DATA.meta = {
-  version: '0.2.0 (v0.3.0 in progress)',
-  date: '2026-04-21',
+  version: '0.3.0 (perf-confidence regime: rules 32/33, gates G104–G110, 5 new agents)',
+  date: '2026-04-22',
   phases: 6,        // 5 + optional 0.5
-  agents: '47 roles (33 dedicated files + 14 wave-helpers)',
+  agents: '52 roles (38 dedicated files + 14 wave-helpers)',
   skills: '40 of 52 cataloged',
   mcps: 6,
-  guardrails: '40+ (G01–G103)',
-  gates: 10,         // H0,H1,H4,H5,H6,H7,H7b,H8,H9,H10
-  budget_tokens: '~2.35 M / run',
-  budget_time: '~4.5 h soft cap',
+  guardrails: '47+ (G01–G110; perf-confidence band G104–G110 enforces CLAUDE rules 20, 32, 33)',
+  gates: 10,         // H0,H1,H4,H5,H6,H7,H7b,H8,H9,H10 (H9 now surfaces INCOMPLETE soak verdicts per rule 33)
+  budget_tokens: '~2.55 M / run (added perf-architect D1 + profile-auditor M3.5 + complexity/soak/drift at T5/T-SOAK)',
+  budget_time: '~4.5 h soft cap (soak wallclock is separate; per-symbol MMD declared in design/perf-budget.md)',
   entry_commands: 2,
   data_stores: 5
 };
@@ -497,13 +497,13 @@ DATA.phases = [
     when_needed:'Every run.',
     budget:{tokens:'500 K', time:'~45–60 min'},
     waves:[
-      ['D1','5 design agents in parallel — designer, interface-designer, algorithm-designer, concurrency-designer, pattern-advisor'],
-      ['D2','Mechanical checks — guardrail-validator runs G30–G38 (stub compiles, signatures well-formed, no breaking-change, Config struct present)'],
+      ['D1','6 design agents in parallel — designer, interface-designer, algorithm-designer, concurrency-designer, pattern-advisor, sdk-perf-architect (authors design/perf-budget.md per rule 32)'],
+      ['D2','Mechanical checks — guardrail-validator runs G30–G38 + G108 oracle-margin sanity pre-check'],
       ['D3','Up to 7 devils in parallel — design, semver, convention, security, dep-vet (+ breaking-change, constraint for Mode B/C)'],
       ['D4','Review-fix loop — per-finding retry ≤5, stuck at 2, global ≤10 per run; re-run ALL devils after each rework batch'],
-      ['D5','HITL gates — H4 breaking-change confirm (B/C), H6 dep-vet conditional, H5 overall design approval']
+      ['D5','HITL gates — H4 breaking-change confirm (B/C), H6 dep-vet conditional, H5 overall design approval (surfaces perf-budget.md oracles / MMDs / perf-exceptions.md)']
     ],
-    agents:['sdk-design-lead','sdk-designer','interface-designer','algorithm-designer','concurrency-designer','pattern-advisor','sdk-design-devil','sdk-semver-devil','sdk-convention-devil','sdk-security-devil','sdk-dep-vet-devil','sdk-breaking-change-devil','sdk-constraint-devil','guardrail-validator'],
+    agents:['sdk-design-lead','sdk-designer','interface-designer','algorithm-designer','concurrency-designer','pattern-advisor','sdk-perf-architect','sdk-design-devil','sdk-semver-devil','sdk-convention-devil','sdk-security-devil','sdk-dep-vet-devil','sdk-breaking-change-devil','sdk-constraint-devil','guardrail-validator'],
     mcps:['context7','exa','serena','code-graph'],
     guardrails:['G30','G31','G32','G33','G34','G38','G07','G01','G04'],
     inputs:[
@@ -521,6 +521,8 @@ DATA.phases = [
       {label:'design/concurrency.md', kind:'artifact'},
       {label:'design/dependencies.md', kind:'artifact'},
       {label:'design/patterns.md', kind:'artifact'},
+      {label:'design/perf-budget.md', kind:'artifact (latency/allocs/oracle/floor/complexity/MMD/drift per §7 symbol — rule 32)'},
+      {label:'design/perf-exceptions.md', kind:'artifact (perf-vs-cleanliness escape hatch; paired with [perf-exception:] markers)'},
       {label:'design/reviews/*.md', kind:'devil verdicts'},
       {label:'design/design-summary.md', kind:'phase report'}
     ],
@@ -543,20 +545,21 @@ DATA.phases = [
     when_needed:'Every run.',
     budget:{tokens:'1000 K', time:'~70 min'},
     waves:[
-      ['M1','Red — sdk-test-spec-generator writes failing table-driven tests per TPRD §4 FRs'],
+      ['M1','Red — sdk-test-spec-generator writes failing table-driven tests per TPRD §4 FRs; every bench declares b.ReportAllocs() (G104 precondition)'],
       ['M2','Merge plan (Mode B/C) — sdk-merge-planner outputs per-symbol strategy (preserve/regenerate/surface-at-H7b)'],
       ['M3','Green — sdk-implementor writes minimum code to pass tests; adds markers'],
+      ['M3.5','Profile Audit — sdk-profile-auditor captures CPU/heap/block/mutex pprof per hot-path bench; G104 allocs/op ≤ budget, G109 top-10 CPU samples ≥0.8 hot-path coverage. BLOCKER halts before M4.'],
       ['M4','Constraint proofs (Mode B/C) — sdk-constraint-devil runs bench before/after for [constraint] markers'],
       ['M5','Refactor — refactoring-agent removes duplication, applies simplify patterns'],
       ['M6','Docs — documentation-agent adds godocs, Example_* functions, README'],
-      ['M7','Devils (parallel) — code-reviewer, overengineering-critic, api-ergonomics-devil, leak-hunter, marker-hygiene-devil (B/C), security-devil'],
+      ['M7','Devils (parallel) — code-reviewer, overengineering-critic, api-ergonomics-devil, leak-hunter, marker-hygiene-devil (B/C + G110 perf-exception pairing), security-devil'],
       ['M8','Review-fix sub-loop — same caps as D4'],
-      ['M9','Guardrails — guardrail-validator runs G40–G52, G95–G103 (marker ownership, byte-hash validation)'],
-      ['M10','HITL H7 — user approves diff; H7b surfaces co-owned symbols for decision']
+      ['M9','Guardrails — guardrail-validator runs G40–G52, G95–G103, G104 alloc-budget, G109 profile-no-surprise, G110 perf-exception pairing'],
+      ['M10','HITL H7 — user approves diff; H7b surfaces co-owned symbols for decision; INCOMPLETE M3.5 verdicts surfaced per rule 33']
     ],
-    agents:['sdk-impl-lead','sdk-test-spec-generator','sdk-merge-planner','sdk-implementor','sdk-constraint-devil','refactoring-agent','documentation-agent','code-reviewer','sdk-overengineering-critic','sdk-api-ergonomics-devil','sdk-leak-hunter','sdk-marker-hygiene-devil','sdk-security-devil','guardrail-validator'],
+    agents:['sdk-impl-lead','sdk-test-spec-generator','sdk-merge-planner','sdk-implementor','sdk-profile-auditor','sdk-constraint-devil','refactoring-agent','documentation-agent','code-reviewer','sdk-overengineering-critic','sdk-api-ergonomics-devil','sdk-leak-hunter','sdk-marker-hygiene-devil','sdk-security-devil','guardrail-validator'],
     mcps:['serena','code-graph','context7'],
-    guardrails:['G40','G41','G42','G43','G48','G95','G96','G97','G98','G99','G100','G101','G102','G103','G07','G01'],
+    guardrails:['G40','G41','G42','G43','G48','G95','G96','G97','G98','G99','G100','G101','G102','G103','G104','G109','G110','G07','G01'],
     inputs:[
       {label:'runs/&lt;run-id&gt;/design/*', kind:'all design artifacts'},
       {label:'runs/&lt;run-id&gt;/tprd.md', kind:'spec'},
@@ -597,17 +600,18 @@ DATA.phases = [
       ['T2','Integration — integration-test-agent spins testcontainers per backend'],
       ['T3','Flake hunt — sdk-integration-flake-hunter runs -count=3; halt on any flake'],
       ['T4','Benchmarks — performance-test-agent writes + runs benches'],
-      ['T5','Bench compare — sdk-benchmark-devil benchstats vs baseline (HITL H8 on regression)'],
+      ['T5','Bench + complexity devils (parallel) — sdk-complexity-devil scaling sweep N∈{10,100,1k,10k} → G107 big-O match; sdk-benchmark-devil benchstat vs baseline + G108 oracle-margin vs design/perf-budget.md (HITL H8 on regression or oracle breach)'],
+      ['T5.5','T-SOAK — sdk-soak-runner launches soaks via Bash run_in_background per design/perf-budget.md soak-enabled symbols (decouples from tool-call window); sdk-drift-detector polls state files on a ladder (30s → 6h), fits regression, fast-fails on significant positive slope → G106; enforces MMD → G105. Verdict ∈ {PASS, FAIL, INCOMPLETE} per rule 33.'],
       ['T6','Leak hunt — sdk-leak-hunter goleak + -race -count=5'],
       ['T7','Fuzz — fuzz-agent FuzzXxx if TPRD §11 declares'],
       ['T8','Supply chain — govulncheck, osv-scanner, license allowlist'],
       ['T9','Observability — observability-test-agent span/metric conformance (if TPRD §8 required)'],
       ['T10','Mutation — mutation-test-agent optional, 70%+ target'],
-      ['T11','HITL H9 — user approves test verdicts']
+      ['T11','HITL H9 — user approves test verdicts; INCOMPLETE soak verdicts surfaced explicitly (rule 33; never auto-merge)']
     ],
-    agents:['sdk-testing-lead','unit-test-agent','integration-test-agent','sdk-integration-flake-hunter','performance-test-agent','sdk-benchmark-devil','sdk-leak-hunter','fuzz-agent','guardrail-validator','observability-test-agent','mutation-test-agent'],
+    agents:['sdk-testing-lead','unit-test-agent','integration-test-agent','sdk-integration-flake-hunter','performance-test-agent','sdk-benchmark-devil','sdk-complexity-devil','sdk-soak-runner','sdk-drift-detector','sdk-leak-hunter','fuzz-agent','guardrail-validator','observability-test-agent','mutation-test-agent'],
     mcps:['context7','code-graph'],
-    guardrails:['G60','G61','G63','G65','G69','G07','G01','G04'],
+    guardrails:['G60','G61','G63','G65','G69','G105','G106','G107','G108','G07','G01','G04'],
     inputs:[
       {label:'$SDK_TARGET_DIR/&lt;new-pkg&gt;/*.go on branch', kind:'source'},
       {label:'runs/&lt;run-id&gt;/design/*', kind:'NFR reference'},
@@ -632,32 +636,31 @@ DATA.phases = [
   {
     id:'p-feedback', type:'phase', order:'4', name:'Feedback & Self-Learning',
     path:'phases/FEEDBACK-PHASE.md',
-    subtitle:'Telemetry · Drift · Golden regression · Learning-engine patches',
-    desc:'Close the loop. Metrics, defect tracing, skill drift, golden regression, then learning-engine applies safe patches to existing prompts/skills. Never creates new skills/guardrails/agents.',
-    role_local:'Produce metrics, retros, golden-regression verdict, drift report. Categorize findings into prompt-patch / skill-patch / new-skill-proposal / new-guardrail-proposal.',
-    role_global:'THIS is the cross-run loop. Writes to evolution/, .claude/skills/<name>/SKILL.md (minor bumps), baselines/, docs/PROPOSED-*.md. Feeds the NEXT run.',
+    subtitle:'Telemetry · Drift · Learning-engine patches + notify',
+    desc:'Close the loop. Metrics, defect tracing, skill drift, then learning-engine applies safe patches to existing prompts/skills and appends one notification line per applied patch to learning-notifications.md (reviewed at H10). Never creates new skills/guardrails/agents. Golden-corpus full-replay regression retired (dominated Phase 4 token cost, caught nothing the devil fleet missed on the live run).',
+    role_local:'Produce metrics, retros, drift report. Categorize findings into prompt-patch / skill-patch / new-skill-proposal / new-guardrail-proposal. Emit per-patch notifications.',
+    role_global:'THIS is the cross-run loop. Writes to evolution/, .claude/skills/<name>/SKILL.md (minor bumps), baselines/, docs/PROPOSED-*.md. Feeds the NEXT run. User revert at H10 is the safety net (no auto-replay).',
     triggers:'After H9 testing approval. Reads the entire run.',
     when_needed:'Every run.',
-    budget:{tokens:'200 K', time:'~20–30 min (first run ~30–60 min due to baseline creation)'},
+    budget:{tokens:'~120 K (down from ~1.7–3.2 M once corpus was seeded — full-pipeline replay × 3 fixtures was the dominant Phase 4 cost by design; in practice corpus was empty so empirical savings start at ~0 and grow to the multi-million range as soon as seeding would have begun)', time:'~15–20 min (down from 90–135 min sequential / 30–45 min parallel once corpus was seeded)'},
     waves:[
-      ['F1','Metrics — metrics-collector computes quality_score (CLAUDE §12), per-phase + per-run metrics'],
+      ['F1','Metrics — metrics-collector computes quality_score (CLAUDE §12), per-phase + per-run metrics; also runs scripts/compute-shape-hash.sh on the generated package + counts Example_* functions, appending to baselines/output-shape-history.jsonl (compensating baseline for retired golden-corpus)'],
       ['F2','Retrospectives — phase-retrospector writes retro-intake.md, retro-design.md, retro-impl.md, retro-testing.md'],
       ['F3','Root causes — defect-analyzer categorizes defects, root-cause-tracer traces backward through phases'],
-      ['F4','Drift + coverage — sdk-skill-drift-detector (D13) + sdk-skill-coverage-reporter (D14)'],
-      ['F5','Golden regression — sdk-golden-regression-runner re-runs canonical fixtures; FAIL halts F7 auto-apply'],
+      ['F4','Drift + coverage — sdk-skill-drift-detector (D13) + sdk-skill-coverage-reporter (D14); coverage-reporter also emits per-skill devil_fix_rate + devil_block_rate to baselines/devil-verdict-history.jsonl'],
+      ['F5','(retired — full-replay golden regression dropped; safety now = append-only patches + minor-bump versioning + learning-notifications.md review at H10)'],
       ['F6','Planning — improvement-planner categorizes findings (prompt-patch / skill-patch / new-skill-proposal / new-guardrail-proposal + confidence)'],
-      ['F7','Learning — learning-engine auto-applies high-confidence prompt patches (≤10) + existing-skill body patches (≤3 minor bumps, golden-gated); files new-skill/guardrail proposals (D15)'],
+      ['F7','Learning — learning-engine auto-applies high-confidence prompt patches (≤10) + existing-skill body patches (≤3 minor bumps); appends one notification line per patch to feedback/learning-notifications.md; cross-checks the four compensating baselines (shape-hash, devil-verdict, quality, example-count) and prepends ⚠ regression lines if any fire; files new-skill/guardrail proposals'],
       ['F8','Baselines — baseline-manager raises on improvement >10%, keeps on regression, resets every 5 runs'],
-      ['F9','Finalize — write run-summary.md; HITL H10 merge verdict']
+      ['F9','Finalize — write run-summary.md; HITL H10 merge verdict (user reviews learning-notifications.md and may revert any patch)']
     ],
-    agents:['metrics-collector','phase-retrospector','defect-analyzer','root-cause-tracer','sdk-skill-drift-detector','sdk-skill-coverage-reporter','sdk-golden-regression-runner','improvement-planner','learning-engine','baseline-manager'],
+    agents:['metrics-collector','phase-retrospector','defect-analyzer','root-cause-tracer','sdk-skill-drift-detector','sdk-skill-coverage-reporter','improvement-planner','learning-engine','baseline-manager'],
     mcps:['neo4j-memory','neo4j-cypher'],
-    guardrails:['G80','G82','G03','G01','G04'],
+    guardrails:['G80','G81','G83','G84','G85','G86','G03','G01','G04'],
     inputs:[
       {label:'runs/&lt;run-id&gt;/decision-log.jsonl', kind:'all-phase audit log'},
       {label:'runs/&lt;run-id&gt;/{intake,design,impl,testing}/*', kind:'all phase artifacts'},
       {label:'baselines/*.json', kind:'prior baselines'},
-      {label:'golden-corpus/*', kind:'canonical fixtures'},
       {label:'evolution/knowledge-base/*.jsonl', kind:'cross-run state'}
     ],
     outputs:[
@@ -665,7 +668,9 @@ DATA.phases = [
       {label:'feedback/retro-*.md (one per phase)', kind:'artifacts'},
       {label:'feedback/root-causes.md', kind:'artifact (if defects)'},
       {label:'feedback/skill-drift.md + skill-coverage.md', kind:'artifacts'},
-      {label:'feedback/golden-regression.json', kind:'verdict'},
+      {label:'feedback/learning-notifications.md', kind:'one line per applied patch + compensating-baseline ⚠ regression lines (H10 review)'},
+      {label:'baselines/output-shape-history.jsonl (appended)', kind:'shape-hash + example-count per run'},
+      {label:'baselines/devil-verdict-history.jsonl (appended)', kind:'per-skill devil_fix_rate + devil_block_rate'},
       {label:'evolution/improvement-plan-&lt;run-id&gt;.md', kind:'plan'},
       {label:'evolution/prompt-patches/&lt;agent&gt;.md (appended)', kind:'patches'},
       {label:'.claude/skills/&lt;name&gt;/SKILL.md (minor bumped)', kind:'skill update'},
@@ -677,7 +682,7 @@ DATA.phases = [
       {label:'runs/&lt;run-id&gt;/run-summary.md', kind:'final report'}
     ],
     loops:[
-      {name:'Golden regression gate (F5→F7)', caps:'on FAIL, F7 (learning-engine) HALTS auto-apply; user must triage'},
+      {name:'H10 notification review', caps:'user reads learning-notifications.md, may revert any per-patch; learning_patches_reverted_by_user feeds next-run confidence tuning'},
       {name:'Baseline reset cycle', caps:'every 5 runs, clear baseline and capture fresh'}
     ],
     local_lifecycle:'Writes runs/<run-id>/feedback/*, evolution/improvement-plan-<run-id>.md, evolution/evolution-reports/<run-id>.md.',
@@ -738,6 +743,10 @@ DATA.agents = [
     'Documents functional-options vs Config+New rationale; hexagonal layering.',
     'Design',['sdk-design-lead (D1)'],['sdk-config-struct-pattern','go-hexagonal-architecture'],
     '~5 K tokens','Every run'),
+  A('sdk-perf-architect','sdk-perf-architect','opus',
+    'D1 wave. Authors design/perf-budget.md + design/perf-exceptions.md. Per TPRD §7 symbol: latency p50/p95/p99, allocs/op budget, throughput, hot-path flag, reference-impl oracle + margin, theoretical-floor derivation, big-O complexity, MMD for soak, drift signals, bench name. Backs CLAUDE rule 32 (perf-confidence regime) and gates G104 / G107 / G108 / G105.',
+    'Design',['sdk-design-lead (D1)'],['context7 (oracle lookup)','exa (cross-SDK perf numbers)','spec-driven-development','connection-pool-tuning','backpressure-flow-control','context-deadline-patterns'],
+    '~15 K tokens','Every run; required upstream contract for downstream perf gates'),
   A('sdk-design-devil','sdk-design-devil','opus',
     'READ-ONLY adversary. Finds painful APIs: params > 4, exposed internals, mutable shared state, non-idiomatic naming, goroutine ownership ambiguity. DD-* findings.',
     'Design',['sdk-design-lead (D3)'],['design/reviews/design-devil.md'],
@@ -795,9 +804,13 @@ DATA.agents = [
     'Implementation',['sdk-impl-lead (M7, B/C)'],['bash (hash computation)','ownership-map.json'],
     '~2.5 K tokens','Mode B/C primarily; BLOCKER on violations'),
   A('sdk-overengineering-critic','sdk-overengineering-critic','sonnet',
-    'READ-ONLY. Flags unnecessary abstractions, speculative interfaces, unused options, premature optimization.',
+    'READ-ONLY. Flags unnecessary abstractions, speculative interfaces, unused options, premature optimization. Defers to [perf-exception:] markers paired with design/perf-exceptions.md (G110-validated) when complexity is measurably justified.',
     'Implementation',['sdk-impl-lead (M7)'],['pattern scanning'],
     '~2.5 K tokens','Every run (M7)'),
+  A('sdk-profile-auditor','sdk-profile-auditor','opus',
+    'READ-ONLY Wave M3.5. Captures CPU / heap / block / mutex pprof per hot-path bench. Asserts (a) top-10 CPU samples match design/perf-budget.md hot-path declarations → G109, (b) allocs/op ≤ declared budget → G104, (c) zero mutex contention on declared single-threaded paths, (d) no GC-pressure spike in steady state. BLOCKER halts before M4. Catches design-reality drift that benchstat alone cannot see.',
+    'Implementation',['sdk-impl-lead (M3.5)'],['go tool pprof','go test -cpuprofile/-memprofile/-blockprofile/-mutexprofile','go-concurrency-patterns'],
+    '~6 K tokens','Every run (M3.5)'),
   A('sdk-api-ergonomics-devil','sdk-api-ergonomics-devil','opus',
     'READ-ONLY. SDK-consumer POV. Finds boilerplate-heavy callsites, surprising defaults, missing Example_*, forced error handling.',
     'Implementation',['sdk-impl-lead (M7)'],['api-ergonomics-audit skill'],
@@ -831,9 +844,21 @@ DATA.agents = [
     'Testing',['sdk-testing-lead (T4)'],['bash'],
     '~5 K tokens','Every run (T4)'),
   A('sdk-benchmark-devil','sdk-benchmark-devil','sonnet',
-    'READ-ONLY. Compares bench results vs baselines/performance-baselines.json. Gates hot-path +5%, shared +10%. Triggers HITL H8.',
-    'Testing',['sdk-testing-lead (T5)'],['benchstat'],
-    '~2 K tokens','Every run (T5)'),
+    'READ-ONLY. Two gates: (1) regression — bench vs baselines/performance-baselines.json, hot-path +5%, shared +10%; (2) oracle-margin (G108) — measured p50 ≤ oracle × margin_multiplier from design/perf-budget.md. Alloc-budget (G104) is owned by sdk-profile-auditor. Triggers HITL H8 on either failure; oracle breach is NOT --accept-perf-regression waivable.',
+    'Testing',['sdk-testing-lead (T5)'],['benchstat','design/perf-budget.md oracle blocks'],
+    '~2.5 K tokens','Every run (T5)'),
+  A('sdk-complexity-devil','sdk-complexity-devil','opus',
+    'READ-ONLY Wave T5. For every §7 symbol with variable-size input, runs scaling bench at N ∈ {10, 100, 1k, 10k}, fits a curve, compares measured complexity to declared big-O in design/perf-budget.md → G107. Catches accidental O(N²) paths that pass wallclock regression at microbench sizes. Runs FIRST in T5 (scaling mismatch makes regression moot).',
+    'Testing',['sdk-testing-lead (T5)'],['go test -bench with size sweep','curve fitting (log-log regression)'],
+    '~4 K tokens','Every run (T5) where §7 has variable-size inputs'),
+  A('sdk-soak-runner','sdk-soak-runner','sonnet',
+    'Wave T5.5 (T-SOAK). Launches soak tests via Bash run_in_background per design/perf-budget.md soak-enabled symbols. Harness writes structured state.jsonl (ops, heap_bytes, goroutines, gc_pause_p99_ns, drift_signals) every 30s / 10k ops. Decouples test execution from Claude tool-call timeout — this is the "submit and observe" primitive. Lifecycle completes after LAUNCH, not after soaks finish; handoff to sdk-drift-detector.',
+    'Testing',['sdk-testing-lead (T5.5)'],['Bash run_in_background','nohup/setsid','state.jsonl writer'],
+    '~3 K tokens','Every run where design/perf-budget.md has soak-enabled symbols'),
+  A('sdk-drift-detector','sdk-drift-detector','opus',
+    'READ-ONLY Wave T5.5 (T-SOAK observer). Polls state.jsonl on a ladder (30s, 2m, 5m, 15m, 30m, 60m, 2h, 4h, 6h). Fits linear regression per drift_signal. Fast-fails on statistically significant positive slope (slope>0 AND p<0.05 AND R²>0.5) → G106. Enforces MMD → G105. Emits verdict ∈ {PASS, FAIL, INCOMPLETE} per CLAUDE rule 33. Kills SIGTERM-then-SIGKILL on FAIL to stop burning CPU on a decided failure.',
+    'Testing',['sdk-testing-lead (T5.5)'],['jq / state.jsonl parsing','linear regression','kill -TERM/-KILL'],
+    '~5 K tokens','Every run where soaks were launched'),
   A('fuzz-agent','fuzz-agent','sonnet',
     'Wave T7. Writes FuzzXxx tests and runs them for TPRD §11-declared targets (parsers, API handlers, query builders).',
     'Testing',['sdk-testing-lead (T7)'],['fuzz-patterns','bash'],
@@ -874,18 +899,14 @@ DATA.agents = [
     'F4. Reports invoked vs declared skills per TPRD §Skills-Manifest. Unused-but-relevant = trigger gap.',
     'Feedback',['metrics-collector'],['decision-log.jsonl'],
     '~2 K tokens','Phase 4'),
-  A('sdk-golden-regression-runner','sdk-golden-regression-runner','opus',
-    'F5. Re-runs canonical fixtures from golden-corpus/ at deterministic seed. FAIL halts F7 learning-engine auto-apply.',
-    'Feedback',['learning-engine (before auto-apply) OR user (--golden-only)'],['bash (full pipeline re-run)'],
-    '~15 K tokens/fixture','Phase 4, before F7; also on-demand via /run-sdk-addition --golden-only'),
   A('improvement-planner','improvement-planner','opus',
     'F6. Categorizes findings into prompt-patch / skill-patch / new-skill-proposal / new-guardrail-proposal with confidence levels.',
-    'Feedback',['after F3–F5'],['backpatch-log','retrospectives','metrics'],
+    'Feedback',['after F3–F4'],['backpatch-log','retrospectives','metrics'],
     '~8 K tokens','Phase 4'),
   A('learning-engine','learning-engine','opus',
-    'F7. Applies high-confidence prompt patches (≤10/run) + existing-skill body patches (≤3/run, minor bump, golden-gated). NEVER creates new skills/agents/guardrails.',
-    'Feedback',['improvement-planner'],['Edit','neo4j-memory','golden-regression gate'],
-    '~6 K tokens','Phase 4; halts on golden-regression FAIL'),
+    'F7. Applies high-confidence prompt patches (≤10/run) + existing-skill body patches (≤3/run, minor bump). Appends one line per patch to learning-notifications.md; user reviews at H10 and may revert. NEVER creates new skills/agents/guardrails.',
+    'Feedback',['improvement-planner'],['Edit','neo4j-memory','learning-notifications.md'],
+    '~6 K tokens','Phase 4; notifies user per patch'),
   A('baseline-manager','baseline-manager','opus',
     'F8. Quality/coverage/performance/skill-health baselines. Raise-only on improvement >10%. Reset every 5 runs.',
     'Feedback',['metrics-collector'],['baselines/*.json','neo4j-memory (opt)'],
@@ -1044,21 +1065,13 @@ DATA.stores = [
     local_lifecycle:'Built up wave-by-wave within one run. decision-log.jsonl appends continuously.',
     global_lifecycle:'Runs accumulate. Read-only after H10. Currently no pruning policy.'},
   {id:'store-baselines', type:'store', name:'baselines/', path:'baselines/',
-    purpose:'Persistent numeric + qualitative baselines (performance, coverage, quality, skill-health). Gate regressions across runs.',
-    size:'~64 KB',
-    structure:'performance-baselines.json · quality-baselines.json · coverage-baselines.json · skill-health-baselines.json · baseline-history.jsonl · stable-signatures.json · do-not-regenerate-hashes.json · regression-report-<run-id>.md',
+    purpose:'Persistent numeric + qualitative baselines (performance, coverage, quality, skill-health). Gate regressions across runs. Post-golden-corpus retirement also hosts four compensating baselines: output-shape-history, devil-verdict-history, example_count_per_package (inside coverage-baselines), and a tightened 5% quality regression cap enforced by G86.',
+    size:'~70 KB',
+    structure:'performance-baselines.json · quality-baselines.json · coverage-baselines.json (+ example_count per package) · skill-health-baselines.json · output-shape-history.jsonl · devil-verdict-history.jsonl · baseline-history.jsonl · stable-signatures.json · do-not-regenerate-hashes.json · regression-report-<run-id>.md',
     produced_by:['Phase 3 Testing (first run)','Phase 4 baseline-manager (F8)'],
     consumed_by:['Phase 3 Testing (G60, G61, G63 compare)','Phase 4 learning-engine (reset logic)','Future: visualization dashboards'],
     local_lifecycle:'Not local — baselines are global.',
     global_lifecycle:'Raise-only on improvement >10%; reset every 5 runs (settings.json: baseline_reset_every_n_runs=5). Append-only history.'},
-  {id:'store-golden', type:'store', name:'golden-corpus/', path:'golden-corpus/',
-    purpose:'Canonical regression fixtures — pipeline-output snapshots approved as "golden" after H10 sign-off. Used to detect capability degradation across runs.',
-    size:'~8 KB (0 fixtures seeded yet)',
-    structure:'<addition-name>-v<N>/ { tprd.md, gate-answers.yaml, expected/, metadata.json }',
-    produced_by:['sdk-golden-regression-runner after H10 approval'],
-    consumed_by:['sdk-golden-regression-runner (F5 and --golden-only)','learning-engine (mandatory check before major skill bumps)'],
-    local_lifecycle:'Not local — fixtures are permanent once created.',
-    global_lifecycle:'Append-only. Retired entries tracked in retired.jsonl (never deleted).'},
   {id:'store-evolution', type:'store', name:'evolution/', path:'evolution/',
     purpose:'Learning-engine state — cross-run patterns, skill/prompt evolution, human-review inbox for new skills/guardrails.',
     size:'~180 KB',
@@ -1092,10 +1105,10 @@ DATA.gates = [
     desc:'User reviews code diff on branch sdk-pipeline/<run-id>, devil verdicts, merge-plan (B/C).'},
   {id:'h7b', type:'gate', name:'H7b — Co-owned symbols', when:'Phase 2 M2 (Mode B/C only)', decision:'Per-symbol approve/reject', timeout:'48 h → Reject',
     desc:'Surfaces each co-owned symbol (pipeline + MANUAL) from merge-plan for explicit per-symbol user decision.'},
-  {id:'h8', type:'gate', name:'H8 — Perf regression waiver', when:'Phase 3 T5 (if regression)', decision:'Accept waiver · Reject', timeout:'48 h → Reject',
-    desc:'Triggered only on bench regression >5% hot-path or >10% shared. User accepts revised baseline or rejects.'},
+  {id:'h8', type:'gate', name:'H8 — Perf regression / oracle-margin waiver', when:'Phase 3 T5 (if regression OR oracle breach)', decision:'Accept waiver · Reject', timeout:'48 h → Reject',
+    desc:'Triggered on bench regression >5% hot-path / >10% shared (rule 20 gate 1) OR oracle-margin breach (G108). Regression is waivable with --accept-perf-regression. Oracle breach is NOT — requires updating design/perf-budget.md margin with rationale.'},
   {id:'h9', type:'gate', name:'H9 — Testing approval', when:'End of Phase 3', decision:'Approve test verdicts · Revise', timeout:'48 h → Continue',
-    desc:'User reviews coverage, bench-compare, leak, fuzz, vulncheck reports.'},
+    desc:'User reviews coverage, bench-compare, leak, fuzz, vulncheck reports, complexity-proofs, drift-analysis. MUST surface every INCOMPLETE soak verdict explicitly (rule 33): user chooses extend-window / accept-with-written-waiver / reject. INCOMPLETE never auto-merges at H10.'},
   {id:'h10', type:'gate', name:'H10 — Merge verdict', when:'End of Phase 4', decision:'Merge to main · Keep branch · Delete', timeout:'72 h → Keep branch',
     desc:'Final: user decides what to do with branch sdk-pipeline/<run-id>. Pipeline never merges or pushes itself.'}
 ];
@@ -1118,9 +1131,15 @@ DATA.loops = [
     trigger:'Integration test -count=3 fails any iteration', caps:'re-run -count=3 up to 10 total iterations (CLAUDE rule 11)',
     carry:'flaky test identity', exit:'all tests pass 3× OR cap hit → halt Phase 3',
     desc:'If a flake is detected, may loop back to Phase 2 implementor for fixes, then re-run T1–T8.'},
+  {id:'loop-soak-poll', type:'loop', name:'Soak poll ladder', scope:'local (Phase 3 T5.5)',
+    trigger:'sdk-soak-runner launches N soaks via Bash run_in_background',
+    caps:'Poll ladder: 30s, 2m, 5m, 15m, 30m, 60m, 2h, 4h, 6h. Global wallclock cap from settings.json (default 6h). Fast-fail on drift signal with slope>0 AND p<0.05 AND R²>0.5.',
+    carry:'state.jsonl timeline per soak; linear regression fit per drift signal',
+    exit:'Every soak reaches status ∈ {PASS, FAIL, STOPPED_BY_SIGNAL} OR global cap hit (INCOMPLETE)',
+    desc:'The observe half of the "submit and observe" primitive. Decouples long-running tests from Claude\'s 10-min tool-call window. Verdict taxonomy per CLAUDE rule 33: PASS (reached MMD cleanly), FAIL (drift detected), INCOMPLETE (MMD unreached within cap — never auto-promoted to PASS).'},
   {id:'loop-evolution', type:'loop', name:'Cross-run evolution', scope:'global (every run\'s Phase 4 → next run)',
     trigger:'End of Phase 4 — every completed run writes to persistent state',
-    caps:'≤10 prompt patches/run · ≤3 skill body patches/run · 0 new skills/guardrails/agents/run · 2+ run recurrence for auto-apply · golden-regression gate · baseline reset every 5 runs',
+    caps:'≤10 prompt patches/run · ≤3 skill body patches/run · 0 new skills/guardrails/agents/run · 2+ run recurrence for auto-apply · per-patch notification + user H10 revert (no golden-corpus gate) · baseline reset every 5 runs',
     carry:'prompt patches, skill patches, baselines, evolution knowledge-base, neo4j-memory entities',
     exit:'No termination condition yet defined (system-level). Per-run converges at H10.',
     desc:'The big outer loop. Every run refines agent prompts and existing skill bodies; files new-skill/guardrail proposals for humans.'}
@@ -1131,7 +1150,7 @@ DATA.commands = [
     path:'commands/run-sdk-addition.md',
     desc:'Launch the full NFR-driven SDK-addition pipeline. All 5 phases (+ Phase 0.5 if Mode B/C) in sequence with 7 HITL gates. Produces code branch, test reports, metrics. Never commits to main or pushes.',
     invokes:'Phase 0 → Phase 0.5 (if B/C) → Phase 1 → Phase 2 → Phase 3 → Phase 4',
-    args:'--spec <path> (TPRD) · --target <path> · --phases <list> · --resume <run-id> · --dry-run · --accept-perf-regression <n> · --auto-approve-tprd · --skip-design-gate · --skip-impl-gate · --budget-tokens <n> · --seed <int> · --golden-only',
+    args:'--spec <path> (TPRD) · --target <path> · --phases <list> · --resume <run-id> · --dry-run · --accept-perf-regression <n> · --auto-approve-tprd · --skip-design-gate · --skip-impl-gate · --budget-tokens <n> · --seed <int>',
     role_local:'Entry point; orchestrates all 5 phases. Manages run_id, branch creation (sdk-pipeline/<run-id>), HITL gates, checkpointing.',
     role_global:'Creates durable run record in runs/<run-id>/. Updates baselines and evolution state. Files new-skill/guardrail proposals if missing.'},
   {id:'cmd-preflight-tprd', type:'command', name:'/preflight-tprd',
@@ -1199,9 +1218,12 @@ DATA.glossary = [
   ['decision-log.jsonl','Append-only audit trail of every agent decision, lifecycle event, failure, refactor, skill-evolution, budget-tracking entry. 8 entry types. ≤15 per agent per run.'],
   ['run-manifest.json','Checkpoint file in runs/<run-id>/state/ — wave/agent status. Read on --resume to know which waves are in-progress / completed / failed.'],
   ['Baseline','Persistent performance/coverage/quality/skill-health reference. Raise-only on >10% improvement; keep on regression; reset every 5 runs.'],
-  ['Golden corpus','Canonical run fixtures captured post-H10. Re-run at deterministic seed to detect capability regression. Mandatory check before major skill bumps.'],
   ['Evolution','Cross-run learning state. prompt-patches/, skill-candidates/, knowledge-base/, evolution-reports/. Never deletes; always appends.'],
-  ['Learning-engine','Phase 4 F7 agent. Applies ≤10 prompt patches + ≤3 skill-body patches per run (golden-gated). NEVER creates new skills/agents/guardrails.'],
+  ['Learning-engine','Phase 4 F7 agent. Applies ≤10 prompt patches + ≤3 skill-body patches per run. Appends one line per applied patch to feedback/learning-notifications.md; user reviews at H10 and may revert. NEVER creates new skills/agents/guardrails.'],
+  ['learning-notifications.md','Per-run file (runs/<run-id>/feedback/) listing each patch learning-engine applied, with a per-patch revert pointer. Reviewed at H10. Combined with four compensating baselines (shape-hash, devil-verdict, tightened 5% quality cap, example-count) it replaces the retired golden-corpus full-replay regression as the safety net for self-evolved skill patches.'],
+  ['output-shape-history.jsonl','baselines/ file. SHA256 of sorted exported-symbol signatures per run, tagged with skills_invoked. Learning-engine surfaces hash churn on patched skills as ⚠ shape-churn in learning-notifications.md. Compensating baseline for retired golden-corpus.'],
+  ['devil-verdict-history.jsonl','baselines/ file. Per-skill devil_fix_rate + devil_block_rate per run. A ≥20pp jump after a skill auto-patch surfaces as ⚠ devil-regression. Compensating baseline.'],
+  ['G86','scripts/guardrails/G86.sh. BLOCKER at feedback phase exit if any agent quality_score regressed ≥5% vs baseline AND ≥3 prior runs exist (sample-size precondition avoids early-run false positives). Tightened from the previous 10% threshold post-golden-corpus retirement.'],
   ['Recurrence rule','Pattern must appear in ≥2 runs before promotion to auto-apply (unless CRITICAL severity).'],
   ['neo4j-memory','MCP holding typed cross-run knowledge graph: Run, Agent, Skill, Phase, Defect, Pattern, Baseline, Patch entities and their relations.'],
   ['Quality score','Per-agent float 0.0–1.0 derived from 7 factors: completeness, review_severity, guardrail_pass_rate, rework_score, communication_health, failure_recovery, downstream_impact.'],
@@ -1209,7 +1231,17 @@ DATA.glossary = [
   ['Guardrail G-number','G01–G103 mechanical shell scripts. Each declares phases it applies to + severity (BLOCKER/HIGH/MEDIUM/WARN/INFO).'],
   ['Waiver','User accepts a BLOCKER via H8 (perf) or --accept-perf-regression <n>. Logged in decision-log.'],
   ['Dry-run','--dry-run flag: no writes to $SDK_TARGET_DIR. Produces preview.md instead of branch commits.'],
-  ['Resume','--resume <run-id>: restart from last checkpoint in state/run-manifest.json.']
+  ['Resume','--resume <run-id>: restart from last checkpoint in state/run-manifest.json.'],
+  ['perf-budget.md','Phase 1 D1 artifact authored by sdk-perf-architect. Per-§7-symbol declarations: latency p50/p95/p99, allocs/op, throughput, hot-path flag, reference-impl oracle + margin_multiplier, theoretical-floor derivation, time/space big-O, bench name, optional soak block (mmd_seconds, drift_signals). The upstream contract that makes G104/G105/G106/G107/G108/G109 falsifiable. Missing entry for a §7 symbol = BLOCKER at D5.'],
+  ['perf-exceptions.md','Phase 1 D1 artifact (may be empty). Lists design-time-approved cases where impl will use hand-optimized code that sdk-overengineering-critic would otherwise reject. Each entry declares: symbol, marker text, reason, justified_by_bench, reverts_cleanliness_rule, must_reprove_on_change. Paired with [perf-exception:] source markers; G110 enforces the pairing.'],
+  ['MMD','Minimum Meaningful Duration. Declared per soak-enabled symbol in design/perf-budget.md (mmd_seconds). The shortest a soak can run and still produce a valid verdict. A soak that ran less than MMD is INCOMPLETE, not PASS (rule 33 / G105). Typical values: memory leaks 30–60 min; goroutine leaks 5 min; pool fragmentation 4–12 h.'],
+  ['Oracle','A best-in-class reference implementation for a given primitive (e.g., go-redis/redigo for Redis; IBM/sarama for Kafka; aws-sdk-go-v2/minio-go for S3). Declared per symbol in perf-budget.md with a measured number and margin_multiplier. Used by G108 to verify our impl is within N× of best-in-class. If oracle=none, theoretical_floor governs softly.'],
+  ['Theoretical floor','Physics-derived lower bound on latency (1 RTT at local network ≈100µs; 1 syscall ≈1µs; memory-bandwidth rate for memcpy; etc.). Declared in perf-budget.md. Measured performance below floor = physically impossible → BLOCKER. Measured >5× above floor = WARN on calibration.'],
+  ['Drift signal','A time-series metric that sdk-drift-detector monitors during T-SOAK for monotonic trend (e.g., heap_bytes, goroutines, gc_pause_p99_ns, pool_checkout_latency_ns, mutex_wait_ns). Positive slope with p<0.05 and R²>0.5 = drift detected (G106 FAIL). Warmup first 2 min excluded.'],
+  ['Verdict taxonomy','CLAUDE rule 33. Three verdicts: PASS (gate completed, no violation; soak needs t_elapsed ≥ MMD); FAIL (violation detected — BLOCKER, no auto-merge); INCOMPLETE (gate could not render — e.g., MMD unreached within wallclock cap, pprof unavailable, too few samples). INCOMPLETE never auto-promotes to PASS. H9 surfaces every INCOMPLETE explicitly.'],
+  ['[perf-exception:]','Provenance marker: `[perf-exception: <reason> bench/BenchmarkX]`. Exempts the symbol from sdk-overengineering-critic ONLY when paired with a matching entry in runs/<run-id>/design/perf-exceptions.md and backed by sdk-profile-auditor benchmark evidence. G110 enforces the pairing. Orphan markers or orphan entries = FAIL.'],
+  ['Soak test','A long-running benchmark (minutes to hours) designed to surface memory leaks, goroutine leaks, pool fragmentation, or GC-pressure accumulation that microbenchmarks cannot see. Launched in background by sdk-soak-runner (decoupled from Claude tool-call lifetime), observed by sdk-drift-detector. Gated by MMD (G105) + drift (G106).'],
+  ['Perf-Confidence Regime','CLAUDE rule 32. The seven-axis falsification model: declaration (perf-budget.md) → profile shape (G109) → allocation (G104) → complexity (G107) → regression + oracle (G108 + rule 20) → drift + MMD (G105/G106) → exception-pairing (G110). Confidence = ∪ of failure modes these gates falsify. Anything not caught is an unknown-unknown.']
 ];
 </script>
 
@@ -1501,7 +1533,6 @@ function renderOverview(){
   const storeConnections = [
     ['store-runs','p-intake'],['store-runs','p-design'],['store-runs','p-impl'],['store-runs','p-testing'],['store-runs','p-feedback'],
     ['store-baselines','p-testing'],['store-baselines','p-feedback'],
-    ['store-golden','p-feedback'],
     ['store-evolution','p-feedback'],
     ['store-docs','p-intake'],['store-docs','p-feedback']
   ];
@@ -1811,7 +1842,7 @@ function renderEvolution(){
         <h3>What feeds back into the next run</h3>
         <ul>
           <li><code>evolution/prompt-patches/&lt;agent&gt;.md</code> — appended "## Learned Patterns" sections; read by next run's agents</li>
-          <li><code>.claude/skills/&lt;name&gt;/SKILL.md</code> — minor-bumped by learning-engine (≤3/run, golden-gated)</li>
+          <li><code>.claude/skills/&lt;name&gt;/SKILL.md</code> — minor-bumped by learning-engine (≤3/run); each patch notified in <code>feedback/learning-notifications.md</code> for H10 review</li>
           <li><code>.claude/skills/&lt;name&gt;/evolution-log.md</code> — append-only version history</li>
           <li><code>baselines/*.json</code> — raise-only on improvement >10%; reset every 5 runs</li>
           <li><code>neo4j-memory</code> entities (Run, Agent, Skill, Phase, Defect, Pattern, Baseline, Patch) · JSONL fallback</li>
@@ -1820,14 +1851,13 @@ function renderEvolution(){
         <h3>Safety caps (CLAUDE §10)</h3>
         <ul>
           <li>Prompt patches per run: <b>≤10</b> auto-apply</li>
-          <li>Existing-skill body patches per run: <b>≤3</b> (high-confidence + 2-run recurrence + golden PASS)</li>
+          <li>Existing-skill body patches per run: <b>≤3</b> (high-confidence + 2-run recurrence; user notification + H10 revert option)</li>
           <li>New skills per run: <b>0</b> (file to PROPOSED-SKILLS.md only)</li>
           <li>New guardrails per run: <b>0</b> (file to PROPOSED-GUARDRAILS.md only)</li>
           <li>New agents per run: <b>0</b> (human PR required)</li>
           <li>Recurrence required: <b>2+ runs</b> (except CRITICAL)</li>
-          <li>Golden regression: auto-revert on FAIL</li>
+          <li>Safety net: append-only patch log + <code>learning-notifications.md</code> reviewed at H10 (user can revert any patch)</li>
           <li>Baseline reset: every <b>5</b> runs</li>
-          <li>Golden-corpus refresh cadence: every <b>25</b> runs</li>
         </ul>
       </div>
       <div>
@@ -1839,7 +1869,7 @@ function renderEvolution(){
           </defs>
           <rect x="40" y="20"  width="420" height="60" rx="10" fill="${getVar('--panel2')}" stroke="${getVar('--phase')}" stroke-width="2"/>
           <text x="60" y="42" class="e-lbl">Run N — Phase 4 Feedback</text>
-          <text x="60" y="62" class="e-sub">metrics → retros → drift → golden → plan → patches → baselines</text>
+          <text x="60" y="62" class="e-sub">metrics → retros → drift → plan → patches (notify user) → baselines</text>
 
           <rect x="40" y="110" width="200" height="56" rx="10" fill="${getVar('--panel2')}" stroke="${getVar('--store')}" stroke-width="2"/>
           <text x="60" y="132" class="e-lbl">evolution/</text>
@@ -1879,7 +1909,7 @@ function renderEvolution(){
           <path d="M 140 338 Q 140 380 250 380" class="e-loop" marker-end="url(#arr2Loop)"/>
           <path d="M 360 338 Q 360 380 250 380" class="e-loop" marker-end="url(#arr2Loop)"/>
 
-          <text x="250" y="475" class="e-sub" text-anchor="middle" fill="${getVar('--loop')}">every 5 runs → baseline reset · every 25 runs → golden refresh</text>
+          <text x="250" y="475" class="e-sub" text-anchor="middle" fill="${getVar('--loop')}">every 5 runs → baseline reset · user reviews learning-notifications.md at every H10</text>
           <text x="250" y="495" class="e-sub" text-anchor="middle">system-level termination: not yet defined</text>
         </svg>
       </div>
@@ -2017,7 +2047,7 @@ function drawerSkill(s){
   out += `<dl class="meta"><dt>Version</dt><dd>${escapeHtml(s.version)}</dd><dt>Status</dt><dd>${escapeHtml(s.status)}</dd><dt>Category</dt><dd>${escapeHtml(s.category)}</dd></dl>`;
   out += `<section><h3>Description</h3><p>${escapeHtml(s.desc)}</p></section>`;
   if (s.triggers) out += `<section><h3>Invoked by</h3><p>${escapeHtml(s.triggers)}</p></section>`;
-  out += `<section><h3>Lifecycle</h3><p>Read by agents per TPRD §Skills-Manifest. Body may be minor-bumped by learning-engine (F7) with golden-regression gate. Evolution-log.md kept alongside SKILL.md.</p></section>`;
+  out += `<section><h3>Lifecycle</h3><p>Read by agents per TPRD §Skills-Manifest. Body may be minor-bumped by learning-engine (F7); each patch appends a notification line to <code>feedback/learning-notifications.md</code> that the user reviews at H10. Evolution-log.md kept alongside SKILL.md.</p></section>`;
   return out;
 }
 function drawerMcp(m){

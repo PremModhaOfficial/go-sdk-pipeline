@@ -95,8 +95,14 @@ Agents MUST read target SDK tree before designing. No contradicting existing pat
 ### 19. Dependency Justification
 Every new `go get` requires `runs/<run-id>/design/dependencies.md` entry: name, version, license, size, `govulncheck`, `osv-scanner`, last-commit-age, transitive-count. `sdk-dep-vet-devil` verdict required. License allowlist: MIT / Apache-2.0 / BSD / ISC / 0BSD / MPL-2.0.
 
-### 20. Benchmark Regression Gate
->10% regression on shared paths OR >5% on new-package hot path = BLOCKER unless `--accept-perf-regression <pct>`.
+### 20. Benchmark Regression + Oracle + Alloc Gates
+Three independent perf gates, all enforced at Phase 3 T5:
+
+1. **Regression** — >10% on shared paths OR >5% on new-package hot path = BLOCKER, waivable with `--accept-perf-regression <pct>`. Owner: `sdk-benchmark-devil`.
+2. **Oracle margin (G108)** — measured p50 must stay within `oracle.margin_multiplier ×` the declared reference-impl number in `design/perf-budget.md`. BLOCKER if breached. NOT covered by `--accept-perf-regression`; waiver requires updating the margin in perf-budget.md with rationale at H8. Owner: `sdk-benchmark-devil`.
+3. **Alloc budget (G104)** — measured `allocs/op` must be ≤ declared `allocs_per_op` in perf-budget.md. BLOCKER. Enforced at M3.5 by `sdk-profile-auditor` (BEFORE T5; alloc issues don't reach testing).
+
+Rule 32 (Performance-Confidence Regime) lists the full gate set. Rule 33 (Verdict Taxonomy) disambiguates PASS / FAIL / INCOMPLETE.
 
 ### 21. Git-Based Safety
 `$SDK_TARGET_DIR` MUST be a git repo. Pipeline works on dedicated branch `sdk-pipeline/<run-id>`. Final diff shown to user before merge recommendation. No force-push. No direct main commit.
@@ -105,7 +111,7 @@ Every new `go get` requires `runs/<run-id>/design/dependencies.md` entry: name, 
 `manifest.json` tracks per-phase token + wall-clock. Soft caps → warn. Hard caps → user confirm-to-continue.
 
 ### 23. Skill Versioning & Human-Only Authorship
-Every skill MUST have `version: X.Y.Z` frontmatter + adjacent `evolution-log.md`. **Skill files are human-authored only** — `learning-engine` may patch existing skill bodies (minor bump, append to `evolution-log.md`) but MUST NOT create new `SKILL.md` files. New skill proposals file to `docs/PROPOSED-SKILLS.md`; a human authors + PR-merges the skill before it can be referenced by any TPRD `§Skills-Manifest`. Major changes require human PR review + golden-corpus regression.
+Every skill MUST have `version: X.Y.Z` frontmatter + adjacent `evolution-log.md`. **Skill files are human-authored only** — `learning-engine` may patch existing skill bodies (minor bump, append to `evolution-log.md`, write one line per patch to `learning-notifications.md`) but MUST NOT create new `SKILL.md` files. New skill proposals file to `docs/PROPOSED-SKILLS.md`; a human authors + PR-merges the skill before it can be referenced by any TPRD `§Skills-Manifest`. Major changes require human PR review (no golden-corpus gate; pipeline does not run full-replay regression).
 
 ### 24. Supply Chain
 `govulncheck` + `osv-scanner` MUST be green on all new deps.
@@ -119,11 +125,20 @@ Same TPRD + same pipeline version + same seed MUST converge on equivalent output
 ### 27. Credential Hygiene
 Integration tests read creds from `.env.example` (committed, fake) and `.env` (gitignored). No creds in spec/design/test source. Guardrail G69.
 
-### 28. Golden Regression
-Changes to any skill version MUST pass `golden-corpus` regression before auto-application by `learning-engine`.
+### 28. Learning-Engine Notification + Compensating Baselines (replaces former Golden Regression rule)
+Every patch `learning-engine` applies (prompt patch or existing-skill body patch with minor bump) MUST also append one notification line to `runs/<run-id>/feedback/learning-notifications.md`. The user reviews this file at H10 and may revert any individual patch before approving merge. Full-pipeline golden-corpus regression replay has been retired — it was the dominant Phase 4 cost once a corpus seeded (~1.5–3M tokens, 30+ min per run) and caught almost nothing the devil fleet was not already catching on the live run.
+
+The safety net is now the user notification loop backed by **four compensating baselines** that recover most of what golden-corpus was guarding:
+
+1. **Output-shape hash** (`baselines/output-shape-history.jsonl`) — SHA256 of sorted exported-symbol signatures per generated package per run. `learning-engine` surfaces hash churn on runs that invoked any just-patched skill as `⚠ shape-churn` lines.
+2. **Devil-verdict stability** (`baselines/devil-verdict-history.jsonl`) — per-skill `devil_fix_rate` + `devil_block_rate` tracked per run. A ≥20pp jump after a skill auto-patch surfaces as `⚠ devil-regression`.
+3. **Tightened quality regression threshold** — 10% → 5% on per-agent `quality_score`. G86.sh enforces as BLOCKER at feedback phase exit when ≥3 prior runs exist.
+4. **Example_* count per package** (`baselines/coverage-baselines.json`) — raise-only; a drop with ≥2 prior runs on a package emits `⚠ example-drop`.
+
+G85 enforces `learning-notifications.md` is written whenever any patch is applied. G86 enforces the quality regression threshold. Signals (1), (2), (4) are WARN-level (H10 reviewer decides); signal (3) is BLOCKER-level once the sample-size precondition is met.
 
 ### 29. Code Provenance Markers
-Markers (`[traces-to:]`, `[constraint:]`, `[stable-since:]`, `[deprecated-in:]`, `[do-not-regenerate]`, `[owned-by:]`) are machine-read by `sdk-marker-scanner`. Marker rules:
+Markers (`[traces-to:]`, `[constraint:]`, `[stable-since:]`, `[deprecated-in:]`, `[do-not-regenerate]`, `[owned-by:]`, `[perf-exception:]`) are machine-read by `sdk-marker-scanner`. Marker rules:
 
 - MANUAL-marked symbols NEVER modified by pipeline (guardrail G96, byte-hash match)
 - `[constraint: ... bench/BenchmarkX]` triggers automatic bench proof (guardrail G97)
@@ -131,12 +146,37 @@ Markers (`[traces-to:]`, `[constraint:]`, `[stable-since:]`, `[deprecated-in:]`,
 - `[stable-since: vX]` signature changes require major semver + TPRD §12 declaration (G101)
 - Pipeline-authored symbols MUST have `[traces-to: TPRD-<section>-<id>]` marker (G99)
 - Pipeline NEVER forges `[traces-to: MANUAL-*]` (G103)
+- `[perf-exception: <reason> bench/BenchmarkX]` exempts a symbol from `sdk-overengineering-critic` findings, but ONLY if: (a) an entry exists in `runs/<run-id>/design/perf-exceptions.md` declaring the exception at design time, (b) the named bench exists and measurably justifies the complexity, (c) `sdk-profile-auditor` has profile evidence. Guardrail G110 enforces the marker↔perf-exceptions.md pairing. Orphan `[perf-exception:]` markers (no matching entry) = BLOCKER.
 
 ### 30. Incremental Update Support
 Pipeline supports three request modes: A (new package), B (extension), C (incremental update). Mode C uses marker-aware 3-way merge via `sdk-merge-planner`. Existing tests + bench MUST continue passing post-update (G95).
 
 ### 31. MCP Fallback Policy
 Every MCP integration (`mcp__neo4j-memory__*`, `mcp__serena__*`, `mcp__code-graph__*`, `mcp__context7__*`) is an **enhancement, not a correctness dependency**. Guardrail `G04.sh` runs at phase start, verifies each MCP is reachable, and writes a verdict to `runs/<id>/<phase>/mcp-health.md`. On MCP unavailability: agents degrade to existing JSONL / Grep / text-based fallbacks with a WARN log entry. Pipeline NEVER halts on MCP failure. See `.claude/skills/mcp-knowledge-graph/SKILL.md` for the canonical read/write + fallback pattern. See `docs/MCP-INTEGRATION-PROPOSAL.md` for scope + rollout.
+
+### 32. Performance-Confidence Regime
+"Best performance" is uncomputable — the space of equivalent programs is infinite. What the pipeline CAN do is build a falsification regime: if a meaningful perf improvement is available, these gates surface it. Confidence = ∪ of failure modes we actively falsify.
+
+**The seven falsification axes**:
+
+1. **Declaration** — `sdk-perf-architect` writes `design/perf-budget.md` (rule 20) at D1: per-§7-symbol latency p50/p95/p99, allocs/op, throughput, hot-path flag, reference oracle, theoretical floor, big-O complexity, MMD (soak symbols), drift signals. Without a declaration, downstream gates have nothing to falsify against.
+2. **Profile shape (G109)** — `sdk-profile-auditor` at M3.5 reads CPU/heap/block/mutex pprof; top-10 CPU samples must match declared hot paths (coverage ≥0.8); surprise hotspots = BLOCKER. Catches design-reality drift before testing phase.
+3. **Allocation (G104)** — `sdk-profile-auditor` enforces `allocs/op ≤ design budget` from perf-budget.md. Mandatory `b.ReportAllocs()` on every benchmark.
+4. **Complexity (G107)** — `sdk-complexity-devil` at T5 runs a scaling sweep at N ∈ {10, 100, 1k, 10k}, curve-fits, compares to declared big-O. Catches accidental quadratic paths that pass wallclock gates at microbench sizes.
+5. **Regression + Oracle (rule 20 / G108)** — `sdk-benchmark-devil` at T5: regression vs. baseline AND oracle-margin vs. declared reference impl. Oracle breach is not waivable via `--accept-perf-regression`.
+6. **Drift (G106) + MMD (G105)** — `sdk-soak-runner` + `sdk-drift-detector` at T5.5 launch soaks in background (Bash `run_in_background`), poll state files on a ladder, fast-fail on statistically significant positive trend in drift signals. MMD enforces that a soak verdict reflects a long-enough run.
+7. **Profile-backed exceptions (G110)** — the `[perf-exception:]` marker (rule 29) lets impl carry hand-optimized code through the `sdk-overengineering-critic` — but only when paired with a design-time entry in `perf-exceptions.md` AND a profile-auditor-measured benchmark win.
+
+**Interpretation**: the pipeline's perf confidence is exactly the union of these axes. Anything they don't catch is an unknown-unknown. Add a new axis when you identify a failure mode none of the seven catches.
+
+### 33. Verdict Taxonomy — PASS / FAIL / INCOMPLETE
+Three verdicts, not two. An INCOMPLETE verdict is NEVER silently promoted to PASS.
+
+- **PASS** — the gate ran to completion and found no violation. For soak tests, this requires `actual_duration_s ≥ mmd_seconds` from perf-budget.md (G105).
+- **FAIL** — the gate ran and detected a violation (drift, regression, oracle-breach, complexity-mismatch, alloc-over-budget, surprise hotspot). BLOCKER; no auto-merge.
+- **INCOMPLETE** — the gate could not render a verdict: MMD not reached within wallclock cap, too few samples for regression fit, pprof unavailable, harness crashed without writing state. H9 MUST surface INCOMPLETE verdicts explicitly. User chooses: extend window, accept risk with written waiver, or reject. INCOMPLETE never auto-merges.
+
+Wherever a gate historically returned "passed so far" on a timeout, it MUST now return INCOMPLETE. A synchronous Bash tool call hitting the 10-minute ceiling with a running soak = INCOMPLETE, not PASS.
 
 ---
 
@@ -148,7 +188,7 @@ Phase 0.5 Analyze    → (Mode B/C only) snapshot existing API + tests + bench
 Phase 1   Design     → API design + devil review
 Phase 2   Impl       → TDD red/green/refactor/docs (marker-aware)
 Phase 3   Testing    → unit + integration + bench + leak
-Phase 4   Feedback   → metrics + drift + coverage + golden + learning-engine (existing-skill patches only)
+Phase 4   Feedback   → metrics + drift + coverage + learning-engine (existing-skill patches only, per-patch notify)
 ```
 
 HITL gates: H0 (target-dir preflight), H1 (TPRD + manifests acceptance), H5 (design sign-off), H7/H7b (impl sign-off / mid-impl checkpoint), H9 (testing sign-off), H10 (merge verdict). **H2 and H3 removed** (were bootstrap skill/agent approval gates).
@@ -175,7 +215,6 @@ runs/<run-id>/              — Per-run state
   testing/                  — Phase 3 outputs
   feedback/                 — Phase 4 outputs
 baselines/                  — Persistent quality/coverage/perf/skill-health
-golden-corpus/<n>/          — Canonical fixtures
 evolution/                  — Learning-engine state
 state/ownership-cache.json  — Target-SDK-wide marker ownership map
 ```

@@ -1,13 +1,13 @@
 ---
 name: guardrail-validation
-description: Mechanical PASS/FAIL checks at phase exits. Archive's 28 checks extended to G01-G103 including supply-chain (G32-G34), benchmark-regression (G65), marker-ownership (G95-G103), dependency-vetting, and SDK-convention gates. Multi-tenancy checks inverted (now check ABSENCE).
-version: 1.1.0
+description: Mechanical PASS/FAIL checks at phase exits. G01-G110 including supply-chain (G32-G34), benchmark-regression (G65), marker-ownership (G95-G103), dependency-vetting, SDK-convention gates, and the seven perf-confidence gates G104-G110 (alloc-budget, soak-MMD, soak-drift, complexity, oracle-margin, profile-no-surprise, perf-exception pairing). Multi-tenancy checks inverted (now check ABSENCE).
+version: 1.2.0
 created-in-run: bootstrap-seed
 status: stable
-tags: [meta, guardrail, validator, mechanical]
+tags: [meta, guardrail, validator, mechanical, perf-confidence]
 ---
 
-# guardrail-validation (SDK-mode, v1.1.0)
+# guardrail-validation (SDK-mode, v1.2.0)
 
 
 ## Delta  (v1.0.0 -> v1.1.0)
@@ -42,17 +42,36 @@ tags: [meta, guardrail, validator, mechanical]
 | Design | G30–G38 | api.go.stub compile, dep vetting, govulncheck, osv-scanner, license allowlist, semver verdict, convention match |
 | Impl | G40–G52 | no TODO, go build/vet/fmt/staticcheck, godoc, context-first, goroutine-cancellation, Close()-drain |
 | Testing | G60–G69 | race, coverage ≥90%, goleak, flake check, benchmark delta gate, Example_*, no-creds |
-| Feedback | G80–G84 | evolution-report, baselines not lowered, golden regression, evolution-log update, per-run caps |
+| Feedback | G80, G81, G83, G84, G85, G86 | evolution-report, baselines not lowered, evolution-log update, per-run caps, learning-notifications written, quality regression ≥5% cap (tightened post-golden-corpus). G82 (golden regression) retired — replaced by four compensating baselines + G86 (see CLAUDE.md Rule 28). |
 | Meta | G90–G94 | skill-index consistency, empty-evolution-log, deprecated-skill references, CLAUDE.md rule contiguity, determinism |
 | Markers | G95–G103 | MANUAL-byte-preservation, constraint-bench-proof, marker-delete consent, do-not-regenerate hash, stable-since semver, deprecated-in-horizon, no-forged-traces-to |
+| Perf-Confidence | G104–G110 | alloc-budget (G104), soak-MMD (G105), soak-drift (G106), complexity-mismatch (G107), oracle-margin (G108), profile-no-surprise (G109), perf-exception pairing (G110) |
+
+### Perf-Confidence band (G104–G110)
+
+These seven gates collectively enforce CLAUDE.md rule 32 (Performance-Confidence Regime) and rule 33 (Verdict Taxonomy PASS / FAIL / INCOMPLETE).
+
+| ID | Severity | Phase | Owner agent | Script | Check |
+|----|---|---|---|---|---|
+| G104 | BLOCKER | Impl (M3.5) | `sdk-profile-auditor` | `scripts/guardrails/G104-alloc-budget.sh` | For every bench with a declared `allocs_per_op` in `design/perf-budget.md`, measured allocs/op ≤ budget. Reads `-benchmem` output. Mandates `b.ReportAllocs()` on every benchmark. |
+| G105 | BLOCKER(INCOMPLETE-gated) | Testing (T-SOAK) | `sdk-drift-detector` | `scripts/guardrails/G105-soak-mmd.sh` | For every soak-enabled symbol, final `t_elapsed_s` in state.jsonl ≥ `mmd_seconds`. Verdict < MMD = INCOMPLETE (rule 33) — never auto-passes to PASS. |
+| G106 | BLOCKER | Testing (T-SOAK) | `sdk-drift-detector` | `scripts/guardrails/G106-soak-drift.sh` | For every declared drift_signal, linear regression over the soak timeline has slope ≤ 0 OR p-value ≥ 0.05 OR R² ≤ 0.5. Warmup-excluded first 2 minutes. |
+| G107 | BLOCKER | Testing (T5) | `sdk-complexity-devil` | `scripts/guardrails/G107-complexity.sh` | For every symbol with declared `complexity.time` in perf-budget.md, scaling benchmark at N ∈ {10, 100, 1k, 10k} curve-fits to declared or better. Measured > declared = FAIL. |
+| G108 | BLOCKER | Testing (T5) | `sdk-benchmark-devil` | `scripts/guardrails/G108-oracle-margin.sh` | For every symbol with a non-`none` oracle in perf-budget.md, measured p50 ≤ `oracle.measured_p50_us × margin_multiplier`. NOT waivable via `--accept-perf-regression`. |
+| G109 | BLOCKER | Impl (M3.5) | `sdk-profile-auditor` | `scripts/guardrails/G109-profile-no-surprise.sh` | Top-10 CPU samples from pprof ≥ 0.80 coverage over declared hot-path functions. Also flags `runtime.mallocgc` > 15%, `runtime.gcBgMarkWorker` > 10%, unexpected `sync.Mutex.Lock` > 5% on single-threaded paths, unexpected syscalls on non-I/O benches. |
+| G110 | BLOCKER | Impl (M7 + M9) | `sdk-marker-hygiene-devil` | `scripts/guardrails/G110-perf-exception.sh` | Every `[perf-exception: ... bench/X]` marker in source has a matching entry in `design/perf-exceptions.md` with the same bench name. Orphan markers or orphan entries = FAIL. |
+
+### Verdict Taxonomy integration (rule 33)
+
+Any gate that cannot render a decision — pprof unavailable, too few samples (scaling sweep had N=10 only), MMD wallclock cap hit before soak completion, flaky benchmark with variance > 20% at -count=10 — returns verdict **INCOMPLETE**, not PASS. Phase lead surfaces INCOMPLETE verdicts at the applicable HITL gate (H7 for M3.5 gates, H9 for T5 / T-SOAK gates). H9 specifically enumerates INCOMPLETE soak verdicts; user must explicitly extend the run, accept with written waiver, or reject. INCOMPLETE never auto-merges at H10.
 
 ### Script mapping
-`scripts/guardrails/<id>.sh` (or `.go`). Each emits `PASS` / `FAIL:<reason>` exit codes.
+`scripts/guardrails/<id>.sh` (or `.go`). Each emits `PASS` / `FAIL:<reason>` / `INCOMPLETE:<reason>` exit codes (0 / 1 / 2 respectively; INCOMPLETE is new in v1.2.0).
 
 ## When to Activate
 - `mechanical-guardrail-validator` (== `guardrail-validator` agent) at every phase exit
 - Any phase lead before claiming phase-green
-- CI-mode golden run (`--golden-only`) invokes every G-check end-to-end
+- CI-mode full-run invokes every G-check end-to-end
 
 ---
 

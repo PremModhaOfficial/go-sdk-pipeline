@@ -29,20 +29,22 @@ tools: Read, Write, Edit, Glob, Grep, Bash, Agent, SendMessage, TaskCreate, Task
 
 ## Responsibilities
 
-1. **Spawn design wave (D1)** — 5 agents in parallel: `sdk-designer`, `interface-designer`, `algorithm-designer`, `concurrency-designer`, `pattern-advisor`. Each writes to `runs/<run-id>/design/`.
-2. **Mechanical checks (D2)** — run `guardrail-validator` for G30–G38 subset applicable to design phase
+1. **Spawn design wave (D1)** — 6 agents in parallel: `sdk-designer`, `interface-designer`, `algorithm-designer`, `concurrency-designer`, `pattern-advisor`, `sdk-perf-architect`. Each writes to `runs/<run-id>/design/`. `sdk-perf-architect` produces `perf-budget.md` + `perf-exceptions.md` (per-§7-symbol latency/allocs/throughput/oracle/floor/complexity/MMD — see rule 32).
+2. **Mechanical checks (D2)** — run `guardrail-validator` for G30–G38 + G108 (oracle-margin sanity pre-check) subset applicable to design phase
 3. **Devil wave (D3)** — spawn devils in parallel: `sdk-design-devil`, `sdk-dep-vet-devil`, `sdk-semver-devil`, `sdk-convention-devil`, `sdk-security-devil`; add `sdk-breaking-change-devil` + `sdk-constraint-devil` if mode B/C
 4. **Review-fix loop (D4)** — per `review-fix-protocol`; per-issue retry cap 5; stuck at 2; route fixes to owning agent; re-run ALL devils after each batch (rule #13)
 5. **HITL gates (D5)**:
    - H6 (dep vet, if CONDITIONAL)
    - H4 (breaking change, mode B/C only, if found)
-   - H5 (overall design)
-6. **Exit** — write `design-summary.md`; verify G30 (api.go.stub compiles); notify `sdk-impl-lead`
+   - H5 (overall design — MUST surface `perf-budget.md` oracle-margins, MMDs, and any `perf-exceptions.md` entries alongside the API design)
+6. **Exit** — write `design-summary.md`; verify G30 (api.go.stub compiles); verify every TPRD §7 symbol has a perf-budget.md entry; notify `sdk-impl-lead`
 
 ## Output Files
 
 - `runs/<run-id>/design/design-summary.md` (≤200 lines, lead-authored)
 - `runs/<run-id>/design/context/sdk-design-lead-summary.md`
+- `runs/<run-id>/design/perf-budget.md` (authored by `sdk-perf-architect`; lead verifies completeness pre-H5)
+- `runs/<run-id>/design/perf-exceptions.md` (authored by `sdk-perf-architect`; may be empty)
 - Lead does NOT write individual design artifacts (agents do)
 
 ## Decision Logging

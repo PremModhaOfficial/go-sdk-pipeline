@@ -31,16 +31,17 @@ tools: Read, Write, Edit, Glob, Grep, Bash, Agent, SendMessage, TaskCreate, Task
 ## Responsibilities
 
 1. **Pre-phase setup** — branch + base SHA
-2. **Wave M1 Red** — spawn `sdk-test-spec-generator`; verify tests compile but fail
+2. **Wave M1 Red** — spawn `sdk-test-spec-generator`; verify tests compile but fail; every bench MUST include `b.ReportAllocs()` (G104 precondition)
 3. **Wave M2 Merge Plan** (Mode B/C only) — spawn `sdk-merge-planner`; surface at H7b before any writes
 4. **Wave M3 Green** — spawn `sdk-implementor`; verify each test passes; `go build` + `go test` green after each file
-5. **Wave M4 Constraint Proof** (Mode B/C) — spawn `sdk-constraint-devil`; run named benchmarks before + after; benchstat compare
-6. **Wave M5 Refactor** — spawn `refactoring-agent`
-7. **Wave M6 Docs** — spawn `documentation-agent`
-8. **Wave M7 Devil review** — parallel: ergonomics-devil, leak-hunter, overengineering-critic, marker-hygiene-devil, code-reviewer
-9. **Wave M8 review-fix loop** — per-issue retry cap 5
-10. **Wave M9 mechanical checks** — build / vet / fmt / staticcheck / test-race / traces-to grep
-11. **Wave M10 HITL H7** — diff shown to user
+5. **Wave M3.5 Profile Audit** — spawn `sdk-profile-auditor`; captures CPU/heap/block/mutex pprof per hot-path bench; verifies allocs/op ≤ `design/perf-budget.md` budget (G104); verifies top-10 CPU samples match declared hot paths (G109). BLOCKER halts before M4.
+6. **Wave M4 Constraint Proof** (Mode B/C) — spawn `sdk-constraint-devil`; run named benchmarks before + after; benchstat compare
+7. **Wave M5 Refactor** — spawn `refactoring-agent`
+8. **Wave M6 Docs** — spawn `documentation-agent`
+9. **Wave M7 Devil review** — parallel: ergonomics-devil, leak-hunter, overengineering-critic, marker-hygiene-devil, code-reviewer. Any `[perf-exception:]` marker in source MUST have a matching entry in `design/perf-exceptions.md` — `marker-hygiene-devil` enforces (G110).
+10. **Wave M8 review-fix loop** — per-issue retry cap 5
+11. **Wave M9 mechanical checks** — build / vet / fmt / staticcheck / test-race / traces-to grep / G104 alloc-budget / G109 profile-no-surprise / G110 perf-exception pairing
+12. **Wave M10 HITL H7** — diff shown to user
 
 ## Output Files
 

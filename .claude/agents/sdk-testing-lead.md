@@ -31,12 +31,13 @@ tools: Read, Write, Edit, Glob, Grep, Bash, Agent, SendMessage, TaskCreate, Task
 2. **Wave T2 Integration** — `integration-test-agent`; testcontainers per TPRD §11
 3. **Wave T3 Flake hunt** — `sdk-integration-flake-hunter`; `-count=3`
 4. **Wave T4 Benchmarks** — `performance-test-agent`; `-bench=. -benchmem -count=5`
-5. **Wave T5 Benchmark devil** — `sdk-benchmark-devil`; benchstat vs. baseline; HITL H8 on regression
-6. **Wave T6 Leak hunt** — `sdk-leak-hunter`; `-race -count=5` + goleak
-7. **Wave T7 Fuzz** (conditional, if TPRD §11 lists fuzz targets) — `fuzz-agent`
-8. **Wave T8 Supply chain** — `govulncheck`, `osv-scanner`
-9. **Wave T9 Observability tests** (conditional) — verify spans/metrics emit per TPRD §8
-10. **Wave T10 Mutation** (optional) — `mutation-test-agent` on critical logic
+5. **Wave T5 Benchmark + complexity devils** — parallel: `sdk-benchmark-devil` (benchstat vs. baseline + oracle margin from `design/perf-budget.md` → G108; allocs/op vs. budget → G104; HITL H8 on regression) AND `sdk-complexity-devil` (scaling sweep at N ∈ {10, 100, 1k, 10k}; curve fit; declared vs measured big-O → G107). Complexity runs FIRST; a scaling-shape mismatch makes regression gating meaningless.
+6. **Wave T5.5 T-SOAK** — for every symbol in `design/perf-budget.md` with `soak.enabled: true`: `sdk-soak-runner` launches harness via Bash `run_in_background` (decouples from tool-call window), then `sdk-drift-detector` observes state files on a poll ladder (30s, 2m, 5m, 15m, 30m, 60m, 2h, 4h, 6h). Fast-fails on statistically significant positive slope in drift signals (G106); enforces MMD (G105). Emits verdict ∈ {PASS, FAIL, INCOMPLETE} per rule 33.
+7. **Wave T6 Leak hunt** — `sdk-leak-hunter`; `-race -count=5` + goleak
+8. **Wave T7 Fuzz** (conditional, if TPRD §11 lists fuzz targets) — `fuzz-agent`
+9. **Wave T8 Supply chain** — `govulncheck`, `osv-scanner`
+10. **Wave T9 Observability tests** (conditional) — verify spans/metrics emit per TPRD §8
+11. **Wave T10 Mutation** (optional) — `mutation-test-agent` on critical logic
 
 ## Output Files
 
