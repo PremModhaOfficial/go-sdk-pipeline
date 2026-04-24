@@ -1,6 +1,6 @@
 {
   "schema_version": "1.1.0",
-  "pipeline_version": "sdk-pipeline@0.2.0",
+  "pipeline_version": "sdk-pipeline@0.3.0",
   "note": "Superseded by baselines/skill-health-baselines.json as of run sdk-dragonfly-s2 (2026-04-18). This stub retained for backward-compatibility tools scanning the original filename. Authoritative data lives in skill-health-baselines.json.",
   "supersedes_pointer": "baselines/skill-health-baselines.json",
   "deprecated_since_run": "sdk-dragonfly-s2",

@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "pipeline_version": "sdk-pipeline@0.2.0",
+  "pipeline_version": "sdk-pipeline@0.3.0",
   "note": "SDK-mode skill-health baseline per CLAUDE.md Rule #23 and baseline-manager SDK-MODE Delta 2. Tracks longitudinal skill stability under learning-engine body-patch regime (no runtime skill synthesis). First baseline established from sdk-dragonfly-s2 F4a/F4b/F7 signals.",
   "run_id": "sdk-dragonfly-s2",
   "baseline_run": "sdk-dragonfly-s2",

@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "pipeline_version": "sdk-pipeline@0.2.0",
+  "pipeline_version": "sdk-pipeline@0.3.0",
   "note": "Populated after first successful run (sdk-dragonfly-s2, 2026-04-18). Per-agent quality scores from metrics-collector (F1). Never lowered except via explicit learning-engine signoff (resets every 5 runs per settings.json baseline_reset_every_n_runs=5). Raise-only policy: improvements >10% over baseline trigger raise; regressions keep baseline and flag.",
   "pipeline_level": {
     "baseline_pipeline_quality": 0.95,

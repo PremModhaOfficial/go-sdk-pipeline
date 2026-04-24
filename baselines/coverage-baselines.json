@@ -1,6 +1,6 @@
 {
   "schema_version": "1.1.0",
-  "pipeline_version": "sdk-pipeline@0.2.0",
+  "pipeline_version": "sdk-pipeline@0.3.0",
   "note": "Per-package branch coverage + Example_* count baselines. New packages default to 90% branch floor (CLAUDE.md Rule #14). Example count tracked per package as a compensating baseline for retired golden-corpus (Rule 28) — a drop vs baseline with ≥2 prior runs emits a WARN in learning-notifications.md. Raise only if improvement >5%; regressions keep baseline and flag. Reset every 5 runs.",
   "packages": {
     "core/l2cache/dragonfly": {

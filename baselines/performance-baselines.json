@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "pipeline_version": "sdk-pipeline@0.1.0",
+  "pipeline_version": "sdk-pipeline@0.3.0",
   "note": "Per-package benchmark baselines. ns/op + B/op + allocs/op. Regression gates: hot path +5%, shared +10%.",
   "packages": {
     "core/l2cache/dragonfly": {

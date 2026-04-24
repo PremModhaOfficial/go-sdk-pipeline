@@ -137,6 +137,8 @@ The safety net is now the user notification loop backed by **four compensating b
 
 G85 enforces `learning-notifications.md` is written whenever any patch is applied. G86 enforces the quality regression threshold. Signals (1), (2), (4) are WARN-level (H10 reviewer decides); signal (3) is BLOCKER-level once the sample-size precondition is met.
 
+**Drift-prevention gates** (added in v0.3.0 straighten): G06 enforces `pipeline_version` consistency (settings.json is the single source of truth); G90 (tightened to strict equality) enforces `skill-index.json` ↔ filesystem equality; G116 enforces that retired concepts catalogued in `docs/DEPRECATED.md` do not appear in live docs. All three are BLOCKERs at intake — the pipeline refuses to operate on a drifted repo. `scripts/check-doc-drift.sh` runs all three as a standalone sanity pass.
+
 ### 29. Code Provenance Markers
 Markers (`[traces-to:]`, `[constraint:]`, `[stable-since:]`, `[deprecated-in:]`, `[do-not-regenerate]`, `[owned-by:]`, `[perf-exception:]`) are machine-read by `sdk-marker-scanner`. Marker rules:
 
@@ -195,7 +197,7 @@ HITL gates: H0 (target-dir preflight), H1 (TPRD + manifests acceptance), H5 (des
 
 ## Pipeline Versioning
 
-`settings.json` declares `pipeline_version: "0.2.0"`. Every log entry stamps it. Upgrade path: bump semver; record changes in `evolution/evolution-reports/`.
+`settings.json` declares `pipeline_version: "0.3.0"` — the **single source of truth**. Every log entry stamps it; every other file that mentions a pipeline version MUST match. Divergence = drift (guardrail G06 enforces at intake). Upgrade path: bump semver in `.claude/settings.json`; propagate to all consumers in the same PR; record changes in `evolution/evolution-reports/pipeline-v<X.Y.Z>.md`.
 
 ## Directory Reference
 

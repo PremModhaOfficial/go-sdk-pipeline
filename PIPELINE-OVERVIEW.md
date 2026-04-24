@@ -1,9 +1,9 @@
 # motadata-sdk-pipeline — Executive Overview
 
 > **Audience**: CXO + Tech Leads
-> **Version**: 0.2.0
-> **Date**: 2026-04-18
-> **Status**: Production-ready for first NFR-driven SDK addition
+> **Version**: 0.3.0
+> **Date**: 2026-04-24
+> **Status**: Production-ready — MCP-enhanced knowledge graph, perf-confidence regime, compensating-baseline safety net, deterministic-first reviewer gate
 
 ---
 
@@ -29,8 +29,8 @@ We split SDK development into two distinct activities, each played to its streng
 
 | Human strength | Pipeline strength |
 |---|---|
-| Defining what the API should do (TPRD) | Implementing it consistently (35+ agents, 40+ skills) |
-| Making policy decisions (skill authorship, breaking-change verdicts) | Mechanical conformance (38 guardrail scripts, 7 quality gates) |
+| Defining what the API should do (TPRD) | Implementing it consistently (38 agents, 41 skills) |
+| Making policy decisions (skill authorship, breaking-change verdicts) | Mechanical conformance (52 guardrail scripts, 7 falsification axes for perf, 7 quality gates) |
 | Reviewing the diff | Producing the diff (TDD, marker-aware merge, devil reviews) |
 | Owning architecture | Owning consistency |
 
@@ -120,12 +120,12 @@ Effects materialize in subsequent runs. A pattern observed in Dragonfly + S3 (2-
 | Component | Count | Purpose |
 |---|---:|---|
 | Phases | **5** | Intake, Design, Impl, Testing, Feedback (+ 0.5 for Mode B/C) |
-| Agents | **34** | 5 leads, 13 devils, 4 Mode B/C helpers, 11 ported feedback-track |
-| Skills | **40** | 19 SDK-native + 21 generic Go/test/observability |
-| Guardrail scripts | **38** | Mechanical pass/fail checks across all phases |
+| Agents | **38** | 5 leads, 13 devils, 5 perf/drift specialists, 4 Mode B/C helpers, 11 ported feedback-track |
+| Skills | **41** | 20 SDK-native + 21 generic Go/test/meta/observability/mcp (see `.claude/skills/skill-index.json` for the live list) |
+| Guardrail scripts | **52** | Mechanical pass/fail checks across all phases (catalog IDs G01–G116) |
 | HITL gates | **7** | Explicit human approval at every transition |
 | Slash commands | **2** | `/run-sdk-addition`, `/preflight-tprd` |
-| Baselines | **6** | Quality, coverage, performance, skill-health, marker-hashes, stable-signatures |
+| Baselines | **10** | Quality, coverage, performance, skill-health, skill-health-baselines, marker-hashes, stable-signatures, output-shape-history, devil-verdict-history, baseline-history |
 
 ### Phase responsibilities
 
@@ -156,6 +156,16 @@ Effects materialize in subsequent runs. A pattern observed in Dragonfly + S3 (2-
 | `sdk-constraint-devil` | Unproven `[constraint:]` claims |
 | `sdk-breaking-change-devil` | Mode B/C signature changes (no semver bump) |
 
+### Perf / drift specialists (rules 32 + 33)
+
+| Agent | Role |
+|---|---|
+| `sdk-perf-architect` | Authors `design/perf-budget.md` at D1 — per-symbol p50/p95/p99, allocs/op, big-O, oracle, MMD, drift signals |
+| `sdk-profile-auditor` | At M3.5: reads CPU/heap/block/mutex pprof; enforces G104 alloc budget + G109 profile-shape coverage (≥0.8 match to declared hot paths) |
+| `sdk-complexity-devil` | At T5: scaling sweep at N ∈ {10, 100, 1k, 10k}; curve-fits and enforces G107 big-O match |
+| `sdk-soak-runner` | At T5.5: launches soaks in background, polls state files on a ladder; enforces G105 MMD (minimum-measurable-duration) |
+| `sdk-drift-detector` | At T5.5: fast-fail on statistically significant positive trend in drift signals (G106) |
+
 ---
 
 ## 8. Quality Contract
@@ -168,11 +178,18 @@ The TPRD declares numeric gates. The pipeline enforces them.
 | Existing-package coverage delta (Mode B/C) | **≥ 0** | G60 |
 | Bench regression — new-package hot path | > **5%** = BLOCKER | TPRD §10 + G65 |
 | Bench regression — shared path | > **10%** = BLOCKER | G65 |
+| Alloc budget (per symbol) | measured ≤ declared | G104 |
+| Big-O complexity match | curve-fit ≤ declared | G107 |
+| Oracle margin | p50 ≤ `margin × reference impl` | G108 (not waivable via `--accept-perf-regression`) |
+| Profile-shape coverage | top-10 CPU samples ≥ 0.8 match to declared hot paths | G109 |
+| Soak MMD | `actual_duration_s ≥ mmd_seconds` or verdict = INCOMPLETE | G105 |
+| Drift trend | no statistically significant positive trend on declared drift signals | G106 |
 | `goleak.VerifyTestMain` | clean | G63 |
 | `govulncheck` HIGH/CRITICAL | **0** | G32 |
 | `osv-scanner` HIGH/CRITICAL | **0** | G33 |
 | Dep license | Allowlist (MIT, Apache-2.0, BSD, ISC, 0BSD, MPL-2.0) | G34 |
 | Determinism (same TPRD + seed) | Byte-equivalent | CLAUDE.md rule 25 |
+| Quality regression (cross-run) | ≤ **5%** per-agent `quality_score` once ≥3 prior runs | G86 |
 
 **Override**: `--accept-perf-regression <pct>` on the run command (logged + flagged for review).
 
@@ -186,7 +203,11 @@ The TPRD declares numeric gates. The pipeline enforces them.
 | Target-dir discipline (G07) | Writes only to `$SDK_TARGET_DIR` + `runs/` |
 | `--dry-run` mode | Halts before any target-dir write; emits `preview.md` |
 | Marker protocol (G95–G103) | `[owned-by: MANUAL]` symbols byte-hash-checked; pipeline cannot modify them |
-| Golden-corpus regression | Any skill patch must pass canonical fixtures or auto-revert |
+| Compensating baselines × 4 (rule 28) | Output-shape hash + devil-verdict stability + tightened 5% quality threshold (G86) + `Example_*` count per package — replaces retired golden-corpus gate |
+| Learning-notifications loop (G85) | Every learning-engine patch emits a line to `learning-notifications.md`; user reviews at H10 and may revert per-patch |
+| Deterministic-first reviewer gate (rule 13) | Reviewer fleet only re-runs on iterations where build/vet/fmt/staticcheck/`-race`/goleak/vuln/osv/marker-hash/constraint-bench/license are green |
+| MCP health check (G04) | WARN-only; writes `runs/<id>/<phase>/mcp-health.md`; pipeline never halts on MCP failure (rule 31) |
+| Doc-drift gate (G06 + G90 + G116 + check-doc-drift.sh) | Intake refuses to run on a drifted repo: `pipeline_version` consistency, skill-index ↔ filesystem equality, retired-term registry enforcement |
 | Per-phase token + wall-clock budget | Soft cap → WARN; hard cap → user confirms |
 | HITL gates × 7 | Every phase transition requires human approval (or explicit timeout policy) |
 | Decision log | Every agent action JSONL-appended; full audit trail per run |
@@ -224,6 +245,11 @@ After every Phase 4:
     raise quality bar if improved >10%
     keep on regression (never lower)
     full reset every 5 runs
+    update 4 compensating baselines (rule 28):
+      - output-shape-history.jsonl        (⚠ shape-churn WARN on skill-patched runs)
+      - devil-verdict-history.jsonl       (⚠ devil-regression WARN on ≥20pp jump)
+      - quality regression (G86, BLOCKER) (≥5% delta with ≥3 prior runs)
+      - Example_* count per package       (⚠ example-drop WARN on drop with ≥2 prior runs)
 ```
 
 | Self-improvement cap | Value | Why |
@@ -233,7 +259,8 @@ After every Phase 4:
 | Prompt patches per run | ≤ 10 | Bounded surface area |
 | Existing-skill body patches per run | ≤ 3 | Avoid skill-churn destabilizing pipeline |
 | New skills / agents / guardrails per run | **0** | Strictly human-PR-only |
-| Golden-corpus gate | required | Auto-revert any patch that breaks fixtures |
+| Learning-notifications (G85) | required per patch | User reviews at H10, may revert |
+| Quality regression (G86) | BLOCKER at 5% once ≥3 prior runs | Tightened from 10% with retirement of golden-corpus |
 | Baseline reset | every 5 runs | Re-anchor to current performance |
 
 ---
@@ -268,6 +295,34 @@ If Neo4j is unreachable, every affected agent falls back to the existing JSONL u
 | 0.5.0 | context7 at Intake + Design for current library docs |
 
 See `docs/MCP-INTEGRATION-PROPOSAL.md` for the full proposal.
+
+---
+
+## 11a. Performance-Confidence Regime (rules 32 + 33)
+
+"Best performance" is uncomputable — the space of equivalent programs is infinite. What the pipeline can do is build a **falsification regime**: if a meaningful perf improvement is available, these gates surface it. Confidence = ∪ of failure modes actively falsified.
+
+### Seven falsification axes
+
+| # | Axis | When | Agent | Gate |
+|---|---|---|---|---|
+| 1 | **Declaration** | D1 | `sdk-perf-architect` | `design/perf-budget.md` exists; per-§7 symbol p50/p95/p99, allocs/op, big-O, oracle, MMD, drift signals |
+| 2 | **Profile shape** | M3.5 | `sdk-profile-auditor` | G109 — top-10 CPU samples match declared hot paths (coverage ≥ 0.8) |
+| 3 | **Allocation** | M3.5 | `sdk-profile-auditor` | G104 — measured `allocs/op` ≤ declared budget |
+| 4 | **Complexity** | T5 | `sdk-complexity-devil` | G107 — scaling sweep at N ∈ {10, 100, 1k, 10k}; curve-fit ≤ declared big-O |
+| 5 | **Regression + Oracle** | T5 | `sdk-benchmark-devil` | G65 regression + G108 oracle margin (oracle not waivable via `--accept-perf-regression`) |
+| 6 | **Drift + MMD** | T5.5 | `sdk-soak-runner` + `sdk-drift-detector` | G106 drift fail-fast + G105 MMD satisfied or verdict = INCOMPLETE |
+| 7 | **Profile-backed exceptions** | design + impl | `sdk-overengineering-critic` | G110 — `[perf-exception: ... bench/X]` marker requires design-time entry in `perf-exceptions.md` AND profile-auditor-measured win |
+
+### Verdict taxonomy (rule 33)
+
+Three verdicts, not two. `INCOMPLETE` is never silently promoted to `PASS`.
+
+- **PASS** — gate ran to completion; no violation. For soaks requires `actual_duration_s ≥ mmd_seconds`.
+- **FAIL** — gate detected a violation (drift, regression, oracle breach, complexity mismatch, alloc over budget, surprise hotspot). BLOCKER.
+- **INCOMPLETE** — gate could not render a verdict (MMD not reached, too few samples, pprof unavailable, harness crashed). Surfaced explicitly at H9. User chooses: extend window, accept risk with written waiver, or reject. Never auto-merges.
+
+Any gate that historically returned "passed so far" on timeout now returns INCOMPLETE.
 
 ---
 
@@ -430,8 +485,12 @@ quality_score = completeness         × 0.20
 | **Mode C** | Incremental update to existing package |
 | **HITL gate** | Human-in-the-Loop approval point between phases |
 | **Devil agent** | Read-only adversarial reviewer (security, semver, dep-vet, etc.) |
-| **Marker protocol** | Code annotations (`[traces-to:]`, `[owned-by:]`, `[constraint:]`) that drive provenance + safety checks |
-| **Golden corpus** | Canonical fixtures regressed against on every learning-engine patch |
+| **Marker protocol** | Code annotations (`[traces-to:]`, `[owned-by:]`, `[constraint:]`, `[perf-exception:]`) that drive provenance + safety checks |
+| **Compensating baselines** | Four cross-run baselines that replaced golden-corpus (rule 28): output-shape hash, devil-verdict stability, tightened quality threshold, example-count |
+| **Deterministic-first gate** | Rule 13: reviewer fleet only re-runs on iterations where build/vet/fmt/staticcheck/-race/goleak/vuln/osv/marker-hash/constraint-bench/license are green |
+| **Oracle margin** | Declared `margin × reference impl p50` tolerance in `perf-budget.md` (G108) — not waivable via `--accept-perf-regression` |
+| **MMD** | Minimum-measurable-duration for soak verdicts (G105) |
+| **Verdict taxonomy** | PASS / FAIL / INCOMPLETE (rule 33) — timeouts yield INCOMPLETE, never silently promoted |
 | **Skill-candidate** | Draft skill awaiting human PR review (cannot be auto-promoted) |
 
 ---
@@ -440,8 +499,12 @@ quality_score = completeness         × 0.20
 
 - `LIFECYCLE.md` — operator's manual (this is its complement)
 - `improvements.md` — what we built on top of the reference fleet
-- `CLAUDE.md` — agent fleet rules (30+ rules)
+- `CLAUDE.md` — agent fleet rules (33 rules)
 - `AGENTS.md` — full agent ownership matrix
+- `docs/MCP-INTEGRATION-PROPOSAL.md` — scope + rollout of neo4j-memory, Serena, code-graph, context7
+- `docs/NEO4J-KNOWLEDGE-GRAPH.md` — graph schema + canonical Cypher
+- `docs/DEPRECATED.md` — retirement registry (concepts + commit + replacement)
+- `evolution/evolution-reports/pipeline-v0.3.0.md` — current release notes
 - `phases/*-PHASE.md` — per-phase contracts
 - `commands/run-sdk-addition.md` — slash command spec
 - `commands/preflight-tprd.md` — risk-free TPRD validation spec

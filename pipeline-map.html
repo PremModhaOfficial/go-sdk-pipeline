@@ -1,8 +1,19 @@
 <!doctype html>
+<!--
+  KNOWN-STALE: manually maintained; canonical counts and current state live elsewhere.
+  Single sources of truth:
+    - pipeline_version → .claude/settings.json
+    - agent list      → .claude/agents/
+    - skill list      → .claude/skills/skill-index.json
+    - guardrail list  → scripts/guardrails/
+    - retired concepts → docs/DEPRECATED.md
+  Do not trust counts or version strings in this file — regenerate by hand when they matter.
+  Drift check runs at intake via scripts/check-doc-drift.sh.
+-->
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>motadata-sdk-pipeline — Interactive Map</title>
+<title>motadata-sdk-pipeline — Interactive Map (known-stale; see canonical sources)</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
 :root{

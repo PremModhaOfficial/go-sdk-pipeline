@@ -22,7 +22,7 @@ What this NFR-driven pipeline adds on top of the original SaaS multi-agent fleet
 | **NFR-driven framing** | TPRD §5 NFR + §10 Perf Targets + §11 Bench are first-class numeric gates | Quality is a contract, not afterthought |
 | **Per-skill versioning** | `version: X.Y.Z` frontmatter + `evolution-log.md` sibling | Every skill change is auditable |
 | **Human-only skill authorship** | `learning-engine` patches existing bodies only; never creates new SKILL.md | New skills require human PR |
-| **Pipeline versioning** | `pipeline_version: 0.2.0` stamped on every log entry + run | Cross-run reproducibility anchor |
+| **Pipeline versioning** | `pipeline_version: 0.3.0` stamped on every log entry + run | Cross-run reproducibility anchor |
 | **Supply-chain gate** | `govulncheck` + `osv-scanner` + license allowlist (G32–G34) | No vulnerable / unfree deps |
 | **Two slash commands** | `/run-sdk-addition`, `/preflight-tprd` | Single entry point + risk-free check |
 
@@ -33,17 +33,17 @@ What this NFR-driven pipeline adds on top of the original SaaS multi-agent fleet
 | Item | Reference fleet (approx) | SDK pipeline | Δ |
 |---|---:|---:|---:|
 | Phases | 4 (architecture, detailed-design, implementation, testing) | **5** (intake + 0.5 + design + impl + testing + feedback) | +1 + intake/feedback re-scoped |
-| Agents | 11 ported | **34** | **+23 new SDK-specific** |
-| Skills | 21 ported | **40** + 8 candidates | **+19 new** |
-| Guardrails | 28 checks | **38** scripts (G01–G103 catalog) | +10 implemented; catalog grew by ~75 |
+| Agents | 11 ported | **38** | **+27 new SDK-specific** (23 v0.2.0 + 5 v0.3.0 perf/drift) |
+| Skills | 21 ported | **41** (20 SDK-native + 21 generic/meta/mcp) | **+20 new** |
+| Guardrails | 28 checks | **52** scripts (G01–G116 catalog) | +24 implemented; catalog grew significantly |
 | Slash commands | n/a (microservice flow) | **2** | +2 |
 | HITL gates | broader, less explicit | **7** explicit (H0/H1/H5/H7/H7b/H9/H10) | restructured |
 | Per-run scratch dirs | 1 | **6** (`intake/extension/design/impl/testing/feedback`) | structured |
-| Baseline files | 3 (quality, coverage, perf) | **6** (+ skill-health, do-not-regenerate-hashes, stable-signatures) | +3 |
+| Baseline files | 3 (quality, coverage, perf) | **10** (+ skill-health, skill-health-baselines, do-not-regenerate-hashes, stable-signatures, output-shape-history, devil-verdict-history, baseline-history) | +7 |
 
 ---
 
-## NEW agents (23 SDK-specific, all written from scratch)
+## NEW agents (27 SDK-specific, all written from scratch)
 
 | Group | Agents | Count |
 |---|---|---:|
@@ -51,31 +51,45 @@ What this NFR-driven pipeline adds on top of the original SaaS multi-agent fleet
 | **Design devils** | `sdk-design-devil`, `sdk-dep-vet-devil`, `sdk-semver-devil`, `sdk-convention-devil`, `sdk-security-devil`, `sdk-api-ergonomics-devil`, `sdk-overengineering-critic` | 7 |
 | **Impl devils** | `sdk-marker-hygiene-devil`, `sdk-constraint-devil`, `sdk-leak-hunter` | 3 |
 | **Testing devils** | `sdk-benchmark-devil`, `sdk-integration-flake-hunter` | 2 |
-| **Feedback monitors** | `sdk-skill-drift-detector`, `sdk-skill-coverage-reporter`, `sdk-golden-regression-runner` | 3 |
+| **Feedback monitors** | `sdk-skill-drift-detector`, `sdk-skill-coverage-reporter`, `sdk-golden-regression-runner` (retired; see DEPRECATED.md) | 2 active |
 | **Mode B/C helpers** | `sdk-existing-api-analyzer`, `sdk-marker-scanner`, `sdk-merge-planner`, `sdk-breaking-change-devil` | 4 |
+| **Perf / drift specialists (v0.3.0)** | `sdk-perf-architect`, `sdk-profile-auditor`, `sdk-complexity-devil`, `sdk-soak-runner`, `sdk-drift-detector` | 5 |
 
 (Reference-fleet ports retained: `learning-engine`, `improvement-planner`, `baseline-manager`, `metrics-collector`, `phase-retrospector`, `root-cause-tracer`, `defect-analyzer`, `refactoring-agent`, `documentation-agent`, `code-reviewer`, `guardrail-validator` — 11 ported.)
 
 ---
 
-## NEW skills (19 SDK-native, all written from scratch)
+## NEW skills (20 SDK-native written from scratch + 1 MCP integration)
+
+All 19 `sdk_native` entries shipped as skeleton placeholders in v0.2.0 (frontmatter + "synthesize on Phase -1 use" body text). Phase -1 was removed in commit `b28405a` before those bodies were ever synthesized, leaving the skills as non-functional stubs that passed `G23` (skill-index name match) but contributed nothing at runtime. **v0.3.0 straighten authored the real body for all 19 in a single pass** (commit range listed in `evolution/evolution-reports/pipeline-v0.3.0.md`). Each is now `version: 1.0.0 status: stable authored-in: v0.3.0-straighten` with ≥3 GOOD + ≥3 BAD code examples drawn from the target SDK, decision criteria, cross-references, and guardrail hooks.
 
 | Domain | Skills | Count |
 |---|---|---:|
-| **SDK conventions** | `sdk-config-struct-pattern`, `sdk-otel-hook-integration`, `sdk-marker-protocol`, `sdk-semver-governance` | 4 |
-| **Client patterns** | `network-error-classification`, `client-shutdown-lifecycle`, `client-tls-configuration`, `credential-provider-pattern`, `client-rate-limiting`, `client-mock-strategy` | 6 |
-| **Resilience** | `circuit-breaker-policy`, `idempotent-retry-safety`, `backpressure-flow-control`, `context-deadline-patterns` | 4 |
-| **Pool / leak / perf** | `connection-pool-tuning`, `goroutine-leak-prevention` | 2 |
-| **Supply chain / docs** | `go-dependency-vetting`, `go-example-function-patterns`, `api-ergonomics-audit` | 3 |
+| **SDK conventions** | `sdk-config-struct-pattern`†, `sdk-otel-hook-integration`†, `sdk-marker-protocol`†, `sdk-semver-governance`† | 4 |
+| **Client patterns** | `network-error-classification`†, `client-shutdown-lifecycle`†, `client-tls-configuration`†, `credential-provider-pattern`†, `client-rate-limiting`†, `client-mock-strategy`† | 6 |
+| **Resilience** | `circuit-breaker-policy`†, `idempotent-retry-safety`†, `backpressure-flow-control`†, `context-deadline-patterns`† | 4 |
+| **Pool / leak / perf** | `connection-pool-tuning`†, `goroutine-leak-prevention`† | 2 |
+| **Supply chain / docs** | `go-dependency-vetting`†, `go-example-function-patterns`†, `api-ergonomics-audit`† | 3 |
+
+† All 19 authored in v0.3.0 straighten (2026-04-24). Prior to that, each file contained only the bootstrap-seed skeleton "will be synthesized on first Phase -1 use" — drift since Phase -1 removal in commit `b28405a`. The straighten pass replaced each skeleton with a real body backed by code read from `motadata-go-sdk/src/motadatagosdk/`.
+
+### v0.3.0 skill additions
+
+| Domain | Skills | Count |
+|---|---|---:|
+| **MCP integration (v0.3.0)** | `mcp-knowledge-graph` | 1 |
+| **Updated for v0.3.0** | `environment-prerequisites-check` (v1.0.0 → v1.1.0 — MCP reachability probe) | 1 |
 
 ---
 
-## NEW guardrails (10 implemented + ~75 catalog entries new)
+## NEW guardrails (23 implemented + ~75 catalog entries new)
 
 | ID | Phase | What it checks |
 |---|---|---|
 | G02 | universal | decision-log entry-limit |
 | G03 | universal | run-manifest schema |
+| **G04** | universal | MCP health check (WARN-only; writes `mcp-health.md`) (v0.3.0) |
+| **G06** | intake | `pipeline_version` consistency across repo (v0.3.0 straighten) |
 | G07 | impl | target-dir discipline |
 | G20–G24 | intake | TPRD completeness, Non-Goals, clarification info, **Skills-Manifest**, **Guardrails-Manifest** |
 | G32, G33, G34 | design | govulncheck, osv-scanner, license allowlist |
@@ -84,10 +98,20 @@ What this NFR-driven pipeline adds on top of the original SaaS multi-agent fleet
 | G63 | testing | `goleak.VerifyTestMain` clean |
 | G65 | testing | bench regression (>5% hot / >10% shared) |
 | G69 | testing | credential hygiene |
-| G82 | feedback | golden-corpus regression PASS |
-| G90 | meta | skill-index ↔ filesystem consistency |
+| G82 | feedback | golden-corpus regression PASS (retired in v0.3.0; see DEPRECATED.md) |
+| **G85** | feedback | `learning-notifications.md` written on any patch (v0.3.0) |
+| **G86** | feedback | quality regression BLOCKER at 5% once ≥3 prior runs (v0.3.0) |
+| G90 | meta | skill-index ↔ filesystem **strict equality** (tightened v0.3.0) |
 | G93 | meta | settings.json schema |
 | **G95–G103** | impl | **complete marker-protocol enforcement** (9 checks) |
+| **G104** | testing | alloc budget — measured `allocs/op` ≤ declared (v0.3.0) |
+| **G105** | testing | soak MMD — `actual_duration_s ≥ mmd_seconds` or INCOMPLETE (v0.3.0) |
+| **G106** | testing | drift fail-fast — no positive trend on declared signals (v0.3.0) |
+| **G107** | testing | big-O scaling match at N ∈ {10, 100, 1k, 10k} (v0.3.0) |
+| **G108** | testing | oracle margin — p50 ≤ `margin × reference impl`; not waivable (v0.3.0) |
+| **G109** | impl | profile-shape — top-10 CPU samples ≥ 0.8 match hot paths (v0.3.0) |
+| **G110** | impl | `[perf-exception:]` marker ↔ `perf-exceptions.md` pairing (v0.3.0) |
+| **G116** | intake | retired-term scanner — DEPRECATED.md terms absent from live docs (v0.3.0 straighten) |
 
 ---
 

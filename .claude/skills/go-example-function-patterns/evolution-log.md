@@ -1,12 +1,5 @@
-# Evolution Log — go-example-function-patterns
+# Evolution log
 
-## 0.1.0 — bootstrap-seed — 2026-04-17
-Skeleton created. Full body to be synthesized by `sdk-skill-synthesizer` on first Phase -1 use.
+## v1.0.0 — 2026-04-24 (pipeline v0.3.0 straighten)
 
-## 0.1.1 — sdk-dragonfly-s2 — 2026-04-18
-Triggered by: COV TRIGGERS-GAP (sdk-skill-coverage-reporter F4).
-Change: Added trigger-keywords frontmatter field with activation phrases `ExampleCache_`, `godoc example`, `Example_ function`, `docs wave`. No body change (skill remains `draft` pending human synthesis); patch-level (trigger expansion only).
-Devil verdict: auto-accept for patch-level trigger expansion on a draft skill (no semantic change; body unchanged; status preserved as draft).
-Applied by: learning-engine (F7).
-Pipeline version: 0.2.0.
-Note: Phase -1 bootstrap has been removed from pipeline v0.2.0 per CLAUDE.md; this skill's body must now be authored by a human PR (Rule #23) rather than synthesized by `sdk-skill-synthesizer`. The trigger-keywords will activate the draft skill's activation surface for matching contexts; downstream agents should treat the draft body as advisory.
+Initial authored body. Prior state was a `bootstrap-seed` skeleton containing placeholder text ("will be synthesized on first Phase -1 use"). Phase -1 was removed in commit `b28405a`, leaving the file as a non-functional placeholder. This release authors the real body from target SDK conventions + relevant community Go patterns + the devil agents this skill pairs with.

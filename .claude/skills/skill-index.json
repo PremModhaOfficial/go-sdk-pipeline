@@ -1,6 +1,6 @@
 {
   "schema_version": "1.1.0",
-  "pipeline_version": "0.2.0",
+  "pipeline_version": "0.3.0",
   "generated_by": "manual-authorship",
   "note": "Static, human-curated catalog. Updated manually in the same PR that adds/removes a SKILL.md. No runtime synthesis; no auto-rebuild.",
   "skills": {
@@ -48,7 +48,8 @@
       { "name": "api-ergonomics-audit", "version": "1.0.0", "status": "stable" },
       { "name": "client-mock-strategy", "version": "1.0.0", "status": "stable" },
       { "name": "go-example-function-patterns", "version": "1.0.0", "status": "stable" },
-      { "name": "circuit-breaker-policy", "version": "1.0.0", "status": "stable" }
+      { "name": "circuit-breaker-policy", "version": "1.0.0", "status": "stable" },
+      { "name": "mcp-knowledge-graph", "version": "1.0.0", "status": "stable", "added_in": "0.3.0", "note": "Canonical read/write + fallback pattern for MCP-aware agents (neo4j-memory). Pipeline never halts on MCP failure; JSONL fallback preserved per CLAUDE.md rule 31." }
     ]
   },
   "tags_index": {
@@ -59,6 +60,7 @@
     "resilience": ["circuit-breaker-policy", "idempotent-retry-safety", "backpressure-flow-control", "context-deadline-patterns"],
     "observability": ["otel-instrumentation", "sdk-otel-hook-integration"],
     "markers": ["sdk-marker-protocol"],
-    "meta": ["decision-logging", "review-fix-protocol", "lifecycle-events", "context-summary-writing", "conflict-resolution", "feedback-analysis", "guardrail-validation", "spec-driven-development", "environment-prerequisites-check", "api-ergonomics-audit"]
+    "mcp": ["mcp-knowledge-graph"],
+    "meta": ["decision-logging", "review-fix-protocol", "lifecycle-events", "context-summary-writing", "conflict-resolution", "feedback-analysis", "guardrail-validation", "spec-driven-development", "environment-prerequisites-check", "api-ergonomics-audit", "mcp-knowledge-graph"]
   }
 }
