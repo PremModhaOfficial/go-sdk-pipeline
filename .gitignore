@@ -21,3 +21,9 @@ runs/archive/
 # OS
 .DS_Store
 Thumbs.db
+
+# Compiled AST-hash backend binaries (rebuildable from *.go sources; ~7MB total)
+scripts/ast-hash/go-backend
+scripts/ast-hash/go-symbols
+packs/*/ast-hash-backend
+packs/*/symbols-backend
