@@ -1,0 +1,119 @@
+{
+  "schema_version": "1.0.0",
+  "name": "go",
+  "version": "1.0.0",
+  "type": "language-adapter",
+  "description": "Go SDK pipeline adapter for motadatagosdk. Target: Go 1.26 module motadatagosdk.",
+  "depends": ["shared-core@>=1.0.0"],
+  "pipeline_version_compat": ">=0.4.0",
+
+  "agents": [
+    "code-reviewer",
+    "documentation-agent",
+    "refactoring-agent",
+    "sdk-api-ergonomics-devil",
+    "sdk-benchmark-devil",
+    "sdk-breaking-change-devil",
+    "sdk-complexity-devil",
+    "sdk-constraint-devil",
+    "sdk-convention-devil",
+    "sdk-dep-vet-devil",
+    "sdk-existing-api-analyzer",
+    "sdk-integration-flake-hunter",
+    "sdk-leak-hunter",
+    "sdk-perf-architect",
+    "sdk-profile-auditor",
+    "sdk-soak-runner"
+  ],
+
+  "skills": [
+    "backpressure-flow-control",
+    "circuit-breaker-policy",
+    "client-mock-strategy",
+    "client-rate-limiting",
+    "client-shutdown-lifecycle",
+    "client-tls-configuration",
+    "connection-pool-tuning",
+    "context-deadline-patterns",
+    "credential-provider-pattern",
+    "fuzz-patterns",
+    "go-concurrency-patterns",
+    "go-dependency-vetting",
+    "go-error-handling-patterns",
+    "go-example-function-patterns",
+    "go-hexagonal-architecture",
+    "go-module-paths",
+    "go-struct-interface-design",
+    "goroutine-leak-prevention",
+    "mock-patterns",
+    "otel-instrumentation",
+    "sdk-config-struct-pattern",
+    "sdk-otel-hook-integration",
+    "table-driven-tests",
+    "testcontainers-setup",
+    "testing-patterns"
+  ],
+
+  "guardrails": [
+    "G30",
+    "G31",
+    "G32",
+    "G33",
+    "G34",
+    "G38",
+    "G40",
+    "G41",
+    "G42",
+    "G43",
+    "G48",
+    "G60",
+    "G61",
+    "G63",
+    "G65",
+    "G95",
+    "G96",
+    "G97",
+    "G98",
+    "G99",
+    "G100",
+    "G101",
+    "G102",
+    "G103",
+    "G104",
+    "G105",
+    "G106",
+    "G107",
+    "G108",
+    "G109",
+    "G110"
+  ],
+
+  "toolchain": {
+    "build": "go build ./...",
+    "test": "go test ./... -race -count=1",
+    "lint": "golangci-lint run",
+    "vet": "go vet ./...",
+    "fmt": "gofmt -l .",
+    "coverage": "go test ./... -coverprofile=coverage.out",
+    "coverage_min_pct": 90,
+    "bench": "go test -bench=. -benchmem -count=10",
+    "supply_chain": ["govulncheck ./...", "osv-scanner --recursive ."],
+    "leak_check": "goleak.VerifyTestMain"
+  },
+
+  "file_extensions": [".go"],
+
+  "marker_comment_syntax": {
+    "line": "//",
+    "block_open": "/*",
+    "block_close": "*/"
+  },
+
+  "module_file": "go.mod",
+
+  "notes": {
+    "pass_scope": "v0.4.0 scaffolding — structure only. No runtime consumer reads this file yet. Dispatch refactor deferred.",
+    "perf_regime_ownership": "G104-G110 (perf-confidence regime, rules 32/33) and their owner agents (sdk-perf-architect, sdk-profile-auditor, sdk-complexity-devil, sdk-soak-runner, sdk-benchmark-devil) all live here. They reference Go-specific tooling (pprof, allocs/op from go test -benchmem, goleak). When a second language adapter is authored, equivalent gates + agents go in that adapter.",
+    "marker_protocol_ownership": "G95-G103 (marker protocol) live here because byte-hash semantics depend on source-byte offsets, which are currently Go-specific. The sdk-marker-protocol skill and sdk-marker-scanner/sdk-marker-hygiene-devil agents stay in shared-core (generalize); the enforcement scripts stay in go (language-specific AST)."
+  }
+}

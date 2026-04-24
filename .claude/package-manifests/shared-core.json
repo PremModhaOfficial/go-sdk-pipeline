@@ -1,0 +1,99 @@
+{
+  "schema_version": "1.0.0",
+  "name": "shared-core",
+  "version": "1.0.0",
+  "type": "core",
+  "description": "Language-agnostic orchestration, meta-skills, governance. Any language adapter depends on this.",
+  "depends": [],
+  "pipeline_version_compat": ">=0.4.0",
+
+  "agents": [
+    "baseline-manager",
+    "defect-analyzer",
+    "guardrail-validator",
+    "improvement-planner",
+    "learning-engine",
+    "metrics-collector",
+    "phase-retrospector",
+    "root-cause-tracer",
+    "sdk-design-devil",
+    "sdk-design-lead",
+    "sdk-drift-detector",
+    "sdk-impl-lead",
+    "sdk-intake-agent",
+    "sdk-marker-hygiene-devil",
+    "sdk-marker-scanner",
+    "sdk-merge-planner",
+    "sdk-overengineering-critic",
+    "sdk-security-devil",
+    "sdk-semver-devil",
+    "sdk-skill-coverage-reporter",
+    "sdk-skill-drift-detector",
+    "sdk-testing-lead"
+  ],
+
+  "skills": [
+    "api-ergonomics-audit",
+    "conflict-resolution",
+    "context-summary-writing",
+    "decision-logging",
+    "environment-prerequisites-check",
+    "feedback-analysis",
+    "guardrail-validation",
+    "idempotent-retry-safety",
+    "lifecycle-events",
+    "mcp-knowledge-graph",
+    "network-error-classification",
+    "review-fix-protocol",
+    "sdk-marker-protocol",
+    "sdk-semver-governance",
+    "spec-driven-development",
+    "tdd-patterns"
+  ],
+
+  "guardrails": [
+    "G01",
+    "G02",
+    "G03",
+    "G04",
+    "G06",
+    "G07",
+    "G20",
+    "G21",
+    "G22",
+    "G23",
+    "G24",
+    "G69",
+    "G80",
+    "G81",
+    "G83",
+    "G84",
+    "G85",
+    "G86",
+    "G90",
+    "G93",
+    "G116"
+  ],
+
+  "generalization_debt": {
+    "agents": [
+      {"name": "sdk-semver-devil", "reason": "prompt body cites Go module semver conventions; role itself is language-neutral"},
+      {"name": "sdk-design-devil", "reason": "examples reference Go API shape; review heuristics generalize"},
+      {"name": "sdk-security-devil", "reason": "TLS / credential checks use Go-idiomatic code samples; threat model is generic"},
+      {"name": "sdk-overengineering-critic", "reason": "examples reference Go idioms (unused fields, premature abstraction); critique applies to any OO-ish language"}
+    ],
+    "skills": [
+      {"name": "tdd-patterns", "reason": "examples use Go `*_test.go` and `testing.T`; TDD cycle itself is language-neutral"},
+      {"name": "idempotent-retry-safety", "reason": "code snippets use Go context + errgroup; retry classification generalizes"},
+      {"name": "network-error-classification", "reason": "uses `errors.Is` / `net.Error` examples; classification taxonomy generalizes"}
+    ],
+    "resolution_policy": "Flagged here so the v0.5.0 second-language pilot knows the backlog. No action required in v0.4.0. When a second language adapter is authored, each item gets either (a) a language-neutral rewrite of the prompt/body, (b) move to the go package if role turns out to also be Go-specific, or (c) a split into shared + per-language parts."
+  },
+
+  "notes": {
+    "pass_scope": "v0.4.0 scaffolding — structure only. No runtime consumer reads this file yet. Dispatch refactor deferred to a later pass.",
+    "contains_drift_gates": "G06, G90 (strict), G116 ship in shared-core because drift-prevention is language-neutral and is load-bearing for every run. Removing them from shared-core would let intake proceed on a drifted repo.",
+    "contains_meta_baselines": "G81 (baseline-advance), G83 (determinism), G84 (output-shape hash), G85 (learning-notifications), G86 (quality regression) are cross-run observability gates; language-neutral.",
+    "G04_mcp_health": "WARN-only by design (rule 31). Shared-core because MCP fallback policy applies to any language."
+  }
+}
