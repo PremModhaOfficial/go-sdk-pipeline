@@ -216,7 +216,7 @@ HITL gates: H0 (target-dir preflight), H1 (TPRD + manifests acceptance), H5 (des
 
 ## Pipeline Versioning
 
-`settings.json` declares `pipeline_version: "0.4.0"` — the **single source of truth**. Every log entry stamps it; every other file that mentions a pipeline version MUST match. Divergence = drift (guardrail G06 enforces at intake). Upgrade path: bump semver in `.claude/settings.json`; propagate to all consumers in the same PR; record changes in `evolution/evolution-reports/pipeline-v<X.Y.Z>.md`.
+`settings.json` declares `pipeline_version: "0.5.0"` — the **single source of truth**. Every log entry stamps it; every other file that mentions a pipeline version MUST match. Divergence = drift (guardrail G06 enforces at intake). Upgrade path: bump semver in `.claude/settings.json`; propagate to all consumers in the same PR; record changes in `evolution/evolution-reports/pipeline-v<X.Y.Z>.md`.
 
 ## Directory Reference
 

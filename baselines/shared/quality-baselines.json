@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0.0",
-  "pipeline_version": "sdk-pipeline@0.4.0",
+  "pipeline_version": "sdk-pipeline@0.5.0",
   "scope": "shared",
-  "scope_note": "v0.4.0 declares this baseline as shared (one truth across languages). Per-agent quality is intended to compare apples-to-apples across runs regardless of target language. OPEN QUESTION D2 (deferred to v0.5.0): shared-core agents with generalization_debt may score lower on Python runs because the prompt body cites Go idioms. Decision pending — see docs/LANGUAGE-AGNOSTIC-DECISIONS.md §D2.",
+  "scope_note": "v0.4.0 declares this baseline as shared (one truth across languages). Per-agent quality is intended to compare apples-to-apples across runs regardless of target language. Decision D2 (resolved 2026-04-27 post-R2): Lenient default — one shared score across languages. Progressive fallback: if Phase B Python pilot shows ≥3pp quality_score divergence on any debt-bearer, that specific agent flips to per-language partition until its D6=Split rewrite ships. See docs/LANGUAGE-AGNOSTIC-DECISIONS.md and docs/R2-DEBT-REWRITE-FEASIBILITY.md.",
   "note": "Populated after first successful run (sdk-dragonfly-s2, 2026-04-18). Per-agent quality scores from metrics-collector (F1). Never lowered except via explicit learning-engine signoff (resets every 5 runs per settings.json baseline_reset_every_n_runs=5). Raise-only policy: improvements >10% over baseline trigger raise; regressions keep baseline and flag.",
   "pipeline_level": {
     "baseline_pipeline_quality": 0.95,

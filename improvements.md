@@ -22,7 +22,7 @@ What this NFR-driven pipeline adds on top of the original SaaS multi-agent fleet
 | **NFR-driven framing** | TPRD §5 NFR + §10 Perf Targets + §11 Bench are first-class numeric gates | Quality is a contract, not afterthought |
 | **Per-skill versioning** | `version: X.Y.Z` frontmatter + `evolution-log.md` sibling | Every skill change is auditable |
 | **Human-only skill authorship** | `learning-engine` patches existing bodies only; never creates new SKILL.md | New skills require human PR |
-| **Pipeline versioning** | `pipeline_version: 0.4.0` stamped on every log entry + run | Cross-run reproducibility anchor |
+| **Pipeline versioning** | `pipeline_version: 0.5.0` stamped on every log entry + run | Cross-run reproducibility anchor |
 | **Supply-chain gate** | `govulncheck` + `osv-scanner` + license allowlist (G32–G34) | No vulnerable / unfree deps |
 | **Two slash commands** | `/run-sdk-addition`, `/preflight-tprd` | Single entry point + risk-free check |
 

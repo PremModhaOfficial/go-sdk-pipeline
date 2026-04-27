@@ -1,7 +1,8 @@
-# Package manifests (v0.4.0 scaffolding)
+# Package manifests (v0.5.0 Phase A — Python adapter scaffold)
 
-**Status**: structure only — dispatch refactor deferred.
-**Scope this pass**: define package boundaries as JSON. No agent prompt changes, no runtime consumers, no behavior change.
+**Status**: dispatch refactor live (v0.4.0); Python adapter scaffold added (v0.5.0 Phase A).
+**Pipeline version**: 0.5.0
+**Scope this pass**: Python language-adapter manifest authored as scaffold (empty agents/skills/guardrails arrays — those land in Phase B as the first Python TPRD exposes need). Toolchain + baselines + marker syntax declared. Validator passes 3-pack consistency.
 
 ## What a manifest is
 
@@ -21,20 +22,22 @@ Claude Code's harness discovers agents at `.claude/agents/*.md` and skills at `.
 .claude/package-manifests/
 ├── README.md           # this file
 ├── shared-core.json    # language-agnostic orchestration, meta-skills, governance
-└── go.json             # Go SDK language adapter
+├── go.json             # Go SDK language adapter (production)
+└── python.json         # Python SDK language adapter (v0.5.0 scaffold; runtime exercise pending Phase B)
 ```
 
 Manifest format: see `shared-core.json` for the canonical shape. Every manifest declares `name`, `version`, `type` (`core` | `language-adapter`), `depends`, and three artifact arrays: `agents`, `skills`, `guardrails`. Language adapters additionally declare `toolchain`, `file_extensions`, `marker_comment_syntax`, `module_file`.
 
-## Current counts (v0.4.0 scaffolding)
+## Current counts (v0.5.0 Phase A)
 
 | Package | Agents | Skills | Guardrails |
 |---|---:|---:|---:|
-| shared-core | 22 | 16 | 21 |
+| shared-core | 22 | 16 | 22 |
 | go | 16 | 25 | 31 |
-| **total** | **38** | **41** | **52** |
+| python | 0 | 0 | 0 |
+| **total** | **38** | **41** | **53** |
 
-Matches filesystem. Enforced by `scripts/validate-packages.sh` (exits non-zero on orphan / duplicate / missing).
+`python` ships empty in Phase A — the manifest declares the toolchain, baselines, and marker syntax, but Python-specific agents/skills/guardrails are authored lazily in Phase B (first Python TPRD). Enforced by `scripts/validate-packages.sh` (exits non-zero on orphan / duplicate / missing).
 
 ## What's NOT in this pass
 

@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0.0",
-  "pipeline_version": "sdk-pipeline@0.4.0",
+  "pipeline_version": "sdk-pipeline@0.5.0",
   "scope": "shared",
-  "scope_note": "v0.4.0 declares this baseline as shared (skill stability is intrinsically about the SKILL, language-agnostic). OPEN QUESTION D2 (deferred to v0.5.0): shared-core skills with generalization_debt (tdd-patterns, idempotent-retry-safety, network-error-classification) may show lower stability on Python runs until rewritten — see docs/LANGUAGE-AGNOSTIC-DECISIONS.md §D2.",
+  "scope_note": "v0.4.0 declares this baseline as shared (skill stability is intrinsically about the SKILL, language-agnostic). Decision D2 (resolved 2026-04-27 post-R2): Lenient default — one shared score across languages. Progressive fallback: shared-core skills with generalization_debt (tdd-patterns, idempotent-retry-safety, network-error-classification) flip to per-language only if Phase B data shows ≥3pp divergence; D6=Split (rule shared, examples in <pack>/conventions.yaml) is the canonical resolution. See docs/LANGUAGE-AGNOSTIC-DECISIONS.md and docs/R2-DEBT-REWRITE-FEASIBILITY.md.",
   "note": "SDK-mode skill-health baseline per CLAUDE.md Rule #23 and baseline-manager SDK-MODE Delta 2. Tracks longitudinal skill stability under learning-engine body-patch regime (no runtime skill synthesis). First baseline established from sdk-dragonfly-s2 F4a/F4b/F7 signals.",
   "run_id": "sdk-dragonfly-s2",
   "baseline_run": "sdk-dragonfly-s2",

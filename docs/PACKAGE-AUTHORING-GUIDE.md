@@ -2,7 +2,7 @@
 
 **Audience**: contributors authoring a new package manifest (a second-language adapter, a tier-specific bundle, or a domain split out of `shared-core`).
 
-**Pipeline version**: 0.4.0+
+**Pipeline version**: 0.5.0+
 
 ---
 
@@ -201,7 +201,7 @@ Every baseline file (under `baselines/`) declares a `scope` field. Every languag
 ```json
 {
   "schema_version": "1.0.0",
-  "pipeline_version": "sdk-pipeline@0.4.0",
+  "pipeline_version": "sdk-pipeline@0.5.0",
   "scope": "per-language",
   "language": "go",
   "scope_note": "<reason this is per-language; what units are stored>",

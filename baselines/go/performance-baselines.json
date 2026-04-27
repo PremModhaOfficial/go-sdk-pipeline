@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "pipeline_version": "sdk-pipeline@0.4.0",
+  "pipeline_version": "sdk-pipeline@0.5.0",
   "scope": "per-language",
   "language": "go",
   "scope_note": "v0.4.0 declares this baseline as per-language; v0.5.0 will move to baselines/go/performance-baselines.json (shape B). Units (allocs/op, ns/op, B/op) are intrinsically Go-specific. Cross-language perf comparison NOT a v0.5.0 goal — agents read this file only on Go-targeted runs.",

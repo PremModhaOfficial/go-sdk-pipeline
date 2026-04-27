@@ -90,7 +90,7 @@
       "baselines/shared/skill-health.json",
       "baselines/shared/baseline-history.jsonl"
     ],
-    "scope_note": "v0.4.0 ships with files moved to baselines/shared/ per Decision D1=B. Per-agent quality + per-skill stability are intrinsically language-neutral; one shared partition. All consumers (baseline-manager, metrics-collector, learning-engine, G86) updated to read the partitioned paths. OPEN QUESTION D2 (deferred): shared-core agents/skills carrying generalization_debt may need partitioning into language-specific buckets until rewritten — see docs/LANGUAGE-AGNOSTIC-DECISIONS.md §D2. Decision pending first Python run data."
+    "scope_note": "v0.4.0 ships with files moved to baselines/shared/ per Decision D1=B. Per-agent quality + per-skill stability are intrinsically language-neutral; one shared partition. All consumers (baseline-manager, metrics-collector, learning-engine, G86) updated to read the partitioned paths. Decision D2 (resolved 2026-04-27 post-R2 spike): Lenient default — one shared score. Progressive fallback if Phase B Python pilot shows ≥3pp quality_score divergence on a specific debt-bearer (that agent flips to per-language partition until D6=Split rewrite lands in its conventions.yaml). See docs/LANGUAGE-AGNOSTIC-DECISIONS.md + docs/R2-DEBT-REWRITE-FEASIBILITY.md."
   },
 
   "generalization_debt": {

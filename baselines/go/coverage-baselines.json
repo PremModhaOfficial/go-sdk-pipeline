@@ -1,6 +1,6 @@
 {
   "schema_version": "1.1.0",
-  "pipeline_version": "sdk-pipeline@0.4.0",
+  "pipeline_version": "sdk-pipeline@0.5.0",
   "scope": "per-language",
   "language": "go",
   "scope_note": "v0.4.0 declares this baseline as per-language; v0.5.0 will move to baselines/go/coverage-baselines.json (shape B). Example_* count is a Go-specific concept — Python equivalent is doctest, Rust is #[example]; per-language adapter materializes the metric.",

@@ -1,6 +1,6 @@
 # Language-Agnostic Decision Board
 
-**Status**: living document. Last update: 2026-04-27 (v0.4.0 + R2 spike).
+**Status**: living document. Last update: 2026-04-27 (v0.5.0 Phase A scaffold + R2 spike).
 **Audience**: future contributor (or future-Claude) picking up the multi-language work for v0.5.0+.
 **Reading order**: §TL;DR → §Decisions taken → §Per-touchpoint handling table → §Open questions → §Research branches → §Next-version checklist.
 
@@ -160,8 +160,8 @@ The actual work to onboard Python, in execution order.
 4. Author `.claude/package-manifests/python.json` with `toolchain` block (pytest, ruff, mypy, pip-audit, etc.) and `baselines` block declaring `owns_per_language` paths under `baselines/python/`.
 5. Author Python-specific skills: `python-asyncio-patterns`, `pytest-fixtures`, etc. as gaps surface.
 6. Run `bash scripts/validate-packages.sh` — must PASS.
-7. Bump pipeline_version 0.4.0 → 0.5.0.
-8. `mkdir baselines/python/` (empty; populates on first Python run).
+7. ~~Bump `pipeline_version` 0.4.0 → 0.5.0.~~ ✅ DONE — settings.json reads `0.5.0`; G06 propagated to 13 consumer files.
+8. ~~`mkdir baselines/python/` (empty; populates on first Python run).~~ ✅ DONE — `baselines/python/.gitkeep` placeholder shipped.
 
 > **NOTE (post-v0.4.0)**: Phase B from the original v0.4.0 plan is **already done**. `baselines/go/` and `baselines/shared/` are populated; consumer path-refactor is in. Phase A only needs to add the parallel `baselines/python/` partition — no Go-side migration work remains.
 
