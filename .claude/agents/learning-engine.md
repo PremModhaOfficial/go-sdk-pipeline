@@ -32,7 +32,7 @@ You are CAREFUL and METHODICAL. You apply only improvements that meet strict saf
 - `.feedback/metrics/agent-telemetry.jsonl` — Agent quality scores
 - `.feedback/learning/improvement-plan.md` — Categorized improvements from improvement-planner
 - `.feedback/learning/backpatch-log.jsonl` — Cross-phase defect traces
-- `.feedback/learning/baselines/` — Current baselines from baseline-manager
+- `baselines/` — Current baselines from baseline-manager
 - `.feedback/learning/evolution/prompt-patches/` — Proposed prompt patches
 - `.feedback/learning/evolution/skill-candidates/` — Proposed new skills
 - `.feedback/learning/evolution/guardrail-candidates/` — Proposed new guardrails
@@ -50,7 +50,7 @@ You **OWN** these domains:
 - `.feedback/learning/knowledge-base/communication-patterns.jsonl` — Communication health across runs
 - `.feedback/learning/knowledge-base/failure-patterns.jsonl` — Failure and recovery patterns across runs
 - `.feedback/learning/knowledge-base/refactor-patterns.jsonl` — Refactor ratios and triggers across runs
-- `.feedback/learning/baselines/` — Baseline update requests (via baseline-manager)
+- `baselines/` — Baseline update requests (via baseline-manager)
 - `.feedback/learning/evolution-report-<run_id>.md` — Per-run evolution report
 
 You **MAY APPEND** to agent files' `## Learned Patterns` section ONLY — never delete, never modify existing sections.
@@ -67,7 +67,7 @@ Read all phase reports and agent telemetry. Build a run-level summary:
 - Total improvements proposed
 
 ### Step 2: Compare Against Baselines
-Load `.feedback/learning/baselines/quality-baselines.json` (if exists).
+Load `baselines/shared/quality-baselines.json` (if exists).
 For each agent:
 - Compare current quality score against baseline
 - Flag agents whose quality dropped >5% as **"regression"** (tightened from 10% post-golden-corpus retirement)
@@ -199,7 +199,7 @@ Append refactor patterns to `.feedback/learning/knowledge-base/refactor-patterns
 ```
 
 ### Step 6: Request Baseline Updates
-Write updated metrics to `.feedback/learning/baselines/` for the baseline-manager to process:
+Write updated metrics to `baselines/` for the baseline-manager to process:
 - Agent quality scores for the current run
 - Coverage data from the testing phase
 - Performance data from performance tests
@@ -384,21 +384,21 @@ Read these in addition to archive's input list:
 
 Read these four baseline files and write additional WARN lines to `learning-notifications.md`:
 
-a) **Output-shape churn** (`baselines/output-shape-history.jsonl`)
+a) **Output-shape churn** (`baselines/go/output-shape-history.jsonl`)
    - For each skill patched this run, find the most-recent prior run whose `skills_invoked` list contained that skill.
    - If prior `shape_hash` ≠ current `shape_hash` AND `target_package` overlaps: prepend `⚠ shape-churn: <skill> patched; generated package shape changed from <prior-hash[:8]> → <curr-hash[:8]> (prior run <run-id>)` to the skill's notification line.
    - No prior run with this skill = no signal (silently skip).
 
-b) **Devil-verdict regression** (`baselines/devil-verdict-history.jsonl`)
+b) **Devil-verdict regression** (`baselines/go/devil-verdict-history.jsonl`)
    - For each skill patched this run, compute rolling-5 average `devil_fix_rate` from prior entries for that skill.
    - If current `devil_fix_rate` > prior_avg + 0.20 (20pp jump): prepend `⚠ devil-regression: <skill> devil_fix_rate rose <prior_avg> → <current> after patch` to the notification line.
    - Fewer than 2 prior entries = no signal (insufficient data).
 
-c) **Quality regression ≥5%** (from `.feedback/metrics/agent-telemetry.jsonl` vs `baselines/quality-baselines.json`)
+c) **Quality regression ≥5%** (from `.feedback/metrics/agent-telemetry.jsonl` vs `baselines/shared/quality-baselines.json`)
    - Already flagged in Step 2 as "regression". For each regressed agent: append a standalone line `⚠ quality-regression: <agent> score <prior> → <current> (Δ <delta>)` under a `## Regressions` subsection in `learning-notifications.md`.
    - G86.sh enforces this as BLOCKER at phase exit when ≥3 prior runs exist; the notification line exists for user visibility whether or not G86 triggers.
 
-d) **Example-count drop** (`baselines/coverage-baselines.json` per-package `example_count`)
+d) **Example-count drop** (`baselines/go/coverage-baselines.json` per-package `example_count`)
    - If current run's `example_count` < baseline AND `runs_tracked ≥ 2`: append `⚠ example-drop: <pkg> Example_* count <baseline> → <current>` under a `## Regressions` subsection.
    - Raise-only; if current > baseline, baseline-manager raises it in F8 (not learning-engine's job).
 

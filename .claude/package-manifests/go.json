@@ -111,6 +111,29 @@
 
   "module_file": "go.mod",
 
+  "baselines": {
+    "scope_owned": "per-language",
+    "owns_per_language": [
+      "performance-baselines.json",
+      "coverage-baselines.json",
+      "output-shape-history.jsonl",
+      "devil-verdict-history.jsonl",
+      "do-not-regenerate-hashes.json",
+      "stable-signatures.json"
+    ],
+    "owns_per_language_paths": [
+      "baselines/go/performance-baselines.json",
+      "baselines/go/coverage-baselines.json",
+      "baselines/go/output-shape-history.jsonl",
+      "baselines/go/devil-verdict-history.jsonl",
+      "baselines/go/do-not-regenerate-hashes.json",
+      "baselines/go/stable-signatures.json",
+      "baselines/go/regression-report-<run-id>.md"
+    ],
+    "contributes_per_language_partition_to": [],
+    "scope_note": "v0.4.0 ships with files moved to baselines/go/ per Decision D1=B. All consumers (baseline-manager, metrics-collector, learning-engine, G81/G86/G101) updated to read the partitioned paths. The contributes_per_language_partition_to array fills with quality-baselines.json + skill-health-baselines.json IF Decision D2 (shared-core debt-bearer fairness) lands as 'Strict' in v0.5.0; D2 is currently deferred pending Python pilot data. See docs/LANGUAGE-AGNOSTIC-DECISIONS.md."
+  },
+
   "notes": {
     "pass_scope": "v0.4.0 scaffolding — structure only. No runtime consumer reads this file yet. Dispatch refactor deferred.",
     "perf_regime_ownership": "G104-G110 (perf-confidence regime, rules 32/33) and their owner agents (sdk-perf-architect, sdk-profile-auditor, sdk-complexity-devil, sdk-soak-runner, sdk-benchmark-devil) all live here. They reference Go-specific tooling (pprof, allocs/op from go test -benchmem, goleak). When a second language adapter is authored, equivalent gates + agents go in that adapter.",

@@ -130,14 +130,16 @@ Every patch `learning-engine` applies (prompt patch or existing-skill body patch
 
 The safety net is now the user notification loop backed by **four compensating baselines** that recover most of what golden-corpus was guarding:
 
-1. **Output-shape hash** (`baselines/output-shape-history.jsonl`) — SHA256 of sorted exported-symbol signatures per generated package per run. `learning-engine` surfaces hash churn on runs that invoked any just-patched skill as `⚠ shape-churn` lines.
-2. **Devil-verdict stability** (`baselines/devil-verdict-history.jsonl`) — per-skill `devil_fix_rate` + `devil_block_rate` tracked per run. A ≥20pp jump after a skill auto-patch surfaces as `⚠ devil-regression`.
+1. **Output-shape hash** (`baselines/go/output-shape-history.jsonl`) — SHA256 of sorted exported-symbol signatures per generated package per run. `learning-engine` surfaces hash churn on runs that invoked any just-patched skill as `⚠ shape-churn` lines.
+2. **Devil-verdict stability** (`baselines/go/devil-verdict-history.jsonl`) — per-skill `devil_fix_rate` + `devil_block_rate` tracked per run. A ≥20pp jump after a skill auto-patch surfaces as `⚠ devil-regression`.
 3. **Tightened quality regression threshold** — 10% → 5% on per-agent `quality_score`. G86.sh enforces as BLOCKER at feedback phase exit when ≥3 prior runs exist.
-4. **Example_* count per package** (`baselines/coverage-baselines.json`) — raise-only; a drop with ≥2 prior runs on a package emits `⚠ example-drop`.
+4. **Example_* count per package** (`baselines/go/coverage-baselines.json`) — raise-only; a drop with ≥2 prior runs on a package emits `⚠ example-drop`.
 
 G85 enforces `learning-notifications.md` is written whenever any patch is applied. G86 enforces the quality regression threshold. Signals (1), (2), (4) are WARN-level (H10 reviewer decides); signal (3) is BLOCKER-level once the sample-size precondition is met.
 
 **Drift-prevention gates** (added in v0.3.0 straighten): G06 enforces `pipeline_version` consistency (settings.json is the single source of truth); G90 (tightened to strict equality) enforces `skill-index.json` ↔ filesystem equality; G116 enforces that retired concepts catalogued in `docs/DEPRECATED.md` do not appear in live docs. All three are BLOCKERs at intake — the pipeline refuses to operate on a drifted repo. `scripts/check-doc-drift.sh` runs all three as a standalone sanity pass.
+
+**Partitioning contract** (shipped in v0.4.0 package layer): every baseline file declares a `scope` field — `per-language` (perf, coverage, output-shape hash, devil-verdict, source byte hashes, stable signatures) or `shared` (quality, skill-health, baseline-history) or `shared-stub` (legacy `skill-health.json`). Each language manifest declares which baselines it `owns_per_language` (Go owns perf+coverage+shape-hash+devil-verdict); `shared-core` declares `owns_shared`. **Shape (Decision D1=B)**: per-language subdirectories — `baselines/go/<file>` for per-language data, `baselines/shared/<file>` for cross-language data. v0.4.0 ships the moves AND the consumer path-refactor (baseline-manager, metrics-collector, learning-engine, G81/G86/G101). Cross-language metric comparison (e.g. is `sdk-design-devil`'s quality_score systematically lower in Python runs?) is **explicitly NOT a v0.5.0 goal** (Decision D2 deferred); each adapter compares against its own language's history. See `docs/LANGUAGE-AGNOSTIC-DECISIONS.md` for the full decision board + per-touchpoint handling table.
 
 ### 29. Code Provenance Markers
 Markers (`[traces-to:]`, `[constraint:]`, `[stable-since:]`, `[deprecated-in:]`, `[do-not-regenerate]`, `[owned-by:]`, `[perf-exception:]`) are machine-read by `sdk-marker-scanner`. Marker rules:
@@ -180,6 +182,23 @@ Three verdicts, not two. An INCOMPLETE verdict is NEVER silently promoted to PAS
 
 Wherever a gate historically returned "passed so far" on a timeout, it MUST now return INCOMPLETE. A synchronous Bash tool call hitting the 10-minute ceiling with a running soak = INCOMPLETE, not PASS.
 
+### 34. Package Layer (v0.4.0+) — Manifest-Only
+
+The agent / skill / guardrail set a run is allowed to invoke is **scoped by package manifests**. Manifests are JSON files in `.claude/package-manifests/<name>.json` that list which artifacts belong to one logical package. Two packages exist today: `shared-core` (language-neutral orchestration) and `go` (Go SDK language adapter). All on-disk artifacts MUST belong to exactly one manifest — `scripts/validate-packages.sh` enforces.
+
+**Manifest-only**: files do NOT move into per-package subdirectories. Agents stay at `.claude/agents/<name>.md`, skills at `.claude/skills/<name>/SKILL.md`, guardrails at `scripts/guardrails/G*.sh`. Claude Code's harness auto-discovers from those canonical paths; physical packaging would break discovery. Manifests are descriptive metadata, not directory structure.
+
+**Per-run resolution**: `sdk-intake-agent` Wave I5.5 reads three optional TPRD fields (`§Target-Language` default `go`, `§Target-Tier` default `T1`, `§Required-Packages` default `[shared-core, <lang>]`), resolves the manifest set + dependencies, and writes `runs/<run-id>/context/active-packages.json`. G05 validates the file resolves cleanly. All downstream phase leads + `guardrail-validator` filter their invocations through `active-packages.json` — agents NOT in the active set are skipped (logged as `event: agent-not-in-active-packages`); guardrails NOT in the active set are not run.
+
+**Tier semantics** (per phase lead's tier-critical table):
+- **T1** — full perf-confidence regime (rule 32): perf-architect, profile-auditor, leak-hunter, benchmark-devil, complexity-devil, soak-runner, drift-detector. Default for SDK clients.
+- **T2** — build/test/lint/fmt/staticcheck/supply-chain only. Skip Waves M3.5, M4, M7 (impl), T4–T7, T10 (testing). Coverage gate still applies.
+- **T3** — out-of-scope; intake refuses.
+
+**Backwards compatibility**: TPRDs without the v0.4.0 fields default to `go T1`. Runs missing `active-packages.json` (legacy replays) fall back to invoking everything with a WARN. Fallback removed in v0.5.0.
+
+**Generalization debt** is tracked per-manifest in the `generalization_debt` field — artifacts whose role is language-neutral but whose body still cites Go idioms. This list is the v0.5.0 second-language-pilot backlog. No action required in v0.4.0.
+
 ---
 
 ## Phase Flow
@@ -197,27 +216,32 @@ HITL gates: H0 (target-dir preflight), H1 (TPRD + manifests acceptance), H5 (des
 
 ## Pipeline Versioning
 
-`settings.json` declares `pipeline_version: "0.3.0"` — the **single source of truth**. Every log entry stamps it; every other file that mentions a pipeline version MUST match. Divergence = drift (guardrail G06 enforces at intake). Upgrade path: bump semver in `.claude/settings.json`; propagate to all consumers in the same PR; record changes in `evolution/evolution-reports/pipeline-v<X.Y.Z>.md`.
+`settings.json` declares `pipeline_version: "0.4.0"` — the **single source of truth**. Every log entry stamps it; every other file that mentions a pipeline version MUST match. Divergence = drift (guardrail G06 enforces at intake). Upgrade path: bump semver in `.claude/settings.json`; propagate to all consumers in the same PR; record changes in `evolution/evolution-reports/pipeline-v<X.Y.Z>.md`.
 
 ## Directory Reference
 
 ```
-docs/                       — Pipeline docs, missing-skills-backlog
-phases/                     — Phase contracts
-commands/                   — Slash commands
-.claude/agents/             — Agent prompts
-.claude/skills/<n>/SKILL.md — Skills (versioned)
-runs/<run-id>/              — Per-run state
-  decision-log.jsonl        — All agent entries
-  state/run-manifest.json   — Wave / agent status
-  intake/                   — TPRD + manifest checks + clarifications
-  extension/                — Phase 0.5 outputs (Mode B/C)
-  design/                   — Phase 1 outputs
-  impl/                     — Phase 2 outputs (ownership-map, merge plan)
-  testing/                  — Phase 3 outputs
-  feedback/                 — Phase 4 outputs
-baselines/                  — Persistent quality/coverage/perf/skill-health
-evolution/                  — Learning-engine state
-state/ownership-cache.json  — Target-SDK-wide marker ownership map
+docs/                          — Pipeline docs, missing-skills-backlog
+phases/                        — Phase contracts
+commands/                      — Slash commands
+.claude/agents/                — Agent prompts (canonical, harness-discovered)
+.claude/skills/<n>/SKILL.md    — Skills (versioned, harness-discovered)
+.claude/package-manifests/     — Package metadata (v0.4.0): shared-core.json, go.json, README.md
+scripts/guardrails/G*.sh       — Guardrail scripts (referenced by package manifests)
+scripts/validate-packages.sh   — Manifest ↔ filesystem consistency check
+runs/<run-id>/                 — Per-run state
+  decision-log.jsonl           — All agent entries
+  state/run-manifest.json      — Wave / agent status
+  context/active-packages.json — (v0.4.0) Resolved package set; consumed by phase leads + guardrail-validator
+  context/toolchain.md         — (v0.4.0) Language adapter's toolchain digest (informational)
+  intake/                      — TPRD + manifest checks + clarifications
+  extension/                   — Phase 0.5 outputs (Mode B/C)
+  design/                      — Phase 1 outputs
+  impl/                        — Phase 2 outputs (ownership-map, merge plan)
+  testing/                     — Phase 3 outputs
+  feedback/                    — Phase 4 outputs
+baselines/                     — Persistent quality/coverage/perf/skill-health
+evolution/                     — Learning-engine state
+state/ownership-cache.json     — Target-SDK-wide marker ownership map
 ```
 

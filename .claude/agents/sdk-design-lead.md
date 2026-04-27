@@ -11,9 +11,36 @@ tools: Read, Write, Edit, Glob, Grep, Bash, Agent, SendMessage, TaskCreate, Task
 
 1. Read `runs/<run-id>/state/run-manifest.json`
 2. Read `runs/<run-id>/tprd.md` + `intake/mode.json`
-3. If mode B/C, read `runs/<run-id>/extension/current-api.json`, `bench-baseline.txt`, `ownership-map.json`
-4. Read target SDK tree (package structure, existing clients for pattern reference)
-5. Log `lifecycle: started`, `phase: design`
+3. **Read `runs/<run-id>/context/active-packages.json`** (NEW v0.4.0) — see "Active Package Awareness" below
+4. If mode B/C, read `runs/<run-id>/extension/current-api.json`, `bench-baseline.txt`, `ownership-map.json`
+5. Read target SDK tree (package structure, existing clients for pattern reference)
+6. Log `lifecycle: started`, `phase: design`
+
+## Active Package Awareness (v0.4.0+)
+
+Before invoking any specialist agent, this lead reads `runs/<run-id>/context/active-packages.json` (written by `sdk-intake-agent` Wave I5.5; validated by G05). It computes:
+
+- `ACTIVE_AGENTS = sort -u over .packages[].agents`
+- `TARGET_TIER = .target_tier`
+
+**Per-invocation gate**: for every agent this lead would spawn:
+
+- ✅ `agent ∈ ACTIVE_AGENTS` → invoke as planned.
+- ❌ `agent ∉ ACTIVE_AGENTS` → skip; log `{type: "event", reason: "agent-not-in-active-packages", agent: "<name>", phase: "design"}`. Continue unless the agent is **tier-critical** (see below).
+
+**Tier-critical agents for design phase**:
+
+| Tier | Required in ACTIVE_AGENTS |
+|---|---|
+| T1 | `sdk-perf-architect`, `sdk-design-devil`, `sdk-dep-vet-devil`, `sdk-semver-devil`, `sdk-convention-devil`, `sdk-security-devil` |
+| T2 | `sdk-design-devil`, `sdk-dep-vet-devil`, `sdk-semver-devil` (skip perf-architect; D1 runs without `perf-budget.md`) |
+| T3 | out-of-scope; halt |
+
+If a tier-critical agent is missing from `ACTIVE_AGENTS`: halt with `BLOCKER: tier=<T> requires <agent>; not in active packages. Fix package manifests OR change §Target-Tier in TPRD`.
+
+**T2 simplification**: skip `sdk-perf-architect` (D1) and `sdk-constraint-devil` (D3); HITL H5 reviews API design without `perf-budget.md`. The D5 H8 perf gate becomes a no-op.
+
+**Backwards compatibility**: if `active-packages.json` absent, fall back to legacy behavior (invoke every default agent) and log a WARN. This fallback is removed in v0.5.0.
 
 ## Input
 

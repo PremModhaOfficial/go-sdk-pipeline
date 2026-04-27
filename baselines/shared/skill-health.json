@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.1.0",
+  "pipeline_version": "sdk-pipeline@0.4.0",
+  "scope": "shared-stub",
+  "scope_note": "Legacy stub. Authoritative data lives in baselines/shared/skill-health-baselines.json (scope: shared). v0.5.0 may delete this file once all consumers point at skill-health-baselines.json. Moved from baselines/skill-health.json to baselines/shared/skill-health.json in v0.4.0 per Decision D1=B.",
+  "note": "Superseded by baselines/shared/skill-health-baselines.json as of run sdk-dragonfly-s2 (2026-04-18). This stub retained for backward-compatibility tools scanning the original filename. Authoritative data lives in skill-health-baselines.json.",
+  "supersedes_pointer": "baselines/shared/skill-health-baselines.json",
+  "deprecated_since_run": "sdk-dragonfly-s2",
+  "metrics": {
+    "skill_stability": 0.105,
+    "existing_skill_patch_accept_rate": 1.0,
+    "learning_patches_reverted_by_user": 0,
+    "mean_time_to_green_sec": null,
+    "user_intervention_rate": 2,
+    "manifest_miss_rate": 0.0
+  },
+  "per_skill": {
+    "go-error-handling-patterns": {"version": "1.0.1", "bumps_this_run": 1, "kind": "patch"},
+    "go-example-function-patterns": {"version": "0.1.1", "bumps_this_run": 1, "kind": "patch"}
+  }
+}

@@ -27,14 +27,14 @@ After (3), for each invoked skill compute:
 - `devil_fix_rate` = (NEEDS-FIX findings whose `fix_agent` cites a symbol in a region the skill prescribes) / (total exported symbols the skill's rules apply to). Read findings from `runs/<run-id>/{design,impl,testing}/reviews/*.findings.json`.
 - `devil_block_rate` = same numerator, BLOCKER-severity only / total.
 
-Append one line per invoked skill to `baselines/devil-verdict-history.jsonl`:
+Append one line per invoked skill to `baselines/go/devil-verdict-history.jsonl`:
 ```json
 {"run_id":"<uuid>","timestamp":"<ISO>","skill":"<name>","skill_version":"<X.Y.Z>","devil_fix_rate":0.12,"devil_block_rate":0.02,"symbols_scoped":<N>,"pipeline_version":"<ver>"}
 ```
 
 If the skill was NOT auto-patched this run, this is a pure trend signal (baseline-manager raises). If the skill WAS auto-patched (check `evolution/knowledge-base/prompt-evolution-log.jsonl` for a matching entry this run), flag `regression_candidate: true` on the line so `learning-engine` can surface the jump in `learning-notifications.md` before user H10 review.
 
-Also backfill `skills_invoked` on this run's `baselines/output-shape-history.jsonl` entry (metrics-collector leaves it `[]` if it ran first).
+Also backfill `skills_invoked` on this run's `baselines/go/output-shape-history.jsonl` entry (metrics-collector leaves it `[]` if it ran first).
 
 ## Output
 `runs/<run-id>/feedback/skill-coverage.md`:

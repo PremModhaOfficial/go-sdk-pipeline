@@ -48,21 +48,31 @@ For every symbol declared in TPRD §7 API, emit one perf-budget entry containing
 
 ## perf-budget.md schema
 
+The alloc-metric **field name** comes from the active pack's `perf-config.yaml`
+(`scripts/perf/perf-config.yaml`, indexed by `${PACK}` env var). Pipeline 0.3.0+
+parameterizes it: Go uses `allocs_per_op`, Python uses `heap_bytes_per_call`,
+Rust uses `instructions_per_call`. Author the budget using whichever name your
+target pack declares; G104 enforces against the same name. Pre-0.3.0 budgets
+that always wrote `allocs_per_op` continue to work for the Go pack (default).
+
+The bench name pattern (`Benchmark*` / `bench_*`) and bench tool are also
+pack-supplied; emit budget entries that match your pack's conventions.
+
 ```yaml
 # runs/<run-id>/design/perf-budget.md
-<!-- Generated: <ISO-8601> | Run: <run-id> | Pipeline: <version> -->
+<!-- Generated: <ISO-8601> | Run: <run-id> | Pipeline: <version> | Pack: <go|python|rust> -->
 
 version: 1
 symbols:
   - name: dragonfly.Client.Get
     traces_to: TPRD-7-GET
     hot_path: true
-    bench: bench/BenchmarkGet
+    bench: bench/BenchmarkGet     # pack-supplied prefix; Python: `bench_get`, Rust: `bench_get`
     latency:
       p50_us: 80
       p95_us: 200
       p99_us: 500
-    allocs_per_op: 3
+    allocs_per_op: 3              # field name from pack's alloc_metric.name
     throughput_ops_per_sec: 10000
     complexity:
       time: "O(1)"

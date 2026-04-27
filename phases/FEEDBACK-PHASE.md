@@ -28,7 +28,7 @@ Golden-corpus regression replay has been retired. It dominated Phase 4 token spe
 - Computes per-agent `quality_score` (formula in CLAUDE.md)
 - Per-phase metrics (duration, tokens, rework, devil-block-rate, skill-coverage-pct)
 - Per-run metrics (pipeline_quality, coverage, bench-delta, vuln-count, leak-count, flake-rate, determinism-diff)
-- **Output-shape hash + Example_* count (SDK-mode, compensating for retired golden-corpus)** — runs `scripts/compute-shape-hash.sh` on the generated package, counts `Example_*` functions, appends one line to `baselines/output-shape-history.jsonl`.
+- **Output-shape hash + Example_* count (SDK-mode, compensating for retired golden-corpus)** — runs `scripts/compute-shape-hash.sh` on the generated package, counts `Example_*` functions, appends one line to `baselines/go/output-shape-history.jsonl`.
 - Output: `runs/<run-id>/feedback/metrics.json` + `metrics-summary.md`
 - Persists per-agent quality_score as `(Agent)-[:OBSERVED_IN {score}]->(Run)` observation in neo4j-memory (fallback: agent-performance.jsonl).
 
@@ -50,7 +50,7 @@ Parallel:
 | Agent | Role |
 |-------|------|
 | `sdk-skill-drift-detector` | Compare what each invoked skill PRESCRIBED vs. what the code actually DOES. Example: `sdk-config-struct-pattern` says Config is immutable — code has exported mutable fields. Output: `feedback/skill-drift.md`. |
-| `sdk-skill-coverage-reporter` | Which skills got invoked per phase? Which were expected-but-unused (based on TPRD tech signals)? Also computes per-skill `devil_fix_rate` + `devil_block_rate` and appends to `baselines/devil-verdict-history.jsonl` (compensating baseline for retired golden-corpus). Output: `feedback/skill-coverage.md`. |
+| `sdk-skill-coverage-reporter` | Which skills got invoked per phase? Which were expected-but-unused (based on TPRD tech signals)? Also computes per-skill `devil_fix_rate` + `devil_block_rate` and appends to `baselines/go/devil-verdict-history.jsonl` (compensating baseline for retired golden-corpus). Output: `feedback/skill-coverage.md`. |
 
 Writes drift + coverage observations to neo4j-memory via `mcp-knowledge-graph` skill when available; falls back to markdown artifacts if MCP is down.
 
@@ -94,8 +94,8 @@ Actions:
 **Agent**: `baseline-manager`
 - First-run: create baselines
 - Subsequent: raise if improved by >10%, keep if regressed, reset every 5 runs
-- Update `baselines/{quality,coverage,performance,skill-health}.json`
-- Output: `baselines/regression-report-<run-id>.md`, `baseline-history.jsonl` append
+- Update shared baselines: `baselines/shared/{quality,skill-health,skill-health-baselines}.json` and per-language (Go): `baselines/go/{coverage,performance}-baselines.json`
+- Output: `baselines/go/regression-report-<run-id>.md` (per-language), `baselines/shared/baseline-history.jsonl` append (shared)
 - Creates `(Baseline)-[:UPDATED_IN]->(Run)` with new value as observation (fallback: baseline-history.jsonl).
 
 ### Wave F9 — HITL Gate H10 (merge rec)

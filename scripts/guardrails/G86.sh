@@ -6,7 +6,7 @@
 set -uo pipefail
 RUN_DIR="${1:?}"; TARGET="${2:-}"
 REPO_ROOT="$RUN_DIR/../.."
-BASELINES="$REPO_ROOT/baselines/quality-baselines.json"
+BASELINES="$REPO_ROOT/baselines/shared/quality-baselines.json"
 CURRENT="$RUN_DIR/feedback/metrics.json"
 [ -f "$BASELINES" ] || exit 0
 [ -f "$CURRENT" ]   || { echo "feedback/metrics.json missing"; exit 1; }

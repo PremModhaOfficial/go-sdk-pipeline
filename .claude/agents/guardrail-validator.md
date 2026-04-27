@@ -167,6 +167,38 @@ Only runs on `--seed <int>` mode. Compares two consecutive runs; flags byte-diff
 - Archive writes to `docs/<phase>/reviews/guardrail-report.md`
 - SDK pipeline writes to `runs/<run-id>/<phase>/reviews/guardrail-report.md`
 
+### Delta 6: Package-scoped dispatch (v0.4.0+)
+
+After v0.4.0, guardrail-validator only runs scripts that are in the run's **active package set**. This means a TPRD that targets a non-Go language (future) will not invoke Go-specific guardrails like G104 (alloc budget) or G110 (perf-exception pairing).
+
+**Dispatch algorithm** (runs at every phase invocation, before the script loop):
+
+1. Read `runs/<run-id>/context/active-packages.json` (written by `sdk-intake-agent` at Wave I5.5; verified by G05).
+2. `ACTIVE_GATES = sort -u over .packages[].guardrails` — the full union across resolved packages.
+3. For the **current phase** (`intake | design | implementation | testing | feedback | meta`):
+   - For each `<G>` in `ACTIVE_GATES`, parse the `# phases:` header from `scripts/guardrails/<G>.sh`.
+   - Include `<G>` in the run set iff its phases header matches the current phase OR includes `meta`.
+4. Run only the filtered set.
+5. Any `scripts/guardrails/G*.sh` file present on disk but **not** in `ACTIVE_GATES` is reported as `skipped: not-in-active-packages` with the package list it would have needed.
+
+**Report extension**:
+
+```markdown
+## Package-scoped dispatch
+- Active packages: shared-core@1.0.0, go@1.0.0
+- ACTIVE_GATES total: 53
+- Phase-applicable: 9 (e.g. intake)
+- Gates run: 9 (PASS=8, FAIL=0, SKIP=1)
+- Gates skipped (not in active packages): 0 (none — full Go set covers all on-disk guardrails)
+```
+
+**Failure modes**:
+- `active-packages.json` missing → BLOCKER: cannot dispatch. Halt and notify `sdk-design-lead` (or current phase lead) to escalate to intake.
+- A guardrail script referenced by `ACTIVE_GATES` is missing on disk → BLOCKER (validate-packages.sh should have caught this; treat as drift).
+- A guardrail script on disk is not in `ACTIVE_GATES` → INFO (silently skip; report under `gates_skipped`).
+
+**Backwards compatibility**: if `runs/<run-id>/context/active-packages.json` is absent (older pipeline runs replayed under v0.4.0), fall back to running every `scripts/guardrails/G*.sh` for the phase (legacy behavior). Log a WARN; this branch goes away in v0.5.0.
+
 ## Evolution patches
 Apply from `evolution/prompt-patches/guardrail-validator.md`.
 

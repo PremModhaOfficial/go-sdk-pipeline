@@ -42,7 +42,7 @@ Source: `improvement-planner` Wave F6, derived from retro patterns P1/P2/P4/P5 a
   ```
   For each TPRD §10 constraint marker [constraint: <metric> <op> <value> | bench/<name>]:
     - Resolve the underlying dep from TPRD §6 (e.g. go-redis v9.18).
-    - Look up baselines/performance-baselines.json[<dep>][<metric>] or dep release-notes floor.
+    - Look up baselines/go/performance-baselines.json[<dep>][<metric>] or dep release-notes floor.
     - If target < floor * 0.9: emit WARN with constraint, target, floor, reference.
     - If target > 2 * floor: emit INFO (over-specified; not a problem).
     - Else: PASS.
@@ -109,7 +109,7 @@ Source: `improvement-planner` Wave F6, derived from retro patterns P1/P2/P4/P5 a
 - **Check logic**:
   ```
   For each TPRD §10 constraint that just FAILED bench:
-    look up dep floor from baselines/performance-baselines.json or G25's intake report.
+    look up dep floor from baselines/go/performance-baselines.json or G25's intake report.
     if measured ≈ floor AND target << floor:
       reclassify as CALIBRATION-WARN (not FAIL);
       emit H8 with Option A (baseline update) recommended.
@@ -152,3 +152,27 @@ Source: `improvement-planner` Wave F6, derived from retro patterns P1/P2/P4/P5 a
 ## Cap respected
 
 Per `settings.json § safety_caps.new_guardrails_per_run = 0`, none of the above are created at runtime. All entries are filed here for human PR promotion only.
+
+---
+
+## Auto-filed from run `sdk-dragonfly-p1-v1` on 2026-04-22 (G24 BLOCKER halt)
+
+Source: `sdk-intake-agent` Wave I3. G24 BLOCKER-failed on 10 declared guardrails whose scripts do not exist at `scripts/guardrails/<id>.sh`. Pipeline halted with exit 6 before Phase 0.5. Each entry below maps to pipeline `CLAUDE.md` rule-set 28 (learning-engine safeguards) and rule-set 32 (Performance-Confidence Regime) and requires human PR authorship before this TPRD (or any TPRD referencing these IDs) can clear intake.
+
+| ID | Guardrail | Phase | Severity | Motivation | Source run | Status |
+|---|---|---|---|---|---|---|
+| G81 | Baselines updated or rationale | Feedback | BLOCKER | Rule 28 compensating baselines (1, 2, 4) require per-run updates to `baselines/go/output-shape-history.jsonl`, `baselines/go/devil-verdict-history.jsonl`, `baselines/go/coverage-baselines.json`. Guardrail asserts either the baseline file advanced or the feedback report carries a rationale for the skip. | sdk-dragonfly-p1-v1 | proposed |
+| G83 | Every patch logged in skill evolution-log.md | Feedback | BLOCKER | Per Rule 23, any body-patch `learning-engine` applies to an existing skill must append a line to that skill's adjacent `evolution-log.md` with minor-bump semantics. Guardrail diffs the skill's git-HEAD version frontmatter against its log and fails if patches landed without a matching log entry. | sdk-dragonfly-p1-v1 | proposed |
+| G84 | Per-run safety caps respected | Feedback | BLOCKER | Mechanical check against `settings.json § safety_caps` — counts of `prompt_patches`, `existing_skill_patches`, `new_skills`, `new_guardrails`, `new_agents` applied in the current run must not exceed the declared cap. Catches a runaway learning-engine before F-phase exit. | sdk-dragonfly-p1-v1 | proposed |
+| G104 | Alloc-budget per declared `allocs_per_op` | Impl (M3.5) | BLOCKER | Rule 32 axis 3 (allocation). `sdk-profile-auditor` runs declared benches with `b.ReportAllocs()`, reads `design/perf-budget.md` per-symbol `allocs_per_op`, fails the gate on any symbol whose measured allocs exceeds budget. Runs BEFORE T5 so alloc overruns never reach testing phase. | sdk-dragonfly-p1-v1 | proposed |
+| G105 | Soak-MMD (minimum-measurable-duration) enforcement | Testing (T-SOAK) | BLOCKER | Rule 32 axis 6 + rule 33 verdict taxonomy. Any soak verdict marked PASS must satisfy `actual_duration_s ≥ mmd_seconds` from `design/perf-budget.md`. Shorter runs return INCOMPLETE, not PASS. Prevents silent timeout-to-PASS promotion. P1 no-ops this gate (no soak-enabled symbol declared in TPRD). | sdk-dragonfly-p1-v1 | proposed |
+| G106 | Soak-drift detector | Testing (T-SOAK) | BLOCKER | Rule 32 axis 6. `sdk-drift-detector` curve-fits declared soak signals (e.g. RSS, goroutine count, pool-checkout latency p99) over the soak window and fails on a statistically significant positive trend. P1 no-ops (no soak enabled). | sdk-dragonfly-p1-v1 | proposed |
+| G107 | Complexity scaling sweep | Testing (T5) | BLOCKER | Rule 32 axis 4. `sdk-complexity-devil` runs each declared hot-path symbol at `N ∈ {10, 100, 1k, 10k}`, curve-fits measured latency vs N, and compares to the declared big-O in `perf-budget.md`. Catches accidental quadratic paths that pass wall-clock gates at microbench sizes. This TPRD declares `ZRangeWithScores` O(log N + M) and the `Scan` iterator O(N) amortized. | sdk-dragonfly-p1-v1 | proposed |
+| G108 | Oracle-margin vs reference impl | Testing (T5) | BLOCKER | Rule 32 axis 5. Measured p50 must stay within `oracle.margin_multiplier × reference_impl_ns_per_op` declared in `perf-budget.md`. NOT waivable via `--accept-perf-regression`; oracle-waiver requires an H8 decision + written margin update. TPRD declares GetJSON≤1.5× raw Get, SetJSON≤1.5× raw Set. | sdk-dragonfly-p1-v1 | proposed |
+| G109 | Profile-no-surprise hotspot check | Impl (M3.5) | BLOCKER | Rule 32 axis 2. `sdk-profile-auditor` reads CPU/heap/block/mutex pprof output; top-10 CPU samples must cover ≥0.8 of the declared hot paths in `perf-budget.md`; any hot function not in the declared set is a surprise hotspot and a BLOCKER. Catches design-reality drift before testing. TPRD declares hot paths: `instrumentedCall`, `mapErr`, keyprefix concat. | sdk-dragonfly-p1-v1 | proposed |
+| G110 | `[perf-exception:]` marker ↔ `perf-exceptions.md` pairing | Impl (M7+M9) | BLOCKER | Rule 32 axis 7 + rule 29 marker protocol. Any source-line bearing `[perf-exception: <reason> bench/BenchmarkX]` must have a matching entry in `runs/<run-id>/design/perf-exceptions.md` declaring the exception at design time AND a profile-auditor-measured bench win. Orphan markers (no matching entry) fail the gate. P1 expects zero `[perf-exception:]` markers (no hand-optimized paths). | sdk-dragonfly-p1-v1 | proposed |
+
+### Halt contract
+
+Per command spec §Exit codes and `commands/run-sdk-addition.md`, this is an **exit 6** halt. The run-summary marks intake BLOCKED and H1 is not asked. The remaining waves (I4 clarifications, I5 mode detection, I6 completeness, I7 H1 gate) are skipped; Phase 0.5 extension-analyze does not run. Re-run requires either (a) human-authored scripts at `scripts/guardrails/G{81,83,84,104,105,106,107,108,109,110}.sh` + `chmod +x`, or (b) a TPRD revision that drops the unresolved IDs from §Guardrails-Manifest (not recommended — rule 32 axes 2-7 are load-bearing for the TPRD's declared perf targets in §10).
+

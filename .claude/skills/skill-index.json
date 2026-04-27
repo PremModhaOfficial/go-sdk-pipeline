@@ -1,6 +1,6 @@
 {
   "schema_version": "1.1.0",
-  "pipeline_version": "0.3.0",
+  "pipeline_version": "0.4.0",
   "generated_by": "manual-authorship",
   "note": "Static, human-curated catalog. Updated manually in the same PR that adds/removes a SKILL.md. No runtime synthesis; no auto-rebuild.",
   "skills": {

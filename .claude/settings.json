@@ -1,5 +1,5 @@
 {
-  "pipeline_version": "0.3.0",
+  "pipeline_version": "0.4.0",
   "target_sdk_dir_env": "SDK_TARGET_DIR",
   "phase_budgets": {
     "intake": {

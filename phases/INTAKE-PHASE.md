@@ -74,6 +74,33 @@ Typical triggers (rare with detailed TPRD): package placement fine-tuning, open 
 ### Wave I5 — Mode Detection
 Based on §1 Request Type, set `mode: A|B|C` in manifest. Mode B and C gate Phase 0.5.
 
+### Wave I5.5 — Package Resolution (NEW in v0.4.0)
+**Agent**: `sdk-intake-agent`
+**Severity**: BLOCKER on dependency-resolution failure
+**Purpose**: Resolve which package manifests apply to this run, and freeze the agent/skill/guardrail set the rest of the pipeline is allowed to invoke.
+
+**TPRD optional fields** (all default to Go; backwards-compatible):
+
+| Field | Default | Meaning |
+|---|---|---|
+| `§Target-Language` | `go` | Primary language adapter package required for this run. Must match a manifest in `.claude/package-manifests/<lang>.json`. |
+| `§Target-Tier` | `T1` | Pipeline tier — `T1`=full perf gates (alloc/profile/soak/complexity), `T2`=skeleton+governance (build/test/lint/supply-chain only), `T3`=out-of-scope. |
+| `§Required-Packages` | `["shared-core@>=1.0.0", "<§Target-Language>@>=1.0.0"]` | Override list. Advanced; rarely set explicitly. |
+
+**Resolution algorithm**:
+1. Parse `§Target-Language` (default `go`), `§Target-Tier` (default `T1`), `§Required-Packages` (default derived as above).
+2. For each declared package: verify `.claude/package-manifests/<name>.json` exists; verify version satisfies declared semver range; recursively resolve `depends`.
+3. Compute the union of `agents`, `skills`, `guardrails` arrays across all resolved manifests → the run's **active set**.
+4. Write `runs/<run-id>/context/active-packages.json` (canonical artifact downstream agents read).
+5. Write `runs/<run-id>/context/toolchain.md` (informational digest of the language adapter's `toolchain` block).
+
+**Failure modes**:
+- Manifest missing → BLOCKER (file `docs/PROPOSED-PACKAGES.md` entry; halt with exit 7).
+- Version range unsatisfiable → BLOCKER.
+- Circular `depends` → BLOCKER.
+
+**Output**: `runs/<run-id>/context/active-packages.json`, `runs/<run-id>/context/toolchain.md`.
+
 ### Wave I6 — Completeness Check
 **Agent**: `sdk-intake-agent`
 Runs `spec-completeness-guardrail` (G20 + G21):
@@ -98,6 +125,8 @@ FAIL → back to I4; else → I7.
 - `runs/<run-id>/intake/guardrails-manifest-check.md` — PASS verdict (FAIL halts pipeline with exit 6)
 - `runs/<run-id>/intake/clarifications.jsonl` — every Q + A (may be empty for detailed TPRDs)
 - `runs/<run-id>/intake/mode.json` — `{ "mode": "A|B|C", "target_package": "...", "new_exports": [...] }`
+- `runs/<run-id>/context/active-packages.json` (NEW v0.4.0) — resolved package set for this run; consumed by phase leads + guardrail-validator
+- `runs/<run-id>/context/toolchain.md` (NEW v0.4.0) — language adapter's toolchain digest; informational
 - `runs/<run-id>/state/run-manifest.json` updated with intake completion
 
 ## Metrics
@@ -108,7 +137,7 @@ FAIL → back to I4; else → I7.
 
 ## Guardrails
 
-G20 (all 14 sections + 2 manifests non-empty), G21 (§Non-Goals populated), G22 (clarifications ≤3 — info only), **G23 (NEW: §Skills-Manifest validation, WARN)**, **G24 (NEW: §Guardrails-Manifest validation, BLOCKER)**.
+G20 (all 14 sections + 2 manifests non-empty), G21 (§Non-Goals populated), G22 (clarifications ≤3 — info only), **G23 (§Skills-Manifest validation, WARN)**, **G24 (§Guardrails-Manifest validation, BLOCKER)**, **G05 (v0.4.0: active-packages.json valid + resolves, BLOCKER)**.
 
 ## Example flows
 

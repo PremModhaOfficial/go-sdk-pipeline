@@ -485,7 +485,7 @@ Your between-run responsibilities:
 
 1. **Review `docs/PROPOSED-SKILLS.md`** — author the ones worth adding; merge via PR
 2. **Review `evolution/skill-candidates/<name>/`** — promote drafts you like; delete ones you don't
-3. **Monitor `baselines/skill-health.json`** — `manifest_miss_rate` rising = TPRDs referencing non-existent skills; `skill_stability` rising = learning-engine churning existing skills too hard
+3. **Monitor `baselines/shared/skill-health.json`** — `manifest_miss_rate` rising = TPRDs referencing non-existent skills; `skill_stability` rising = learning-engine churning existing skills too hard
 
 ---
 

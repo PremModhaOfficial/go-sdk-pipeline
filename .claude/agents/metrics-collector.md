@@ -202,7 +202,7 @@ Count `Example_*` functions in the same package:
 ```bash
 EXAMPLE_COUNT=$(grep -cE '^func Example' "$SDK_TARGET_DIR/<pkg>"/*_test.go 2>/dev/null | awk -F: '{s+=$2} END{print s+0}')
 ```
-Append one line to `baselines/output-shape-history.jsonl`:
+Append one line to `baselines/go/output-shape-history.jsonl`:
 ```json
 {"run_id":"<uuid>","timestamp":"<ISO>","target_package":"<pkg>","skills_invoked":["<skill>","..."],"shape_hash":"<sha256>","export_count":<N>,"example_count":<M>,"pipeline_version":"<ver>"}
 ```

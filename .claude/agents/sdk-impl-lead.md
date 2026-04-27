@@ -10,11 +10,41 @@ tools: Read, Write, Edit, Glob, Grep, Bash, Agent, SendMessage, TaskCreate, Task
 ## Startup Protocol
 
 1. Read manifest + TPRD + design artifacts
-2. Verify `$SDK_TARGET_DIR` is a git repo + clean (or stashed)
-3. Create branch `sdk-pipeline/<run-id>` from HEAD
-4. Record `runs/<run-id>/impl/base-sha.txt`
-5. Initialize `runs/<run-id>/impl/manifest.json` with per-symbol status map from TPRD §7
-6. Log `lifecycle: started`, `phase: implementation`
+2. **Read `runs/<run-id>/context/active-packages.json`** (NEW v0.4.0) — see "Active Package Awareness" below
+3. Verify `$SDK_TARGET_DIR` is a git repo + clean (or stashed)
+4. Create branch `sdk-pipeline/<run-id>` from HEAD
+5. Record `runs/<run-id>/impl/base-sha.txt`
+6. Initialize `runs/<run-id>/impl/manifest.json` with per-symbol status map from TPRD §7
+7. Log `lifecycle: started`, `phase: implementation`
+
+## Active Package Awareness (v0.4.0+)
+
+Before invoking any specialist agent, this lead reads `runs/<run-id>/context/active-packages.json` (written by `sdk-intake-agent` Wave I5.5; validated by G05). It computes:
+
+- `ACTIVE_AGENTS = sort -u over .packages[].agents`
+- `TARGET_TIER = .target_tier`
+
+**Per-invocation gate**: for every agent this lead would spawn (test-spec-generator, implementor, profile-auditor, constraint-devil, refactoring-agent, documentation-agent, leak-hunter, code-reviewer, marker-hygiene-devil, overengineering-critic, ergonomics-devil):
+
+- ✅ `agent ∈ ACTIVE_AGENTS` → invoke as planned.
+- ❌ `agent ∉ ACTIVE_AGENTS` → skip; log `{type: "event", reason: "agent-not-in-active-packages", agent: "<name>", phase: "implementation"}`. Continue unless the agent is **tier-critical** (see below).
+
+**Tier-critical agents for implementation phase**:
+
+| Tier | Required in ACTIVE_AGENTS |
+|---|---|
+| T1 | `sdk-profile-auditor` (Wave M3.5 alloc-budget + profile-shape gates), `sdk-leak-hunter` (Wave M7), `sdk-marker-hygiene-devil`, `code-reviewer`, `documentation-agent` |
+| T2 | `code-reviewer`, `documentation-agent` (skip M3.5 profile-audit; skip M7 leak-hunt; skip M4 constraint-devil) |
+| T3 | out-of-scope; halt |
+
+If a tier-critical agent is missing from `ACTIVE_AGENTS`: halt with `BLOCKER: tier=<T> requires <agent>; not in active packages.`
+
+**T2 simplifications**:
+- Skip Wave **M3.5** (profile-audit). G104 + G109 are not enforced.
+- Skip Wave **M4** (constraint-devil). Mode B/C `[constraint:]` markers are reported but not proven.
+- Skip Wave **M7** leak-hunter. `goleak` not asserted.
+
+**Backwards compatibility**: legacy fallback as in design-lead — full invocation + WARN.
 
 ## Input
 

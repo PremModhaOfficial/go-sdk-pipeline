@@ -53,18 +53,20 @@ OWNER        = "pipeline" | "human" | "co"
    {
      "file": "core/l2cache/dragonfly/cache.go",
      "symbol": "mapRows",
+     "language": "go",
      "owner": "human",
      "traces_to": ["MANUAL-IDT-001"],
      "invariants": ["bench/BenchmarkList within 0% of current baseline"],
      "proof_bench": "BenchmarkList",
-     "hash_sha256": "<hash of symbol's bytes>",
+     "ast_hash": "<sha256 from scripts/ast-hash/ast-hash.sh — gofmt-resilient>",
      "stable_since": null,
      "deprecated_in": null,
      "do_not_regenerate": false
    }
    ```
-4. **Compare to cache** — for each symbol in cache but with changed hash, flag as "out-of-band modification"; raise `ESCALATION: out-of-band modification detected on pipeline-owned symbol`
-5. **Update cache** — write new `state/ownership-cache.json` with refreshed hashes
+   The `ast_hash` is computed via `scripts/ast-hash/ast-hash.sh <pack> <file> <symbol>` (Go backend uses `ast.Fprint` with position-stripping filter; Python/Rust packs supply equivalent backends). Pre-0.3.0 ownership maps used `byte_start`/`byte_end`/`hash_sha256` (byte-range hash); G95/G96 honor both schemas during the deprecation window.
+4. **Compare to cache** — for each symbol in cache with changed `ast_hash`, flag as "out-of-band modification"; raise `ESCALATION: out-of-band modification detected on pipeline-owned symbol`
+5. **Update cache** — write new `state/ownership-cache.json` with refreshed `ast_hash` values
 6. **Output reports** — `runs/<run-id>/extension/ownership-summary.md` with counts (pipeline-owned, human-owned, co-owned, constraint-bearing)
 
 ## Output Files

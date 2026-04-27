@@ -51,7 +51,7 @@ The graph complements — does NOT replace — the per-run `runs/<run-id>/decisi
 ```
 create_entities([
   {name: "run-f47ac10b", entityType: "Run", observations: [
-    "pipeline_version: sdk-pipeline@0.3.0",
+    "pipeline_version: sdk-pipeline@0.4.0",
     "started: 2026-04-18T09:00:00Z",
     "ended: 2026-04-18T09:47:00Z",
     "pipeline_quality: 0.87",
@@ -274,7 +274,7 @@ Why wrong: loses the ability to query by live-version at time-of-run, makes `SUP
 | `create_entities` (Run)            | `runs/<run-id>/feedback/run-entity.jsonl`                   |
 | `create_entities` (Defect/Pattern) | `runs/<run-id>/feedback/defects-patterns.jsonl`             |
 | `add_observations` (Skill patch)   | `evolution/knowledge-base/prompt-evolution-log.jsonl`       |
-| `add_observations` (Baseline)      | `baselines/baseline-history.jsonl`                          |
+| `add_observations` (Baseline)      | `baselines/shared/baseline-history.jsonl`                          |
 | `add_observations` (Agent quality) | `runs/<run-id>/feedback/agent-performance.jsonl`            |
 | `create_relations` (any)           | `runs/<run-id>/feedback/relations.jsonl`                    |
 

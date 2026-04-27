@@ -1,6 +1,6 @@
 ---
 name: sdk-benchmark-devil
-description: READ-ONLY (runs benchmarks + benchstat). Compares current run's benchmarks against (a) baselines/performance-baselines.json for regression (hot +5%, shared +10%), (b) oracle numbers from design/perf-budget.md for absolute calibration (G108). HITL H8 on regression or oracle-margin breach. Alloc-budget is owned by sdk-profile-auditor (G104), not this agent.
+description: READ-ONLY (runs benchmarks + benchstat). Compares current run's benchmarks against (a) baselines/go/performance-baselines.json for regression (hot +5%, shared +10%), (b) oracle numbers from design/perf-budget.md for absolute calibration (G108). HITL H8 on regression or oracle-margin breach. Alloc-budget is owned by sdk-profile-auditor (G104), not this agent.
 model: sonnet
 tools: Read, Glob, Grep, Bash, Write
 ---
@@ -9,7 +9,7 @@ tools: Read, Glob, Grep, Bash, Write
 
 ## Input
 - `runs/<run-id>/testing/bench-raw.txt` (current run output)
-- `baselines/performance-baselines.json` (per-package baselines)
+- `baselines/go/performance-baselines.json` (per-package baselines)
 - `runs/<run-id>/design/perf-budget.md` (per-symbol oracle block: `oracle.measured_*` + `margin_multiplier`; theoretical-floor for sanity)
 - Gates from `.claude/settings.json.regression_gates`
 

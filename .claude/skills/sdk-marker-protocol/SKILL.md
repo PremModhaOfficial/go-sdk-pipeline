@@ -51,7 +51,7 @@ func (c *Cache) Get(ctx context.Context, key string) (string, error) { ... }
 
 ### 3. `[stable-since: vX.Y.Z]`
 
-Symbol signature frozen at this version. Any signature change without a TPRD §12 MAJOR declaration is a G101 BLOCKER. Baselines live in `scripts/guardrails/baselines/stable-signatures.json`, normalized through whitespace collapse.
+Symbol signature frozen at this version. Any signature change without a TPRD §12 MAJOR declaration is a G101 BLOCKER. Baselines live in `baselines/go/stable-signatures.json`, normalized through whitespace collapse.
 
 ### 4. `[deprecated-in: vX.Y.Z]`
 
@@ -59,7 +59,7 @@ Paired with godoc `Deprecated:` line. Removing the symbol before an actual relea
 
 ### 5. `[do-not-regenerate]`
 
-Bare marker (no value). File's first 1024 bytes trigger a whole-file hash lock in `baselines/do-not-regenerate-hashes.json` (G100). Any subsequent byte change is BLOCKER until the baseline hash is refreshed via human PR.
+Bare marker (no value). File's first 1024 bytes trigger a whole-file hash lock in `baselines/go/do-not-regenerate-hashes.json` (G100). Any subsequent byte change is BLOCKER until the baseline hash is refreshed via human PR.
 
 ### 6. `[owned-by: MANUAL | pipeline | pipeline:<agent>]`
 

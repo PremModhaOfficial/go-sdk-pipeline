@@ -21,7 +21,7 @@ Emitted by `learning-engine` OR `sdk-bootstrap-lead` when a skill is created / b
 ```json
 {
   "run_id": "<uuid>",
-  "pipeline_version": "sdk-pipeline@0.3.0",
+  "pipeline_version": "sdk-pipeline@0.4.0",
   "skill_version_snapshot": {"<skill>": "<version>", ...},
   "timestamp": "2026-04-17T...",
   "type": "skill-evolution",
@@ -43,7 +43,7 @@ Emitted by every agent to track per-phase token + wall-clock consumption.
 ```json
 {
   "run_id": "<uuid>",
-  "pipeline_version": "sdk-pipeline@0.3.0",
+  "pipeline_version": "sdk-pipeline@0.4.0",
   "skill_version_snapshot": {...},
   "timestamp": "2026-04-17T...",
   "type": "budget",

@@ -135,3 +135,69 @@ Status: `proposed` (awaiting human PR authorship per rule #23). These are net-ne
 | SHOULD | `mvs-forced-bump-preview` | Pattern for running Go MVS simulation against the live target `go.mod` (not a scratch module) to surface forced bumps of existing direct deps at design time, not impl time. | `sdk-dep-vet-devil`, `sdk-design-lead`, `sdk-impl-lead` | P2 (retro-design, retro-impl) |
 
 Note: These are proposals only. Per CLAUDE.md Rule #23 skills are human-authored; the pipeline does NOT draft SKILL.md bodies for these entries. Related guardrails are proposed in `docs/PROPOSED-GUARDRAILS.md` (G25, G36, G66) — guardrails and skills reinforce each other but are independently PR-able.
+
+---
+
+## Auto-filed from run `sdk-dragonfly-p1-v1` on 2026-04-22
+
+- **MISSING** `redis-pipeline-tx-patterns` (≥1.0.0) — source run `sdk-dragonfly-p1-v1`
+- **MISSING** `go-iter-seq-patterns` (≥1.0.0) — source run `sdk-dragonfly-p1-v1`
+- **MISSING** `redis-set-sortedset-semantics` (≥1.0.0) — source run `sdk-dragonfly-p1-v1`
+- **MISSING** `generic-codec-helper-design` (≥1.0.0) — source run `sdk-dragonfly-p1-v1`
+
+---
+
+## Auto-filed from run `sdk-dragonfly-p1-v1` on 2026-04-23
+
+- **MISSING** `redis-pipeline-tx-patterns` (≥1.0.0) — source run `sdk-dragonfly-p1-v1`
+- **MISSING** `go-iter-seq-patterns` (≥1.0.0) — source run `sdk-dragonfly-p1-v1`
+- **MISSING** `redis-set-sortedset-semantics` (≥1.0.0) — source run `sdk-dragonfly-p1-v1`
+- **MISSING** `generic-codec-helper-design` (≥1.0.0) — source run `sdk-dragonfly-p1-v1`
+
+---
+
+## Auto-filed from run `sdk-dragonfly-p1-v1` on 2026-04-23
+
+- **MISSING** `redis-pipeline-tx-patterns` (≥1.0.0) — source run `sdk-dragonfly-p1-v1`
+- **MISSING** `go-iter-seq-patterns` (≥1.0.0) — source run `sdk-dragonfly-p1-v1`
+- **MISSING** `redis-set-sortedset-semantics` (≥1.0.0) — source run `sdk-dragonfly-p1-v1`
+- **MISSING** `generic-codec-helper-design` (≥1.0.0) — source run `sdk-dragonfly-p1-v1`
+
+---
+
+## Auto-filed from run `sdk-dragonfly-s2` on 2026-04-24
+
+- **MISSING** `redis-pipeline-tx-patterns` (≥1.0.0) — source run `sdk-dragonfly-s2`
+- **MISSING** `hash-field-ttl-hexpire` (≥1.0.0) — source run `sdk-dragonfly-s2`
+- **MISSING** `pubsub-lifecycle` (≥1.0.0) — source run `sdk-dragonfly-s2`
+- **MISSING** `miniredis-testing-patterns` (≥1.0.0) — source run `sdk-dragonfly-s2`
+- **MISSING** `lua-script-safety` (≥1.0.0) — source run `sdk-dragonfly-s2`
+- **MISSING** `testcontainers-dragonfly-recipe` (≥1.0.0) — source run `sdk-dragonfly-s2`
+- **MISSING** `k8s-secret-file-credential-loader` (≥1.0.0) — source run `sdk-dragonfly-s2`
+- **MISSING** `sentinel-error-model-mapping` (≥1.0.0) — source run `sdk-dragonfly-s2`
+
+---
+
+## Auto-filed from run `sdk-dragonfly-s2` on 2026-04-24
+
+- **MISSING** `redis-pipeline-tx-patterns` (≥1.0.0) — source run `sdk-dragonfly-s2`
+- **MISSING** `hash-field-ttl-hexpire` (≥1.0.0) — source run `sdk-dragonfly-s2`
+- **MISSING** `pubsub-lifecycle` (≥1.0.0) — source run `sdk-dragonfly-s2`
+- **MISSING** `miniredis-testing-patterns` (≥1.0.0) — source run `sdk-dragonfly-s2`
+- **MISSING** `lua-script-safety` (≥1.0.0) — source run `sdk-dragonfly-s2`
+- **MISSING** `testcontainers-dragonfly-recipe` (≥1.0.0) — source run `sdk-dragonfly-s2`
+- **MISSING** `k8s-secret-file-credential-loader` (≥1.0.0) — source run `sdk-dragonfly-s2`
+- **MISSING** `sentinel-error-model-mapping` (≥1.0.0) — source run `sdk-dragonfly-s2`
+
+---
+
+## Auto-filed from run `sdk-dragonfly-s2` on 2026-04-24
+
+- **MISSING** `redis-pipeline-tx-patterns` (≥1.0.0) — source run `sdk-dragonfly-s2`
+- **MISSING** `hash-field-ttl-hexpire` (≥1.0.0) — source run `sdk-dragonfly-s2`
+- **MISSING** `pubsub-lifecycle` (≥1.0.0) — source run `sdk-dragonfly-s2`
+- **MISSING** `miniredis-testing-patterns` (≥1.0.0) — source run `sdk-dragonfly-s2`
+- **MISSING** `lua-script-safety` (≥1.0.0) — source run `sdk-dragonfly-s2`
+- **MISSING** `testcontainers-dragonfly-recipe` (≥1.0.0) — source run `sdk-dragonfly-s2`
+- **MISSING** `k8s-secret-file-credential-loader` (≥1.0.0) — source run `sdk-dragonfly-s2`
+- **MISSING** `sentinel-error-model-mapping` (≥1.0.0) — source run `sdk-dragonfly-s2`

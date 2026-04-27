@@ -56,6 +56,7 @@
     "G02",
     "G03",
     "G04",
+    "G05",
     "G06",
     "G07",
     "G20",
@@ -74,6 +75,23 @@
     "G93",
     "G116"
   ],
+
+  "baselines": {
+    "scope_owned": "shared",
+    "owns_shared": [
+      "quality-baselines.json",
+      "skill-health-baselines.json",
+      "skill-health.json",
+      "baseline-history.jsonl"
+    ],
+    "owns_shared_paths": [
+      "baselines/shared/quality-baselines.json",
+      "baselines/shared/skill-health-baselines.json",
+      "baselines/shared/skill-health.json",
+      "baselines/shared/baseline-history.jsonl"
+    ],
+    "scope_note": "v0.4.0 ships with files moved to baselines/shared/ per Decision D1=B. Per-agent quality + per-skill stability are intrinsically language-neutral; one shared partition. All consumers (baseline-manager, metrics-collector, learning-engine, G86) updated to read the partitioned paths. OPEN QUESTION D2 (deferred): shared-core agents/skills carrying generalization_debt may need partitioning into language-specific buckets until rewritten — see docs/LANGUAGE-AGNOSTIC-DECISIONS.md §D2. Decision pending first Python run data."
+  },
 
   "generalization_debt": {
     "agents": [

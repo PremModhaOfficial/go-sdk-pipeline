@@ -22,7 +22,7 @@ What this NFR-driven pipeline adds on top of the original SaaS multi-agent fleet
 | **NFR-driven framing** | TPRD §5 NFR + §10 Perf Targets + §11 Bench are first-class numeric gates | Quality is a contract, not afterthought |
 | **Per-skill versioning** | `version: X.Y.Z` frontmatter + `evolution-log.md` sibling | Every skill change is auditable |
 | **Human-only skill authorship** | `learning-engine` patches existing bodies only; never creates new SKILL.md | New skills require human PR |
-| **Pipeline versioning** | `pipeline_version: 0.3.0` stamped on every log entry + run | Cross-run reproducibility anchor |
+| **Pipeline versioning** | `pipeline_version: 0.4.0` stamped on every log entry + run | Cross-run reproducibility anchor |
 | **Supply-chain gate** | `govulncheck` + `osv-scanner` + license allowlist (G32–G34) | No vulnerable / unfree deps |
 | **Two slash commands** | `/run-sdk-addition`, `/preflight-tprd` | Single entry point + risk-free check |
 
@@ -130,9 +130,9 @@ All 19 `sdk_native` entries shipped as skeleton placeholders in v0.2.0 (frontmat
 | `docs/PROPOSED-SKILLS.md` | Human-review backlog |
 | `evolution/skill-candidates/` | Inbox for human-promote |
 | `golden-corpus/` | Per-skill canonical fixtures |
-| `baselines/skill-health.json` | NEW pipeline-maturity dimension |
-| `baselines/do-not-regenerate-hashes.json` | NEW (G100 backing store) |
-| `baselines/stable-signatures.json` | NEW (G101 backing store) |
+| `baselines/shared/skill-health.json` | NEW pipeline-maturity dimension |
+| `baselines/go/do-not-regenerate-hashes.json` | NEW (G100 backing store) |
+| `baselines/go/stable-signatures.json` | NEW (G101 backing store) |
 | `state/ownership-cache.json` | Target-SDK marker ownership map |
 
 ---

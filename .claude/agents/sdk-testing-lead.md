@@ -10,15 +10,45 @@ tools: Read, Write, Edit, Glob, Grep, Bash, Agent, SendMessage, TaskCreate, Task
 ## Startup Protocol
 
 1. Read manifest
-2. Verify on branch `sdk-pipeline/<run-id>` in target SDK
-3. Read `runs/<run-id>/tprd.md` + design artifacts for observability + fuzz + testing specs
-4. Log `lifecycle: started`, `phase: testing`
+2. **Read `runs/<run-id>/context/active-packages.json`** (NEW v0.4.0) — see "Active Package Awareness" below
+3. Verify on branch `sdk-pipeline/<run-id>` in target SDK
+4. Read `runs/<run-id>/tprd.md` + design artifacts for observability + fuzz + testing specs
+5. Log `lifecycle: started`, `phase: testing`
+
+## Active Package Awareness (v0.4.0+)
+
+Before invoking any specialist agent, this lead reads `runs/<run-id>/context/active-packages.json` (written by `sdk-intake-agent` Wave I5.5; validated by G05). It computes:
+
+- `ACTIVE_AGENTS = sort -u over .packages[].agents`
+- `TARGET_TIER = .target_tier`
+
+**Per-invocation gate**: for every agent this lead would spawn (unit-test-agent, integration-test-agent, sdk-integration-flake-hunter, performance-test-agent, sdk-benchmark-devil, sdk-complexity-devil, sdk-soak-runner, sdk-drift-detector, sdk-leak-hunter, fuzz-agent, mutation-test-agent):
+
+- ✅ `agent ∈ ACTIVE_AGENTS` → invoke as planned.
+- ❌ `agent ∉ ACTIVE_AGENTS` → skip; log `{type: "event", reason: "agent-not-in-active-packages", agent: "<name>", phase: "testing"}`. Continue unless the agent is **tier-critical** (see below).
+
+**Tier-critical agents for testing phase**:
+
+| Tier | Required in ACTIVE_AGENTS |
+|---|---|
+| T1 | `sdk-leak-hunter` (T6), `sdk-benchmark-devil` (T5), `sdk-complexity-devil` (T5), `sdk-soak-runner` (T5.5), `sdk-drift-detector` (T5.5), `sdk-integration-flake-hunter` (T3) |
+| T2 | `sdk-integration-flake-hunter` (T3); skip the perf-confidence wave (T5/T5.5/T6); only build/test/lint/supply-chain enforced |
+| T3 | out-of-scope; halt |
+
+If a tier-critical agent is missing from `ACTIVE_AGENTS`: halt with `BLOCKER: tier=<T> requires <agent>; not in active packages.`
+
+**T2 simplifications**:
+- Skip Wave **T4** (performance-test-agent), **T5** (benchmark-devil + complexity-devil), **T5.5** (soak-runner + drift-detector), **T6** (leak-hunter), **T7** (fuzz), **T10** (mutation).
+- HITL **H8** (perf gate) becomes a no-op for T2.
+- Coverage gate (T1 wave) still applies; supply-chain (T8) still applies.
+
+**Backwards compatibility**: legacy fallback as in design-lead — full invocation + WARN.
 
 ## Input
 
 - Target branch on `$SDK_TARGET_DIR`
 - TPRD §8 Observability, §11 Testing, §5 NFR
-- `baselines/performance-baselines.json`
+- `baselines/go/performance-baselines.json`
 
 ## Ownership
 
@@ -96,7 +126,7 @@ tools: Read, Write, Edit, Glob, Grep, Bash, Agent, SendMessage, TaskCreate, Task
 **Rule**: When a TPRD §10 numeric constraint fails bench evaluation AND the failure mode is "target < underlying dep's measured floor" (not a regression or a wiring defect in the pipeline's code), classify the outcome as **CALIBRATION-WARN**, not FAIL. Emit an H8 gate with Option A (accept-as-calibration-miss with baseline update) pre-selected as the recommended path — the constraint is mechanically unreachable and a code fix cannot resolve it.
 
 **How to classify (T5 + benchmark-devil handoff)**:
-1. On bench result miss, consult `baselines/performance-baselines.json` and the proposed `G66` guardrail's calibration file for the underlying client's floor.
+1. On bench result miss, consult `baselines/go/performance-baselines.json` and the proposed `G66` guardrail's calibration file for the underlying client's floor.
 2. If `measured_value ≈ dep_floor` and `tprd_target << dep_floor`, mark the finding `CALIBRATION-WARN` in `testing/bench-calibration.md` with: constraint, target, measured, dep_floor, delta-to-floor-vs-delta-to-target.
 3. Do NOT emit H8 with BLOCKER tone. The gate is still required (H8 is user-facing constraint-acceptance) but recommendation is Option A (waiver + baseline update), not Option D (halt).
 4. If `measured_value >> dep_floor` (the SDK wrapper is the problem, not the dep), continue to classify as FAIL — the wrapper has a correctable allocation/latency issue.

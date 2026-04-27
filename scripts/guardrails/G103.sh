@@ -2,54 +2,66 @@
 # phases: impl
 # severity: BLOCKER
 # No forged MANUAL markers — every [traces-to: MANUAL-*] or [owned-by: MANUAL]
-# must be on a symbol listed in ownership-map manual_symbols.
+# in a symbol's godoc must correspond to an entry in ownership-map.manual_symbols.
+# AST-based as of pipeline 0.3.0 — godoc associated with each symbol via the
+# symbols enumerator instead of regex scan-ahead.
 set -uo pipefail
 RUN_DIR="${1:?}"; TARGET="${2:-}"
 [ -n "$TARGET" ] || { echo "no target dir"; exit 0; }
 OWNERSHIP="$RUN_DIR/impl/ownership-map.json"
 [ -f "$OWNERSHIP" ] || { echo "no ownership-map (Mode A — skipped)"; exit 0; }
 
-python3 - "$TARGET" "$OWNERSHIP" "$RUN_DIR" <<'PY'
-import json, pathlib, re, sys
-target, ownership_path, run_dir = sys.argv[1:4]
-target_p = pathlib.Path(target)
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+SYMBOLS="$REPO_ROOT/scripts/ast-hash/symbols.sh"
+PACK="${PACK:-go}"
+
+python3 - "$TARGET" "$OWNERSHIP" "$RUN_DIR" "$SYMBOLS" "$PACK" <<'PY'
+import json, pathlib, re, subprocess, sys
+target, ownership_path, run_dir, symbols_dispatcher, pack = sys.argv[1:6]
 
 own = json.load(open(ownership_path))
-allowed = set()  # set of (file, symbol)
-for e in own.get("manual_symbols", []):
-    allowed.add((e.get("file", ""), e.get("symbol", "")))
+allowed = {(e.get("file", ""), e.get("symbol", "")) for e in own.get("manual_symbols", [])}
 manual_files = set(own.get("manual_files", []))
 for e in own.get("manual_symbols", []):
     manual_files.add(e.get("file", ""))
 
-manual_marker_re = re.compile(
-    r'\[(?:traces-to:\s*MANUAL-[^\]]+|owned-by:\s*MANUAL)\]')
-sym_re = re.compile(r'^(?:func\s+(?:\([^)]+\)\s+)?([A-Z]\w+)|type\s+([A-Z]\w+))')
+r = subprocess.run([symbols_dispatcher, pack, "-dir", target], capture_output=True, text=True, timeout=60)
+if r.returncode != 0:
+    print(f"FAIL: symbols enumerator exit {r.returncode}: {r.stderr.strip()}")
+    sys.exit(2)
+data = json.loads(r.stdout) if r.stdout else {}
+
+manual_marker_re = re.compile(r'\[(?:traces-to:\s*MANUAL-[^\]]+|owned-by:\s*MANUAL)\]')
 
 forged = []
-for p in target_p.rglob("*.go"):
-    if p.name.endswith("_test.go"):
+for rel, fs in data.items():
+    for s in fs.get("symbols", []):
+        godoc = "\n".join(s.get("godoc") or [])
+        if not manual_marker_re.search(godoc):
+            continue
+        # The symbol carries a MANUAL marker — it must be in the allowed set
+        if (rel, s["name"]) not in allowed:
+            forged.append(f"{rel}:{s.get('line')} MANUAL marker on pipeline symbol '{s['name']}'")
+
+# Also catch file-level MANUAL markers (e.g., package-level comments) that
+# point at non-manual files. Scan files for markers not on a known symbol.
+import re as _re
+for rel, fs in data.items():
+    if rel in manual_files:
         continue
-    rel = str(p.relative_to(target_p))
-    lines = p.read_text(errors="ignore").splitlines()
-    for i, line in enumerate(lines):
+    p = pathlib.Path(target) / rel
+    text = p.read_text(errors="ignore")
+    # Find markers NOT inside a symbol's godoc (those were checked above)
+    symbol_godoc_lines = set()
+    for s in fs.get("symbols", []):
+        for g in s.get("godoc") or []:
+            symbol_godoc_lines.add(g.strip())
+    for lineno, line in enumerate(text.splitlines(), start=1):
         if not manual_marker_re.search(line):
             continue
-        # find the nearest following symbol declaration
-        sym = None
-        for j in range(i + 1, min(i + 30, len(lines))):
-            m = sym_re.match(lines[j])
-            if m:
-                sym = m.group(1) or m.group(2); break
-            if lines[j].strip() and not lines[j].lstrip().startswith("//"):
-                break
-        if sym is None:
-            # marker not attached to a symbol — allow (file-level)
-            if rel not in manual_files:
-                forged.append(f"{rel}:{i+1} MANUAL marker on non-manual file")
-            continue
-        if (rel, sym) not in allowed:
-            forged.append(f"{rel}:{i+1} MANUAL marker on pipeline symbol '{sym}'")
+        if line.strip() in symbol_godoc_lines:
+            continue  # already covered
+        forged.append(f"{rel}:{lineno} MANUAL marker on non-manual file (file-level)")
 
 out = pathlib.Path(run_dir) / "impl" / "forged-manual-check.md"
 out.parent.mkdir(parents=True, exist_ok=True)

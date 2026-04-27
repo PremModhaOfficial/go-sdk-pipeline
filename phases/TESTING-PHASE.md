@@ -8,7 +8,7 @@ Exhaustive verification beyond the TDD tests written in Phase 2. Adds integratio
 
 - Target branch (`sdk-pipeline/<run-id>`) in `$SDK_TARGET_DIR`
 - `runs/<run-id>/design/*`
-- `baselines/performance-baselines.json`
+- `baselines/go/performance-baselines.json`
 
 ## Waves
 
@@ -39,7 +39,7 @@ Exhaustive verification beyond the TDD tests written in Phase 2. Adds integratio
 
 ### Wave T5 — Benchmark Devil
 **Agent**: `sdk-benchmark-devil`
-- Compare raw output against `baselines/performance-baselines.json` for shared packages
+- Compare raw output against `baselines/go/performance-baselines.json` for shared packages
 - For new package: capture baseline (first run = baseline)
 - `benchstat` compare; verdict PASS / REGRESS / ACCEPT-WITH-WAIVER
 - Regression gate (from settings.json): hot path +5%, shared +10%

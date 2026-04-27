@@ -147,6 +147,6 @@ For Mode B (extension): verify each new export carries `[stable-since: <current-
 
 ## Guardrail hooks
 
-- **G101** — `[stable-since:]` signature changes require TPRD §12 `MAJOR` or `breaking` keyword present. BLOCKER. Baseline at `scripts/guardrails/baselines/stable-signatures.json`, whitespace-normalized.
+- **G101** — `[stable-since:]` signature changes require TPRD §12 `MAJOR` or `breaking` keyword present. BLOCKER. Baseline at `baselines/go/stable-signatures.json`, whitespace-normalized.
 - **G102** — `[stable-since:]` value grammar: `^v\d+\.\d+\.\d+$`. BLOCKER on malformed.
 - Reference tool (not run as a guardrail, used at design time): `go run golang.org/x/exp/cmd/gorelease@latest -base=<prev-tag>` — emits the canonical classification. If gorelease and pipeline disagree, pipeline wins (it has TPRD §12 context), but the divergence is logged for human review.

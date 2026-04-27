@@ -22,26 +22,26 @@ You are CONSERVATIVE and DATA-DRIVEN. You raise baselines when quality improves 
 
 ## Input (Read BEFORE processing)
 - `.feedback/metrics/agent-telemetry.jsonl` — Current run metrics (CRITICAL)
-- `.feedback/learning/baselines/quality-baselines.json` — Existing quality baselines (if exists)
-- `.feedback/learning/baselines/coverage-baselines.json` — Existing coverage baselines (if exists)
-- `.feedback/learning/baselines/performance-baselines.json` — Existing performance baselines (if exists)
+- `baselines/shared/quality-baselines.json` — Existing quality baselines (if exists)
+- `baselines/go/coverage-baselines.json` — Existing coverage baselines (if exists)
+- `baselines/go/performance-baselines.json` — Existing performance baselines (if exists)
 - `docs/testing/test-results/` — Coverage and performance data from testing phase
 - `.feedback/learning/knowledge-base/agent-performance.jsonl` — Historical agent performance (if exists)
 
 ## Ownership
-You **OWN** all files in `.feedback/learning/baselines/`:
-- `.feedback/learning/baselines/quality-baselines.json` — Per-agent quality score baselines
-- `.feedback/learning/baselines/coverage-baselines.json` — Per-package branch coverage baselines
-- `.feedback/learning/baselines/performance-baselines.json` — Per-endpoint performance baselines
-- `.feedback/learning/baselines/regression-report.md` — Regression analysis report
-- `.feedback/learning/baselines/baseline-history.jsonl` — Historical baseline changes
+You **OWN** all files in `baselines/`:
+- `baselines/shared/quality-baselines.json` — Per-agent quality score baselines
+- `baselines/go/coverage-baselines.json` — Per-package branch coverage baselines
+- `baselines/go/performance-baselines.json` — Per-endpoint performance baselines
+- `baselines/go/regression-report.md` — Regression analysis report
+- `baselines/shared/baseline-history.jsonl` — Historical baseline changes
 
-You **NEVER** modify agent outputs, telemetry files, test results, or any file outside `.feedback/learning/baselines/`.
+You **NEVER** modify agent outputs, telemetry files, test results, or any file outside `baselines/`.
 
 ## Process
 
 ### Step 1: Check for Existing Baselines
-Read `.feedback/learning/baselines/` directory:
+Read `baselines/` directory:
 - If no baseline files exist → this is the first run, proceed to Step 3 (create initial baselines)
 - If baseline files exist → proceed to Step 2 (compare and update)
 
@@ -92,7 +92,7 @@ Read `.feedback/learning/knowledge-base/agent-performance.jsonl` to count total 
   - Note in the regression report that baselines were reset
 
 ### Step 5: Log Baseline Changes
-Append all changes to `.feedback/learning/baselines/baseline-history.jsonl`:
+Append all changes to `baselines/shared/baseline-history.jsonl`:
 ```json
 {"run_id":"<uuid>","timestamp":"<ISO>","type":"quality|coverage|performance","target":"<agent-or-package-or-endpoint>","previous_baseline":<value>,"new_baseline":<value>,"reason":"improvement|reset|initial","runs_tracked":<N>}
 ```
@@ -152,7 +152,7 @@ Append all changes to `.feedback/learning/baselines/baseline-history.jsonl`:
 
 ## Regression Report
 
-Write `.feedback/learning/baselines/regression-report.md`:
+Write `baselines/go/regression-report.md`:
 
 ```markdown
 <!-- Generated: <ISO-8601> | Run: <run_id> -->
@@ -275,12 +275,12 @@ Zero inter-agent communications were logged across 5 consecutive phases (Archite
 
 ### Delta 2: Add skill-health baseline
 **Why**: SDK pipeline evolves skills continuously. Need longitudinal signal.
-**How**: New baseline file `baselines/skill-health.json` tracking:
+**How**: New baseline file `baselines/shared/skill-health.json` tracking:
 - `skill_stability` — patches per skill per run (rolling 10-run avg)
 - `existing_skill_patch_accept_rate` — % of learning-engine body-patches that were NOT reverted by the user at H10 (inverse of `learning_patches_reverted_by_user`)
-- `output_shape_hash` — SHA256 of the sorted exported-symbol signature list, per-run, tracked in `baselines/output-shape-history.jsonl`. Compensating baseline for retired golden-corpus. A change between two runs that invoked overlapping skills is surfaced by `learning-engine` in `learning-notifications.md`.
-- `devil_verdict_stability` — per-skill `devil_fix_rate` + `devil_block_rate`, tracked in `baselines/devil-verdict-history.jsonl`. Rising rate after a skill auto-patch = patch likely regressed code quality; surfaced by `learning-engine`.
-- `example_count_per_package` — count of `Example_*` functions per generated package, tracked in `baselines/coverage-baselines.json`. Raise-only; drop vs baseline with ≥2 prior runs = WARN in notifications.
+- `output_shape_hash` — SHA256 of the sorted exported-symbol signature list, per-run, tracked in `baselines/go/output-shape-history.jsonl`. Compensating baseline for retired golden-corpus. A change between two runs that invoked overlapping skills is surfaced by `learning-engine` in `learning-notifications.md`.
+- `devil_verdict_stability` — per-skill `devil_fix_rate` + `devil_block_rate`, tracked in `baselines/go/devil-verdict-history.jsonl`. Rising rate after a skill auto-patch = patch likely regressed code quality; surfaced by `learning-engine`.
+- `example_count_per_package` — count of `Example_*` functions per generated package, tracked in `baselines/go/coverage-baselines.json`. Raise-only; drop vs baseline with ≥2 prior runs = WARN in notifications.
 - `manifest_miss_rate` — % of runs halted at intake for missing §Guardrails-Manifest entries (exit 6). §Skills-Manifest misses are WARN-only and tracked separately (non-blocking).
 - `learning_patches_reverted_by_user` — count of patches the user reverted at H10 across latest 5 runs (↘ = notifications well-calibrated)
 - `mean_time_to_green_sec` — wall-clock from start to first passing test
@@ -301,7 +301,7 @@ Update rules per metric (applied after each run):
 - For pipeline-owned: normal logic (raise if improved >10%, keep if regressed, reset every 5 runs)
 
 ### Delta 4: Path rebasing
-- Archive writes to `.feedback/learning/baselines/*`
+- Archive writes to `baselines/*`
 - SDK pipeline writes to `baselines/*`
 
 ## Evolution patches
@@ -332,8 +332,9 @@ Read/write the same data as JSONL under `evolution/knowledge-base/`. The `G04.sh
 
 ## Completion Protocol (SDK-mode)
 
-1. Update `baselines/quality-baselines.json`, `coverage-baselines.json`, `performance-baselines.json`, `skill-health.json`
-2. Write `baselines/regression-report-<run-id>.md` (≤300 lines)
-3. Append to `baselines/baseline-history.jsonl`
+1. Update shared baselines: `baselines/shared/quality-baselines.json`, `baselines/shared/skill-health.json` (legacy stub) + `baselines/shared/skill-health-baselines.json` (authoritative)
+2. Update per-language (Go) baselines: `baselines/go/coverage-baselines.json`, `baselines/go/performance-baselines.json`
+3. Write `baselines/go/regression-report-<run-id>.md` (≤300 lines; per-language artifact)
+4. Append to `baselines/shared/baseline-history.jsonl`
 4. If every-5th-run: write `baselines/reset-event-<run-id>.md` noting reset
 5. Log `lifecycle: completed`
