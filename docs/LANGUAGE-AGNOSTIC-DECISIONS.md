@@ -1,6 +1,6 @@
 # Language-Agnostic Decision Board
 
-**Status**: living document. Last update: 2026-04-27 (v0.4.0).
+**Status**: living document. Last update: 2026-04-27 (v0.4.0 + R2 spike).
 **Audience**: future contributor (or future-Claude) picking up the multi-language work for v0.5.0+.
 **Reading order**: §TL;DR → §Decisions taken → §Per-touchpoint handling table → §Open questions → §Research branches → §Next-version checklist.
 
@@ -22,14 +22,13 @@ This document is the **decision register** — every architectural call that nee
 | **D3** | Output-shape hash strategy: per-language native (1) vs neutral-IDL hash (2) vs drop comparison (3) | **1 — per-language native** | Each language hashes its own AST. No cross-language hash equivalence. Neutral-IDL was over-engineering for the actual purpose (intra-language churn detection). |
 | **D4** | Perf units: native per language (1) vs single neutral unit (2) vs both (3) | **1 — native units per language** | `allocs/op` (Go), CPython-cycles (Python), B/op (Rust) stay native. No cross-language perf comparison; oracle margins are per-language. Bucketed neutral was nice-to-have but not load-bearing. |
 | **D5** | Which language pilot first: Python vs Rust vs TypeScript vs Java | **Python** | Maximum stress on the abstraction (most different from Go: async runtime, no compile-time types, different allocator). An abstraction that survives Python adapts trivially to Rust/Java. |
+| **D6** | Generalization-debt resolution timing: Eager vs Lazy vs Split | **Split — rule shared, examples + per-lang rules in `<pack>/conventions.yaml`** | R2 spike (2026-04-27, `docs/R2-DEBT-REWRITE-FEASIBILITY.md`) sampled three debt-bearers. ~85–95% of rule body neutralizes cleanly; the rest are genuine per-language variants. Eager-rewrite produces vacuous prose; Lazy-rewrite delays the structural decision. Split keeps rule logic DRY while letting examples pattern-match per language. |
+| **D2** | Cross-language fairness for shared-core agents with `generalization_debt`: Strict vs Lenient vs Progressive | **Lenient default + Progressive fallback** | Once D6=Split lands, the rule layer is genuinely shared, so quality_score divergence shouldn't be expected. Cheap default: keep one shared `quality-baselines.json`. Escape hatch: if first Python pilot run shows ≥3pp systematic divergence on any debt-bearer, flip that specific agent to Progressive (per-language partition) until its Split rewrite ships. |
 | **L1–L7** | (See §0 below) — manifest-only packaging, one fleet, toolchain inline, T1/T2/T3, manifests human-PR'd, generalization-debt as backlog mechanism, backwards-compat fallback in dispatch | **Locked** | Each rationale carried in commit history + CLAUDE.md rule 34. |
 
-### Decisions deferred (revisit in v0.5.0)
+### Decisions deferred (none currently)
 
-| ID | Question | Why deferred | When to revisit |
-|---|---|---|---|
-| **D2** | Cross-language fairness for shared-core agents with `generalization_debt`: Strict (partition until rewritten) vs Lenient (one shared score) vs Progressive (track both) | Decision is data-dependent; needs Python pilot to surface whether debt-bearers actually score lower on Python runs. | First Python run with metrics-collector data. If `sdk-design-devil`'s quality_score visibly drops vs Go baseline → Strict. If indistinguishable → Lenient. |
-| **D6** | Generalization-debt resolution timing: Eager (rewrite all 7 before Python) vs Lazy (rewrite as Python pilot exposes friction) vs Split (rule-eager + examples-lazy) | Pre-rewriting in the abstract risks producing prose that *looks* neutral but still leaks Go thinking. Better to pilot first and see what genuinely fails. | First Python run. Pair with R2 spike. |
+All v0.4.0/R2 decisions taken. Tier-2/Tier-3 questions in §2/§3 remain open by design — they need Python pilot data to surface naturally.
 
 ---
 
@@ -74,7 +73,7 @@ This is the load-bearing artifact. For each Go-specific concept in the pipeline,
 | **Type lattice for §7 API symbols** | Free-form §7 in TPRD; agents read Go type literals | Neutral IDL with per-lang type mapping. **DEFER until N=3** (third language). At N=2, free-form is fine. | T3-1 | Don't engineer this in v0.5.0. |
 | **Concurrency idioms in skills** (`go-concurrency-patterns`) | Lives in `go` package | Stay in `go`; v0.5.0 adds `python-asyncio-patterns` etc. as separate skills. | (already in shape) | No work — just author per-lang skills as needed. |
 | **Error idioms** (`go-error-handling-patterns`) | Lives in `go` package | Same — per-language skill. | (already in shape) | No work. |
-| **Convention layer** (`Config struct + New(cfg)`) | Embedded in agent prompts (sdk-convention-devil, sdk-design-devil) | `conventions.yaml` per language pack; `sdk-convention-devil` reads from pack instead of hardcoding. | T2-5 + D6 (debt) | First Python `sdk-convention-devil` run forces. |
+| **Convention layer** (`Config struct + New(cfg)`) | Embedded in agent prompts (sdk-convention-devil, sdk-design-devil) | `conventions.yaml` per language pack; `sdk-convention-devil` reads from pack instead of hardcoding. **R2 confirmed: this seam is load-bearing for D6=Split.** | T2-5 + D6 (Split) | First Python `sdk-convention-devil` run forces materialization. |
 | **Mock framework** (gomock) | `mock-patterns` skill | Per-language skill: `gomock-patterns` / `unittest-mock-patterns` / `mockall-patterns`. | T3-2 | Wait for N=3. |
 | **Container test framework** (testcontainers-go) | `testcontainers-setup` skill | Per-language skill; same project family, different bindings. | T3-2 | Wait for N=3. |
 | **Intake clarification questions** | Some Go-specific (aws-sdk-go-v2 vs v1) | Question bank per pack; intake asks `<lang>`-relevant subset. | Folds into T2-5 (convention layer) | Pilot Python intake; surfaces. |
@@ -82,8 +81,8 @@ This is the load-bearing artifact. For each Go-specific concept in the pipeline,
 | **HITL gate set** (H0..H10) | Unified across langs | Stay unified; per-lang adapters fill the proof not the gate. | T3-8 | No work. |
 | **Run-id namespace** | Flat in `runs/<id>/` | Stay flat; run-id is unique enough. | T3-6 | No work. |
 | **Learning-engine patch authority** | Unrestricted across all skills | Restrict to same-language partition until LTE (Learning Transfer Entropy) metric has data. | T3-5 | Conservative default; revisit later. |
-| **`shared-core` agents/skills with `generalization_debt`** | Live in shared-core; body cites Go idioms | OPEN. Strict (partition per-lang until rewritten) vs Lenient (one shared score) vs Progressive (track both). | D2 (deferred) | Pilot Python first; observe data; decide. |
-| **Generalization-debt rewrite timing** | Debt list known; not yet acted on | OPEN. Eager (all 7 before Python) vs Lazy vs Split (rule-eager + examples-lazy). | D6 (deferred) | Pair with R2 spike. |
+| **`shared-core` agents/skills with `generalization_debt`** | Live in shared-core; body cites Go idioms | **Lenient default**: one shared `baselines/shared/quality-baselines.json`. **Progressive fallback**: if Phase B shows ≥3pp quality_score divergence on any debt-bearer, flip that agent to per-language partition until its Split rewrite ships. | D2 (taken — R2 evidence) | Phase B is the empirical test. |
+| **Generalization-debt rewrite timing** | Debt list known; not yet acted on | **Split**: rule body stays in `shared-core/<agent>.md`; examples + language-specific rules go in `<pack>/conventions.yaml`. Rewrites happen lazily in Phase B as Python TPRD exposes which conventions actually fire. | D6 (taken — R2 evidence) | See `docs/R2-DEBT-REWRITE-FEASIBILITY.md`. |
 
 ---
 
@@ -136,15 +135,13 @@ Small spikes whose output *informs* decisions. Both can run in parallel.
 
 **Trigger**: before authoring `python.json`'s `oracle-catalog`.
 
-### R2. Generalization-debt rewriting feasibility study (~1 day)
+### R2. Generalization-debt rewriting feasibility study (~1 day) — **DONE 2026-04-27**
 
 **Question**: Take ONE shared-core agent with debt (e.g., `sdk-design-devil`) and try to author a language-neutral version of its prompt body. Is the result genuinely useful for both Go and Python design review? Or does it become so abstract it's vacuous?
 
-**Why it matters**: governs D2 + D6. If the rewrite produces vacuous text, **Strict** D2 is wrong (debt-bearers stay per-language forever) and **Split** D6 is needed (rule shared, examples per-lang).
+**Outcome**: **Split** is the load-bearing shape. Rule body neutralizes cleanly (~85–95% across the three sampled debt-bearers); examples + a small minority of rules are genuinely per-language and belong in `<pack>/conventions.yaml`. Eager-rewrite produces vacuous prose; Lazy-rewrite delays the structural decision.
 
-**Deliverable**: rewritten `sdk-design-devil.md` + side-by-side "Go-original vs neutralized vs split" sample, then judgment call.
-
-**Trigger**: before deciding D2 + D6.
+**Deliverable**: `docs/R2-DEBT-REWRITE-FEASIBILITY.md` — full study, side-by-side Original/Neutralized/Split for `sdk-design-devil`, judgment calls for D6 + D2, implementation shape for v0.5.0.
 
 ---
 
@@ -154,9 +151,9 @@ The actual work to onboard Python, in execution order.
 
 ### Pre-flight (before authoring `python.json`)
 
-1. **Run R2 spike** (1 day) → judgment call on D2 + D6.
-2. **Run R1 spike** (2 days) → judgment call on T2-1, oracle catalog shape.
-3. Confirm Python target SDK exists (`motadata-py-sdk` or equivalent) and has at least one client to model the §7 surface against.
+1. ~~**Run R2 spike** (1 day) → judgment call on D2 + D6.~~ ✅ **DONE 2026-04-27** — see `docs/R2-DEBT-REWRITE-FEASIBILITY.md`. Outcome: D6=Split, D2=Lenient+Progressive.
+2. **Run R1 spike** (2 days) → judgment call on T2-1, oracle catalog shape. *Optional* — R1 informs T2-1 only; Phase A scaffold is unblocked without it. Run R1 before authoring Python `oracle-catalog` entries (Phase B).
+3. Confirm Python target SDK exists (`motadata-py-sdk` or equivalent) and has at least one client to model the §7 surface against. *Defer to Phase B start.*
 
 ### Phase A — adapter scaffold (days 1-2)
 
@@ -221,11 +218,11 @@ So a future reader can mechanically check what's already done:
 - `pipeline_version` bumped 0.3.0 → 0.4.0 across settings.json + 9 propagating consumers; G06 PASS post-bump.
 
 **Did NOT ship in v0.4.0** (deferred):
-- D2 — cross-language fairness for shared-core debt-bearers (waiting for Python pilot data)
-- D6 — generalization-debt rewrite timing (waiting on R2 spike result)
-- R1 — cross-language oracle calibration study (proposed, not run)
-- R2 — debt-rewrite feasibility study (proposed, not run)
-- Python adapter scaffold (= v0.5.0)
+- ~~D2~~ → resolved 2026-04-27 (Lenient + Progressive)
+- ~~D6~~ → resolved 2026-04-27 (Split)
+- R1 — cross-language oracle calibration study (proposed, not run; optional pre-Phase B)
+- ~~R2~~ → done 2026-04-27 (`docs/R2-DEBT-REWRITE-FEASIBILITY.md`)
+- Python adapter scaffold (= v0.5.0 Phase A — next up)
 
 ---
 
@@ -248,3 +245,4 @@ For someone picking up this work fresh:
 | Date | Pipeline version | Change |
 |---|---|---|
 | 2026-04-27 | 0.4.0 | Initial — D1=B, D3=native, D4=native, D5=Python locked. D2, D6 deferred. R1, R2 spikes proposed. |
+| 2026-04-27 | 0.4.0 (post-R2) | R2 spike complete (`docs/R2-DEBT-REWRITE-FEASIBILITY.md`). D6=Split + D2=Lenient/Progressive promoted to "Decisions taken". Phase A unblocked. R1 remains optional pre-Phase-B. |
