@@ -50,14 +50,22 @@
       { "name": "go-example-function-patterns", "version": "1.0.0", "status": "stable" },
       { "name": "circuit-breaker-policy", "version": "1.0.0", "status": "stable" },
       { "name": "mcp-knowledge-graph", "version": "1.0.0", "status": "stable", "added_in": "0.3.0", "note": "Canonical read/write + fallback pattern for MCP-aware agents (neo4j-memory). Pipeline never halts on MCP failure; JSONL fallback preserved per CLAUDE.md rule 31." }
+    ],
+    "python_specific": [
+      { "name": "python-asyncio-patterns", "version": "1.0.0", "status": "stable", "added_in": "0.5.0", "archive_source": ".claude/skills/python-asyncio-patterns/SKILL.md", "note": "Authored in v0.5.0 Phase A Python adapter pilot. TaskGroup structured concurrency, task storage to prevent GC, gather vs wait, sync/async bridging." },
+      { "name": "python-class-design", "version": "1.0.0", "status": "stable", "added_in": "0.5.0", "archive_source": ".claude/skills/python-class-design/SKILL.md", "note": "Authored in v0.5.0 Phase A Python adapter pilot. Python analog of sdk-config-struct-pattern: frozen+slots dataclass Config, factory function, Protocol structural typing." },
+      { "name": "pytest-table-tests", "version": "1.0.0", "status": "stable", "added_in": "0.5.0", "archive_source": ".claude/skills/pytest-table-tests/SKILL.md", "note": "Authored in v0.5.0 Phase A Python adapter pilot. Python analog of table-driven-tests: parametrize with ids, fixtures, indirect, raises with match." },
+      { "name": "asyncio-cancellation-patterns", "version": "1.0.0", "status": "stable", "added_in": "0.5.0", "archive_source": ".claude/skills/asyncio-cancellation-patterns/SKILL.md", "note": "Authored in v0.5.0 Phase A Python adapter pilot. Python analog of context-deadline-patterns: asyncio.timeout, CancelledError re-raise contract, asyncio.shield narrow scope." }
     ]
   },
   "tags_index": {
     "sdk": ["sdk-config-struct-pattern", "sdk-otel-hook-integration", "sdk-semver-governance", "sdk-marker-protocol"],
     "go": ["go-concurrency-patterns", "go-error-handling-patterns", "go-struct-interface-design", "go-hexagonal-architecture", "go-module-paths", "go-dependency-vetting", "go-example-function-patterns"],
-    "testing": ["testing-patterns", "table-driven-tests", "tdd-patterns", "fuzz-patterns", "mock-patterns", "testcontainers-setup", "client-mock-strategy"],
+    "python": ["python-asyncio-patterns", "python-class-design", "pytest-table-tests", "asyncio-cancellation-patterns"],
+    "testing": ["testing-patterns", "table-driven-tests", "tdd-patterns", "fuzz-patterns", "mock-patterns", "testcontainers-setup", "client-mock-strategy", "pytest-table-tests"],
     "client": ["network-error-classification", "client-shutdown-lifecycle", "client-tls-configuration", "credential-provider-pattern", "client-rate-limiting", "client-mock-strategy"],
-    "resilience": ["circuit-breaker-policy", "idempotent-retry-safety", "backpressure-flow-control", "context-deadline-patterns"],
+    "resilience": ["circuit-breaker-policy", "idempotent-retry-safety", "backpressure-flow-control", "context-deadline-patterns", "asyncio-cancellation-patterns"],
+    "concurrency": ["go-concurrency-patterns", "goroutine-leak-prevention", "python-asyncio-patterns", "asyncio-cancellation-patterns"],
     "observability": ["otel-instrumentation", "sdk-otel-hook-integration"],
     "markers": ["sdk-marker-protocol"],
     "mcp": ["mcp-knowledge-graph"],
