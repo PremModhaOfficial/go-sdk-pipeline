@@ -1,10 +1,12 @@
 ---
 name: go-struct-interface-design
-description: Struct tags, constructor functions, godoc, interface design (accept interfaces, return structs), -er suffix, acronym casing, no-stutter.
-version: 1.0.0
-created-in-run: bootstrap-seed
-status: stable
-tags: [go, struct, interface, naming, godoc]
+description: >
+  Use this when defining domain structs, designing repository/service/messaging
+  interfaces, creating DTOs with validation/serialization tags, or reviewing
+  struct/interface code for naming and convention compliance. Covers struct tag
+  ordering (json/db/validate), constructor functions, godoc rules, accept-interfaces-return-structs,
+  -er suffix, acronym casing, and no-stutter naming.
+  Triggers: struct, interface, naming, godoc, struct tags, constructor, -er suffix, acronym casing.
 ---
 
 

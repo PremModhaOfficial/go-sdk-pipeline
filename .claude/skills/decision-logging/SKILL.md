@@ -1,13 +1,15 @@
 ---
 name: decision-logging
-description: Canonical JSON schemas + entry limits for `runs/<run-id>/decision-log.jsonl`.. adds `skill-evolution` and `budget` entry types .
-version: 1.1.0
-created-in-run: bootstrap-seed
-status: stable
-tags: [meta, logging, decision-log, schema]
+description: >
+  Use this when writing any entry to runs/<run-id>/decision-log.jsonl —
+  decision, lifecycle, communication, event, failure, refactor, skill-evolution,
+  or budget. Covers canonical JSON schemas, per-agent entry caps, rework-wave
+  cap-reset rules, and the skill-evolution / budget entry types added for the
+  SDK pipeline.
+  Triggers: decision-log, JSONL, schema, entry cap, skill-evolution, budget, lifecycle, communication, refactor, failure.
 ---
 
-# decision-logging (SDK-mode, v1.1.0)
+# decision-logging (SDK-mode, v1.1.1)
 
 
 ## Delta  (v1.0.0 → v1.1.0)
@@ -466,3 +468,71 @@ Why it is wrong: Empty strings and null arrays. Use `"none identified"` for trad
 5. **Omitting the conflict-resolution tag** -- When `architecture-lead` resolves a conflict per CLAUDE.md rule #8, the resulting decision entry MUST include `"conflict-resolution"` in tags. Without it, conflict audit trails are broken.
 
 6. **Logging to the wrong file** -- Architecture agents must append to `docs/architecture/decisions/decision-log.jsonl`. Detailed design agents must append to `docs/detailed-design/decisions/decision-log.jsonl`. Never cross-write.
+
+## Rework waves — per-wave cap reset (added v1.1.1)
+
+The `decision`-entry cap (15 / 10 for review agents) is **per-wave**, not
+per-run. When a phase lead spawns a follow-up rework wave (e.g.
+`sdk-impl-lead` runs M10 / M11 to address H7 findings or constraint
+re-baselining), the spawned agent receives a **fresh cap** for the new
+wave. The cap that applied to the original wave does NOT carry over.
+
+This avoids two failure modes:
+
+1. **Retroactive penalty**: an agent that cleanly used 14 entries in M3 +
+   M5 + M7 should not be blocked from logging M10 rework decisions just
+   because the run-total exceeds 15.
+2. **Decision starvation**: rework waves often surface MORE decisions
+   than the original (re-baselining triggers cascading choices). A
+   shared cap forces under-logging exactly when audit trail matters
+   most.
+
+### Two compliant patterns
+
+**Pattern A — per-wave reset (preferred for distinct rework waves)**:
+
+The agent counts decisions per wave-id (read from manifest's
+`phases.<phase>.<wave_id>` or from the agent's own `wave: M10` field).
+Each new wave starts a fresh count of 15 / 10. Tag every entry with the
+`wave` field so a downstream auditor can verify the per-wave count.
+
+```json
+{"run_id":"...","type":"decision","wave":"M10",
+ "agent":"sdk-impl-lead","phase":"implementation",
+ "decision":"Re-baseline contention budget 500k → 450k after M10 fix-2 rework",
+ "tags":["rework","rebaseline","wave-M10"], ...}
+```
+
+**Pattern B — wave-level meta-entry rollup**:
+
+When a rework wave produces many micro-decisions that share a single
+rationale, the agent emits ONE `decision` entry summarizing the wave +
+inline-cites the sub-decisions in `context`. This is the "consolidated"
+tag pattern at wave granularity.
+
+```json
+{"run_id":"...","type":"decision","wave":"M10",
+ "agent":"sdk-impl-lead","phase":"implementation",
+ "decision":"M10 rework: 3 fixes applied (try_acquire harness counter-mode,
+   contention re-baseline, py-spy install for G109 strict)",
+ "tags":["consolidated","rework","wave-meta"],
+ "context":"Sub-decisions inline: fix-1 see impl/profile/profile-audit.md
+   §0c; fix-2 see m11_rebaseline_applied; fix-3 see g109_profile_shape",
+ ...}
+```
+
+### Reviewer / validator behavior
+
+`G01` (decision-log validator) and downstream consumers (`baseline-manager`,
+`improvement-planner`) MUST count `decision`-type entries **per wave**, not
+per run, when applying the 15 / 10 cap. A run-total of 23 across waves
+M3 (8) + M5 (5) + M7 (2) + M10 (5) + M11 (3) is **compliant** under
+Pattern A.
+
+### Evidence
+
+`sdk-impl-lead` in run `sdk-resourcepool-py-pilot-v1` accumulated 23
+`decision` entries across M3 → M11 (the original M3-M9 plus rework
+M10-M11). Under the v1.1.0 reading this looked like a cap breach; under
+v1.1.1 it is correctly identified as 5 distinct waves each within cap. No
+retroactive penalty applies. Source: `runs/sdk-resourcepool-py-pilot-v1/feedback/skill-drift-report.md` §SKD-003.

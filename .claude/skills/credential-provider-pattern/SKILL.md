@@ -1,12 +1,11 @@
 ---
 name: credential-provider-pattern
-description: Pluggable credential source — provider interface with Get(ctx) + refresh policy; K8s mounted-secret file re-read via ConnMaxLifetime; no creds in source or config literals.
-version: 1.0.0
-status: stable
-authored-in: v0.3.0-straighten
-priority: MUST
-tags: [credentials, auth, security, secret, k8s, iam, vault, rotation]
-trigger-keywords: ["CredentialProvider", "Credentials", "os.ReadFile", "ConnMaxLifetime", "MOTADATA_*_PASSWORD", ".env", "refresh", "rotation"]
+description: >
+  Use this when an SDK client needs a password, API key, token, or mTLS cert
+  that may rotate — designing a Provider interface with Get(ctx), static / K8s
+  mounted-file / IAM-STS-Vault-API impls, finite ConnMaxLifetime so rotation
+  propagates, and .env / .env.example test plumbing per CLAUDE.md rule 27.
+  Triggers: CredentialProvider, Credentials, os.ReadFile, ConnMaxLifetime, MOTADATA_*_PASSWORD, .env, refresh, rotation.
 ---
 
 # credential-provider-pattern (v1.0.0)

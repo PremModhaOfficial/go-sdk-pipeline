@@ -1,15 +1,22 @@
 ---
 name: network-error-classification
-description: Classify wire errors into retriable / fatal / auth-failure sentinel classes; wrap with fmt.Errorf %w so errors.Is composes; typed errors.As for tls.CertificateVerificationError and net.Error.Timeout.
-version: 1.0.0
-status: stable
-authored-in: v0.3.0-straighten
-priority: MUST
-tags: [error-handling, retry, network, sentinel, wrapping, errors-is, errors-as]
-trigger-keywords: ["errors.Is", "errors.As", "fmt.Errorf %w", "sentinel", "ErrTimeout", "ErrAuth", "ErrUnavailable", "net.Error", "tls.CertificateVerificationError", "mapErr"]
+description: >
+  Use this when an SDK client returns errors from a wire call and callers need
+  to know whether to retry, fail-fast, or re-auth — building the sentinel
+  taxonomy (retriable / fatal / auth-failure), the mapErr precedence ladder,
+  and wrapping with %w (Go) or `raise … from` (Python). Cross-language.
+  Triggers: errors.Is, errors.As, fmt.Errorf %w, sentinel, ErrTimeout, ErrAuth, ErrUnavailable, net.Error, tls.CertificateVerificationError, mapErr, raise from, PoolError, PoolTimeout, asyncio.TimeoutError.
 ---
 
-# network-error-classification (v1.0.0)
+# network-error-classification (v1.1.0)
+
+> **Cross-language status**: this skill targets BOTH Go and Python clients.
+> Go examples in the original body (sections "GOOD examples" 1–3, "BAD
+> examples" 1–3) are **Go-specific** — they use `errors.New`, `fmt.Errorf %w`,
+> `errors.Is/As`, `net.Error`, `tls.CertificateVerificationError`. The
+> Python equivalents live in the new "GOOD examples — Python" section below;
+> the conceptual rules (sentinel taxonomy, precedence, classification table)
+> are language-neutral.
 
 ## Rationale
 
@@ -149,6 +156,126 @@ func fetch(ctx context.Context, cache *dragonfly.Cache, key string) ([]byte, err
 }
 ```
 
+## GOOD examples — Python (added v1.1.0)
+
+Python has no `errors.Is`/`%w`. The equivalent identity is **exception class
+hierarchy + `raise … from <user_exc>`**: `isinstance(e, PoolTimeout)` is the
+analog of `errors.Is(err, ErrTimeout)`; `raise PoolTimeout(...) from
+asyncio_te` chains the underlying cause via `__cause__` (preserved across
+formatters and tracebacks).
+
+### P1. Sentinel hierarchy — `class` at module scope
+
+From `motadatapysdk/resourcepool/errors.py` (sdk-resourcepool-py-pilot-v1):
+
+```python
+class PoolError(Exception):
+    """Root sentinel for all resourcepool errors. Callers may except this
+    to catch every pool-originated failure regardless of class."""
+
+# Retriable (transient)
+class PoolTimeout(PoolError):
+    """Acquire deadline exceeded; safe to retry with backoff."""
+
+class PoolExhausted(PoolError):
+    """Pool at capacity AND queue at limit; safe to retry with backoff."""
+
+# Fatal (caller / config bug)
+class PoolClosed(PoolError):
+    """close() already called; retrying is useless — pool is permanent-dead."""
+
+class PoolConfigError(PoolError, ValueError):
+    """min_size > max_size, negative timeout, etc. — caller must fix config."""
+```
+
+Inheriting from `PoolError` lets callers catch the whole family with one
+`except PoolError`. Inheriting `PoolConfigError` from `ValueError` follows
+the Python convention that "bad argument" errors share the stdlib
+hierarchy (analogous to Go embedding sentinels in a struct error).
+
+### P2. Mapping foreign exceptions — `raise … from <user_exc>` (the `%w` analog)
+
+Wherever the pool catches an `asyncio.TimeoutError` or any third-party
+async-cancel exception and translates it to a sentinel, the original MUST
+be chained via `from`. This preserves `__cause__` so loggers, sentry, and
+`traceback.format_exception` see the full chain — exactly what `%w` gives
+Go:
+
+```python
+import asyncio
+
+async def acquire(self, timeout: float) -> Resource:
+    try:
+        return await asyncio.wait_for(self._waiters.get(), timeout=timeout)
+    except asyncio.TimeoutError as te:
+        # GOOD: classify into sentinel + chain the cause
+        raise PoolTimeout(
+            f"acquire deadline exceeded after {timeout:.3f}s"
+        ) from te
+    except asyncio.CancelledError:
+        # CancelledError MUST propagate untranslated. Wrapping it breaks
+        # cooperative cancellation (the event loop will not see it).
+        raise
+```
+
+Three rules:
+
+1. **`from <orig>`** is mandatory on every translation. `raise PoolTimeout(...)`
+   without `from` orphans the cause; `raise PoolTimeout(...) from None`
+   is allowed only when the original is genuinely irrelevant (rare).
+2. **Never wrap `asyncio.CancelledError`** — re-raise as-is. Python 3.8+
+   treats it as a `BaseException`, not `Exception`, precisely so naive
+   `except Exception` doesn't swallow cancellation. Wrapping it into a
+   sentinel breaks cooperative shutdown.
+3. **Never use a bare `except:`** in classification code. `except Exception`
+   is the maximum width; `except <SpecificType>` is preferred.
+
+### P3. Caller-side dispatch via `isinstance` (the `errors.Is` analog)
+
+```python
+async def fetch(pool: ResourcePool, key: str) -> bytes | None:
+    try:
+        async with pool.acquire(timeout=5.0) as conn:
+            return await conn.get(key)
+    except PoolTimeout:
+        # transient — retry with backoff
+        return await retry_with_backoff(pool, key)
+    except PoolExhausted:
+        # transient — retry with backoff
+        return await retry_with_backoff(pool, key)
+    except PoolClosed:
+        # fatal — pool is dead, propagate
+        raise
+    except PoolConfigError:
+        # fatal — caller bug
+        raise
+```
+
+Or grouped via parent class:
+
+```python
+try:
+    ...
+except (PoolTimeout, PoolExhausted) as e:
+    # any retriable family member
+    return await retry_with_backoff(...)
+except PoolError as e:
+    # any non-retriable pool error
+    log.error("pool failure", exc_info=e)
+    raise
+```
+
+### P4. Closes a generalization-debt entry
+
+This section was added per `shared-core.json` `generalization_debt` entry
+flagging this skill as Go-only. The Python `PoolError` hierarchy +
+`raise … from` chaining is the documented Python equivalent of every Go
+construct in §1–§3 above. The `mapErr` precedence ladder (§2) translates
+to a chain of `try / except` blocks in the same precedence order
+(self-sentinel passthrough → stdlib mapping → typed exception isinstance →
+last-resort string/code scan); see `motadatapysdk/resourcepool/errors.py`
+for the live reference.
+
 ## BAD examples
 
 ### 1. `%v` instead of `%w` — breaks `errors.Is`
@@ -178,6 +305,44 @@ if strings.Contains(err.Error(), "connection refused") {
 
 Fix: wrap into `ErrUnavailable` in `mapErr`, then caller uses `errors.Is`.
 
+## BAD examples — Python (added v1.1.0)
+
+### P-BAD-1. Translation without `from` — orphans the cause
+
+```python
+# BAD: __cause__ is None; the original asyncio.TimeoutError is lost.
+try:
+    await asyncio.wait_for(fut, timeout=t)
+except asyncio.TimeoutError:
+    raise PoolTimeout("acquire deadline exceeded")  # missing `from te`
+```
+
+Fix: always `raise PoolTimeout(...) from te`.
+
+### P-BAD-2. Catching and wrapping `asyncio.CancelledError`
+
+```python
+# BAD: cancellation is swallowed; downstream tasks won't see the cancel.
+try:
+    await coro
+except asyncio.CancelledError as ce:
+    raise PoolError("operation cancelled") from ce  # WRONG
+```
+
+Fix: do not catch `CancelledError` at the classification boundary. Let it
+propagate. (Catch only at the trust boundary that owns lifecycle.)
+
+### P-BAD-3. String-matching `str(exc)` instead of class hierarchy
+
+```python
+# BAD: brittle; breaks on asyncio version bumps that reword the message.
+except asyncio.TimeoutError as e:
+    if "timeout" in str(e).lower():
+        raise PoolTimeout(...) from e
+```
+
+Fix: catch the exception type directly. The class IS the classification.
+
 ## Decision criteria
 
 | Category | Default sentinel | Retry? |
@@ -194,6 +359,11 @@ Fix: wrap into `ErrUnavailable` in `mapErr`, then caller uses `errors.Is`.
 | Closed pool | `ErrPoolClosed` | No — client closed |
 | Unclassified wire error | `ErrUnavailable` | Yes, with caution |
 | Config validation | `ErrInvalidConfig` | No |
+| **Python: `asyncio.TimeoutError`** | `PoolTimeout` (chain via `from`) | Yes — caller's deadline; allow retry with fresh budget |
+| **Python: `asyncio.CancelledError`** | DO NOT translate — re-raise | No — cooperative cancellation; never wrap |
+| **Python: pool full + queue full** | `PoolExhausted` | Yes — backoff |
+| **Python: pool already closed** | `PoolClosed` | No — terminal state |
+| **Python: bad config (e.g. min>max)** | `PoolConfigError` (also `ValueError`) | No — caller bug |
 
 Precedence rules:
 
@@ -202,13 +372,25 @@ Precedence rules:
 3. **String scan is LAST.** Server wire-protocol strings ("WRONGPASS") only checked after typed checks fail.
 4. **Sentinel set is semver-public.** Adding is minor; removing or renaming is major. Document the set in the package godoc.
 
+### Python-specific precedence addenda (added v1.1.0)
+
+5. **Class-hierarchy check before string check.** `isinstance(e, PoolTimeout)`
+   is the canonical Python equivalent of Go's `errors.Is(err, ErrTimeout)`.
+   Use it; never `if "timeout" in str(e)`.
+6. **`raise … from <cause>` is mandatory** on every translation. Bare
+   `raise SentinelClass(...)` orphans `__cause__`.
+7. **`asyncio.CancelledError` is sacred** — never catch-and-wrap at the
+   classification boundary. `BaseException` lineage in 3.8+ exists for this.
+
 ## Cross-references
 
-- `go-error-handling-patterns` — `fmt.Errorf %w` chain, sentinel definition
-- `idempotent-retry-safety` — which ops are safe to retry on a retriable sentinel
-- `client-rate-limiting` — 429 / `Retry-After` plumbs into retry decision
-- `client-tls-configuration` — `ErrTLS` sentinel pairing
-- `credential-provider-pattern` — `ErrAuth` triggers provider refresh
+- `go-error-handling-patterns` — `fmt.Errorf %w` chain, sentinel definition (Go-specific)
+- `python-class-design` — sentinel class hierarchy + `__init__` validation patterns (Python-specific; pairs with §P1)
+- `python-asyncio-patterns` — `CancelledError` propagation rules + `asyncio.TimeoutError` semantics (Python-specific; pairs with §P2)
+- `idempotent-retry-safety` — which ops are safe to retry on a retriable sentinel (language-neutral)
+- `client-rate-limiting` — 429 / `Retry-After` plumbs into retry decision (language-neutral)
+- `client-tls-configuration` — `ErrTLS` sentinel pairing (Go-specific)
+- `credential-provider-pattern` — `ErrAuth` triggers provider refresh (Go-specific)
 
 ## Guardrail hooks
 

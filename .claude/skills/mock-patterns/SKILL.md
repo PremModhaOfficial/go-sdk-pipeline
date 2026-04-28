@@ -1,10 +1,12 @@
 ---
 name: mock-patterns
-description: gomock usage — mockgen, controller lifecycle, EXPECT chaining, custom matchers, ordered expectations. When to use mock vs fake vs stub.
-version: 1.0.0
-created-in-run: bootstrap-seed
-status: stable
-tags: [go, testing, mock, gomock, stub, fake]
+description: >
+  Use this when generating mocks for port interfaces, deciding between mock vs
+  fake vs stub for a test, writing custom matchers for complex assertions, or
+  ordering expectations across multiple dependencies. Covers mockgen commands,
+  controller lifecycle, EXPECT chaining, custom matchers, and ordered
+  expectations.
+  Triggers: gomock, mockgen, EXPECT, controller, matcher, mock vs fake vs stub.
 ---
 
 

@@ -1,12 +1,12 @@
 ---
 name: go-dependency-vetting
-description: License, CVE, maintenance, and size gate for every new go get. Drives sdk-dep-vet-devil verdicts via govulncheck + osv-scanner + license allowlist + transitive + last-commit-age.
-version: 1.0.0
-status: stable
-authored-in: v0.3.0-straighten
-priority: MUST
-tags: [dependency, supply-chain, license, govulncheck, osv-scanner, cve]
-trigger-keywords: ["go get", "dependency", "govulncheck", "osv-scanner", "license", "supply chain", "new dep", "go.mod", "DD-", "CVE"]
+description: >
+  Use this when a PR diff adds a require line in go.mod, when justifying a new
+  external dep, or when responding to an sdk-dep-vet-devil verdict. Covers the
+  license/CVE/maintenance/size gate: govulncheck, osv-scanner, license
+  allowlist, transitive count, last-commit-age, and the dependencies.md
+  provenance contract that backs guardrails G31–G34.
+  Triggers: go get, dependency, govulncheck, osv-scanner, license, supply chain, new dep, go.mod, DD-, CVE.
 ---
 
 # go-dependency-vetting (v1.0.0)

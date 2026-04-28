@@ -1,15 +1,11 @@
 ---
 name: sdk-semver-governance
-description: Public API diff + breaking-change classification + correct semver bump. Reads current-api.json against proposed api.go.stub; pairs with sdk-semver-devil for verdict rendering.
-version: 1.0.0
-authored-in: v0.3.0-straighten
-created-in-run: bootstrap-seed
-last-evolved-in-run: v0.3.0-straighten
-source-pattern: motadatagosdk-module-surface
-status: stable
-priority: MUST
-tags: [semver, api-surface, breaking-change, sdk, governance]
-trigger-keywords: [semver, major, minor, patch, breaking, api-surface, stable-since, gorelease, TPRD-§12]
+description: >
+  Use this when classifying a public-API diff into patch / minor / major —
+  reading current-api.json against proposed api.go.stub, applying gorelease
+  rules (added symbols, struct-field changes, interface expansion, sentinel
+  add/remove), and verifying TPRD §12 declares the matching bump.
+  Triggers: semver, major, minor, patch, breaking, api-surface, stable-since, gorelease, TPRD-§12.
 ---
 
 # sdk-semver-governance (v1.0.0)

@@ -1,12 +1,13 @@
 ---
 name: asyncio-cancellation-patterns
-description: asyncio.timeout context manager, CancelledError re-raise contract, asyncio.shield for critical sections, deadline propagation — Python analog of Go context.Context.
-version: 1.0.0
-status: stable
-authored-in: v0.5.0-python-pilot
-priority: MUST
-tags: [python, asyncio, cancellation, timeout, deadline, structured-concurrency]
-trigger-keywords: [asyncio.timeout, asyncio.wait_for, CancelledError, asyncio.shield, cancel, deadline, timeout, shield]
+description: >
+  Use this when adding deadlines or cancellation handling to async SDK code:
+  every async I/O method needing a timeout_s parameter, aclose() shutdown
+  drains, must-finish-once-started critical sections, or cleanup on cancel.
+  Covers asyncio.timeout (3.11+), asyncio.wait_for compat path, the
+  CancelledError re-raise contract, narrow-scope asyncio.shield, and the
+  Go context.Context to Python mapping.
+  Triggers: asyncio.timeout, asyncio.wait_for, CancelledError, asyncio.shield, cancel, deadline, timeout, shield.
 ---
 
 # asyncio-cancellation-patterns (v1.0.0)

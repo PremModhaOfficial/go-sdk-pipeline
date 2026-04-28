@@ -1,15 +1,16 @@
 ---
 name: pytest-table-tests
-description: Pytest table-driven tests — parametrize with ids, fixtures, indirect, raises with match, tmp_path / monkeypatch / caplog standard fixtures.
-version: 1.0.0
-status: stable
-authored-in: v0.5.0-python-pilot
-priority: MUST
-tags: [python, testing, pytest, parametrize, fixtures]
-trigger-keywords: [pytest, parametrize, fixture, indirect, raises, tmp_path, monkeypatch, caplog, table-driven]
+description: >
+  Use this when writing parametrized pytest unit tests for SDK code: multi-case
+  pure-function tests, negative-path cases, async tests, or migrating a stack
+  of similar test functions to one parametrized test. Covers
+  pytest.param(..., id=) (mandatory on >=2-tuple cases), fixture scope
+  selection, indirect fixtures, pytest.raises with match=, and the standard
+  tmp_path / monkeypatch / caplog / capsys fixtures.
+  Triggers: pytest, parametrize, fixture, indirect, raises, tmp_path, monkeypatch, caplog, table-driven.
 ---
 
-# pytest-table-tests (v1.0.0)
+# pytest-table-tests (v1.0.1)
 
 ## Rationale
 
@@ -189,3 +190,63 @@ async def test_async_get(client: Client, timeout_s: float, want_outcome: str) ->
 - pytest-asyncio plugin — async test support
 - pytest-mock plugin — `mocker` fixture wraps `unittest.mock`
 - Cross-skill: `python-asyncio-patterns` — async patterns under test; `python-class-design` — Config under construction-validation tests
+
+## Pilot lessons — bare-list parametrize (added v1.0.1)
+
+**Reaffirmed rule**: For ANY parametrize where the case tuple has ≥2
+positional values, `pytest.param(..., id="...")` is **MANDATORY**. Bare-list
+form `[(a,b,c), (d,e,f)]` works at runtime but produces unreadable IDs and is
+a known regression vector in our pilot codebase.
+
+**Source**: `sdk-resourcepool-py-pilot-v1` regression in
+`tests/test_construction.py:97`. The author wrote:
+
+```python
+# BAD — bare list of tuples; pytest derives IDs from repr
+@pytest.mark.parametrize(
+    ("min_size", "max_size", "want_error"),
+    [
+        (0, 1, None),
+        (1, 0, "min_size > max_size"),
+        (-1, 1, "min_size must be >= 0"),
+    ],
+)
+def test_config_validation(min_size, max_size, want_error): ...
+```
+
+The CI report showed `test_config_validation[0-1-None]`,
+`test_config_validation[1-0-min_size > max_size]`,
+`test_config_validation[-1-1-min_size must be >= 0]` — the negative-zero
+case is visually ambiguous (`[1-0-...]` and `[-1-1-...]` are easy to
+confuse on a triage scan), and the error-string substrings bled into the ID
+making `pytest -k` matching unreliable.
+
+**Fix** (the form this skill mandates):
+
+```python
+# GOOD — every case has an explicit, human-readable id.
+@pytest.mark.parametrize(
+    ("min_size", "max_size", "want_error"),
+    [
+        pytest.param(0, 1, None, id="happy-zero-min"),
+        pytest.param(1, 0, "min_size > max_size", id="reject-min-gt-max"),
+        pytest.param(-1, 1, "min_size must be >= 0", id="reject-negative-min"),
+    ],
+)
+def test_config_validation(min_size, max_size, want_error): ...
+```
+
+CI report becomes `test_config_validation[happy-zero-min]`,
+`test_config_validation[reject-min-gt-max]`,
+`test_config_validation[reject-negative-min]` — triage-readable,
+`pytest -k reject-min-gt-max` is unambiguous.
+
+**When bare-list is OK** (limited carve-out): single-value parametrize
+where the value itself is a meaningful ID — e.g.
+`@pytest.mark.parametrize("compression", ["none", "gzip", "zstd"])` is
+fine because pytest emits `[none]`/`[gzip]`/`[zstd]`. The rule applies to
+≥2-tuple cases.
+
+**Reviewer cue**: a `parametrize` decorator whose second argument is a
+list of bare tuples (not `pytest.param(...)`) in a ≥2-arg parameter set
+is a NEEDS-FIX from `sdk-testing-lead` review.

@@ -1,15 +1,11 @@
 ---
 name: sdk-otel-hook-integration
-description: Wire new clients into motadatagosdk/otel (tracer, metrics, logger) — NOT raw go.opentelemetry.io/otel. Instrumented-call wrapper pattern, attribute conventions, hot-path allocation discipline.
-version: 1.0.0
-authored-in: v0.3.0-straighten
-created-in-run: bootstrap-seed
-last-evolved-in-run: v0.3.0-straighten
-source-pattern: core/l2cache/dragonfly/, otel/
-status: stable
-priority: MUST
-tags: [observability, otel, sdk, tracer, metrics, logger, instrumentation]
-trigger-keywords: [tracer.Start, metrics.NewCounter, metrics.Histogram, logger.L, instrumentedCall, span.SetAttributes, otel.Init, OTLP]
+description: >
+  Use this when wiring a new motadatagosdk client into the motadatagosdk/otel
+  facade (tracer, metrics, logger) — NEVER raw go.opentelemetry.io/otel.
+  Covers the instrumented-call wrapper pattern, bounded-cardinality label
+  rules, lazy sync.Once metric handles, and span.End discipline.
+  Triggers: tracer.Start, metrics.NewCounter, metrics.Histogram, logger.L, instrumentedCall, span.SetAttributes, otel.Init, OTLP.
 ---
 
 # sdk-otel-hook-integration (v1.0.0)

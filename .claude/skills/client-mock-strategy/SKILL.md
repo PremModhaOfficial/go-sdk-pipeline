@@ -1,12 +1,11 @@
 ---
 name: client-mock-strategy
-description: Interface-first design for SDK client tests; when to use miniredis-style in-memory fakes vs generated mocks; compile-time interface assertions.
-version: 1.0.0
-status: stable
-authored-in: v0.3.0-straighten
-priority: MUST
-tags: [mock, testing, interface, fake, miniredis, gomock]
-trigger-keywords: [miniredis, "interface assertion", "var _ Interface", "newTestCache", "fake vs mock", "gomock.Controller", "testcontainers"]
+description: >
+  Use this when picking test doubles for a new SDK client — choosing between
+  in-memory wire-protocol fakes (miniredis, embedded NATS), gomock against a
+  caller-owned narrow interface, or testcontainers for integration. Covers
+  compile-time interface assertions and the interface-size ceiling rule.
+  Triggers: miniredis, interface assertion, var _ Interface, newTestCache, fake vs mock, gomock.Controller, testcontainers.
 ---
 
 # client-mock-strategy (v1.0.0)

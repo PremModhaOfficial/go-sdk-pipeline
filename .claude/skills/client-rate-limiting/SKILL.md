@@ -1,12 +1,11 @@
 ---
 name: client-rate-limiting
-description: Client-side rate limiting — token bucket via golang.org/x/time/rate, adaptive shaping from server Retry-After, per-method vs per-client scoping.
-version: 1.0.0
-status: stable
-authored-in: v0.3.0-straighten
-priority: SHOULD
-tags: [rate-limit, client, concurrency, x-time-rate, retry-after]
-trigger-keywords: ["rate.Limiter", "token bucket", "leaky bucket", "Retry-After", "rate.NewLimiter", "Wait(ctx)", "Allow()"]
+description: >
+  Use this when an SDK client calls a remote API with documented rate limits
+  (HTTP 429, gRPC RESOURCE_EXHAUSTED) and needs token-bucket pacing,
+  Retry-After honouring, and per-method vs per-client scope decisions.
+  Covers golang.org/x/time/rate, ctx-aware Wait, and adaptive shaping.
+  Triggers: rate.Limiter, token bucket, leaky bucket, Retry-After, rate.NewLimiter, Wait(ctx), Allow().
 ---
 
 # client-rate-limiting (v1.0.0)

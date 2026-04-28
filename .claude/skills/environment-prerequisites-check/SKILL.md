@@ -1,10 +1,12 @@
 ---
 name: environment-prerequisites-check
-description: Phase-start runtime tool checklist — Go, gcc, golangci-lint, gosec + phase-specific tools. SDK-pipeline adds govulncheck, osv-scanner, staticcheck, benchstat, Docker (testcontainers), jq, git.
-version: 1.1.0
-created-in-run: bootstrap-seed
-status: stable
-tags: [meta, environment, prerequisites]
+description: >
+  Use this at the start of any phase before launching agent waves, or when
+  guardrails report SKIP / FAIL due to missing tools. Covers the runtime
+  checklist (Go, gcc, golangci-lint, gosec) plus SDK-pipeline additions
+  (govulncheck, osv-scanner, staticcheck, benchstat, Docker for testcontainers,
+  jq, git) and the impact of each missing tool on guardrails.
+  Triggers: prerequisites, phase-start, govulncheck, osv-scanner, staticcheck, benchstat, testcontainers, Docker, toolchain, missing tool.
 ---
 
 # environment-prerequisites-check

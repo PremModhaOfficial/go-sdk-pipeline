@@ -1,10 +1,13 @@
 ---
 name: lifecycle-events
-description: Agent lifecycle event logging — startup, completion, failure. duration_seconds calculation.
-version: 1.0.0
-created-in-run: bootstrap-seed
-status: stable
-tags: [meta, lifecycle, logging]
+description: >
+  Use this when an agent begins work (startup), finishes successfully
+  (completion), hits an unrecoverable error (failure), or is retried after a
+  prior failure — and when calculating duration_seconds for any lifecycle
+  entry. Covers the canonical lifecycle JSON schema, startup / completion /
+  failure protocols, retry semantics, and duration computation per CLAUDE.md
+  rule 1.
+  Triggers: lifecycle, started, completed, failed, retried, duration_seconds, startup, completion, agent-failure.
 ---
 
 

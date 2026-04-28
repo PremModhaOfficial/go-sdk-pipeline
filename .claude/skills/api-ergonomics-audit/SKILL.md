@@ -1,15 +1,12 @@
 ---
 name: api-ergonomics-audit
-description: Consumer-side ergonomics checklist — constructor shape, godoc discoverability, Example_* presence, error-value discoverability, idiomatic-Go surface checks. Feeds sdk-api-ergonomics-devil.
-version: 1.0.0
-authored-in: v0.3.0-straighten
-created-in-run: bootstrap-seed
-last-evolved-in-run: v0.3.0-straighten
-source-pattern: core/l2cache/dragonfly/, general-go-sdk-idioms
-status: stable
-priority: SHOULD
-tags: [api-design, ergonomics, godoc, examples, consumer-pov, meta]
-trigger-keywords: [quickstart, godoc, Example_, boilerplate, "consumer experience", ergonomics, "ctx first param", "errors.Is"]
+description: >
+  Use this when auditing the consumer-facing surface of a new or extended SDK
+  client — constructor shape, quickstart length, godoc discoverability,
+  Example_* coverage, sentinel error exposure, ctx-first parameter ordering,
+  sibling-package consistency. Feeds sdk-api-ergonomics-devil's NEEDS-FIX
+  findings at design and impl exits.
+  Triggers: quickstart, godoc, Example_, boilerplate, consumer experience, ergonomics, ctx first param, errors.Is.
 ---
 
 # api-ergonomics-audit (v1.0.0)

@@ -1,10 +1,12 @@
 ---
 name: fuzz-patterns
-description: Go native fuzzing — FuzzXxx signature, corpus seeding, crash triage, common fuzz targets (parsers, API handlers, query builders).
-version: 1.0.0
-created-in-run: bootstrap-seed
-status: stable
-tags: [go, testing, fuzz, corpus]
+description: >
+  Use this when adding fuzz tests for input parsers (JSON, query params,
+  headers), validating that handlers never panic on malformed input, or testing
+  query builders for injection vulnerabilities. Covers Go native fuzzing
+  (1.18+): FuzzXxx signature, f.Add corpus seeding, testdata/fuzz layout, and
+  crash triage workflow.
+  Triggers: FuzzXxx, fuzz target, corpus, testdata/fuzz, f.Add, f.Fuzz, crash triage.
 ---
 
 

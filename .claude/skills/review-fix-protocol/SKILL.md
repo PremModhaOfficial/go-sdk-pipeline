@@ -1,10 +1,14 @@
 ---
 name: review-fix-protocol
-description: Standardized review-fix resolution loop — per-issue retry cap 5, stuck detection 2, dedup, findings schema, deterministic-first gate (v1.1.0), guardrail re-run, convergence criteria.
-version: 1.1.0
-created-in-run: bootstrap-seed
-status: stable
-tags: [meta, review, findings, retry, convergence, deterministic-gate]
+description: >
+  Use this when running the post-review fix loop after a review/devil/critic
+  agent emits findings, when authoring a .findings.json file, when routing
+  fixes to the responsible agent, or when deciding whether the loop has
+  converged or is stuck. Covers the structured findings schema, per-issue
+  retry cap (5), stuck detection (2 non-improving iterations), reviewer
+  dedup, the deterministic-first gate (v1.1.0), guardrail re-run rules, and
+  convergence criteria.
+  Triggers: review, findings, fix loop, retry cap, stuck detection, dedup, deterministic-first gate, convergence, devil, critic, .findings.json.
 ---
 
 

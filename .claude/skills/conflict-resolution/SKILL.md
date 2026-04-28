@@ -1,10 +1,12 @@
 ---
 name: conflict-resolution
-description: Ownership-matrix lookup, escalation message format, assumption marking, phase-lead resolution procedure, conflict-resolution decision log tagging. See CLAUDE.md rules 7 and 8 on ownership and conflict.
-version: 1.0.0
-created-in-run: bootstrap-seed
-status: stable
-tags: [meta, conflict, ownership, escalation]
+description: >
+  Use this when an agent's output contradicts another agent's, when a decision
+  falls in a domain another agent owns, when same-wave designs are incompatible,
+  or when a phase lead receives an ESCALATION message. Covers ownership-matrix
+  lookup, escalation message format, assumption marking, phase-lead resolution
+  procedure, and conflict-resolution decision-log tagging.
+  Triggers: conflict, ownership, escalation, ESCALATION, assumption, contradiction, phase-lead, resolution.
 ---
 
 # conflict-resolution

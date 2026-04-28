@@ -1,12 +1,11 @@
 ---
 name: client-shutdown-lifecycle
-description: Close() contract for SDK clients — idempotent via sync.Once or atomic.Bool CAS, context-driven abort, drain-with-timeout, ordered sub-resource teardown, goleak-clean goroutines.
-version: 1.0.0
-status: stable
-authored-in: v0.3.0-straighten
-priority: MUST
-tags: [lifecycle, shutdown, close, goroutine, goleak, sync-once, atomic]
-trigger-keywords: ["Close()", "sync.Once", "atomic.Bool", "CompareAndSwap", "drain", "goleak.VerifyTestMain", "t.Cleanup", "context.Canceled"]
+description: >
+  Use this when designing the Close() contract for an SDK client that owns
+  goroutines, connection pools, or buffered channels — idempotency via
+  sync.Once or atomic.Bool CAS, context-driven abort, drain-with-timeout,
+  ordered sub-resource teardown so goleak.VerifyTestMain stays clean.
+  Triggers: Close(), sync.Once, atomic.Bool, CompareAndSwap, drain, goleak.VerifyTestMain, t.Cleanup, context.Canceled.
 ---
 
 # client-shutdown-lifecycle (v1.0.0)

@@ -1,12 +1,12 @@
 ---
 name: python-asyncio-patterns
-description: Python asyncio structure for SDK clients — TaskGroup structured concurrency, task storage to prevent GC, gather vs wait, sync/async bridging.
-version: 1.0.0
-status: stable
-authored-in: v0.5.0-python-pilot
-priority: MUST
-tags: [python, asyncio, concurrency, taskgroup, sdk]
-trigger-keywords: [asyncio, create_task, ensure_future, TaskGroup, gather, wait, run_in_executor, fire-and-forget, async, await]
+description: >
+  Use this when writing async I/O methods, fan-out work, background workers, or
+  bridging blocking code into a Python SDK client. Covers asyncio.TaskGroup
+  structured concurrency, strong-ref task storage to prevent mid-flight GC,
+  gather vs wait selection, asyncio.to_thread / run_in_executor for sync
+  bridging, and Task.cancel() semantics.
+  Triggers: asyncio, create_task, ensure_future, TaskGroup, gather, wait, run_in_executor, fire-and-forget, async, await.
 ---
 
 # python-asyncio-patterns (v1.0.0)

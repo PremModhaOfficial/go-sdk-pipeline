@@ -1,10 +1,12 @@
 ---
 name: context-summary-writing
-description: Context summary file format — 200-line max, Generated/Run header, revision history, ASSUMPTION and DRAFT markers.
-version: 1.0.0
-created-in-run: bootstrap-seed
-status: stable
-tags: [meta, context, summary]
+description: >
+  Use this when an agent finishes work and must publish its context summary for
+  downstream consumers, when publishing an early DRAFT for same-wave peers,
+  preserving revision history across re-runs, or marking assumptions tied to
+  another agent's unfinished output. Covers the 200-line cap, Generated/Run
+  header, revision history, and ASSUMPTION / DRAFT markers.
+  Triggers: context summary, summary, header, revision history, ASSUMPTION, DRAFT, downstream handoff, 200-line.
 ---
 
 

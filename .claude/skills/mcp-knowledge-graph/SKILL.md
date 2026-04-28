@@ -1,10 +1,15 @@
 ---
 name: mcp-knowledge-graph
-description: Read and write pipeline cross-run state via neo4j-memory MCP. Entity/relation/observation patterns for Run, Agent, Skill, Pattern, Defect, Baseline, Patch. Includes fallback-to-JSONL behavior when MCP unavailable.
-version: 1.0.0
-created-in-run: mcp-enhanced-graph
-status: stable
-tags: [mcp, neo4j, knowledge-graph, evolution, feedback]
+description: >
+  Use this when reading or writing cross-run pipeline state via the
+  neo4j-memory MCP — at end of any phase that produces cross-run signal
+  (especially Phase 4 feedback), when learning-engine reads recurring-pattern
+  signals, when baseline-manager / metrics-collector / drift-detector /
+  improvement-planner persist observations, or when correlating defects /
+  baselines / skills across runs. Covers entity / relation / observation
+  patterns for Run, Phase, Agent, Skill, Pattern, Defect, Baseline, Patch
+  plus the JSONL fallback when G04 mcp-health is RED.
+  Triggers: neo4j, neo4j-memory, MCP, knowledge graph, cross-run, entity, relation, observation, fallback, JSONL.
 ---
 
 # mcp-knowledge-graph (SDK-mode, v1.0.0)

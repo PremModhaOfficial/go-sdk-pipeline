@@ -1,10 +1,12 @@
 ---
 name: go-module-paths
-description: Go module import path derivation, monorepo layouts, Dockerfile COPY context, common mistakes.
-version: 1.0.0
-created-in-run: bootstrap-seed
-status: stable
-tags: [go, module, import, monorepo]
+description: >
+  Use this before generating any Go import statement, when creating Dockerfiles
+  that build Go services, configuring Makefile build commands, or setting up
+  CI build steps in a monorepo where go.mod is not at the repo root. Covers
+  module-root derivation from go.mod, import path construction, Dockerfile COPY
+  context, and the most common path mistakes.
+  Triggers: go.mod, import path, monorepo, Dockerfile COPY, module root.
 ---
 
 

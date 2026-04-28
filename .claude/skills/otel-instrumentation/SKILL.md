@@ -1,10 +1,11 @@
 ---
 name: otel-instrumentation
-description: OpenTelemetry TracerProvider, MeterProvider, OTLP exporters, slog correlation, span enrichment, context propagation, graceful shutdown.
-version: 1.0.0
-created-in-run: bootstrap-seed
-status: stable
-tags: [otel, observability, tracing, metrics, logging]
+description: >
+  Use this when standing up OpenTelemetry in a Go service — TracerProvider,
+  MeterProvider, OTLP exporters, slog trace-correlation handler, NATS header
+  carrier, standard service metrics, span attribute conventions, and the
+  graceful Shutdown ordering rules.
+  Triggers: TracerProvider, MeterProvider, OTLP, slog, trace correlation, span attributes, NATS propagation, resource.New, otel.Shutdown.
 ---
 
 

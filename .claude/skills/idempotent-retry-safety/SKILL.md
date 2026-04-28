@@ -1,12 +1,11 @@
 ---
 name: idempotent-retry-safety
-description: Which operations are retriable, exponential backoff with jitter, safe retry predicates, and the idempotency envelope needed before any retry is legal.
-version: 1.0.0
-status: stable
-authored-in: v0.3.0-straighten
-priority: MUST
-tags: [resilience, retry, idempotency, backoff, jitter, safety]
-trigger-keywords: [retry, backoff, jitter, idempotent, at-least-once, exactly-once, IsRetryable, MaxAttempts, MessageID, dedup]
+description: >
+  Use this when designing retry behaviour for an SDK method that causes a
+  side effect — picking the IsRetryable predicate, requiring an idempotency
+  envelope (Idempotency-Key header, MessageID, upsert key) before any retry
+  is legal, and capping attempts with jittered exponential backoff.
+  Triggers: retry, backoff, jitter, idempotent, at-least-once, exactly-once, IsRetryable, MaxAttempts, MessageID, dedup.
 ---
 
 # idempotent-retry-safety (v1.0.0)

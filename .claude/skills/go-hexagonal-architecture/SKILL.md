@@ -1,10 +1,13 @@
 ---
 name: go-hexagonal-architecture
-description: Go hexagonal (ports and adapters) — cmd/, internal/domain/, internal/application/, internal/ports/, internal/adapters/. Port interface design, DI wiring. Ported with SDK note.
-version: 1.0.0
-created-in-run: bootstrap-seed
-status: stable
-tags: [go, architecture, hexagonal, ports-adapters]
+description: >
+  Use this when designing the internal package layout of a Go microservice,
+  defining port interfaces for repositories/messaging/external integrations,
+  implementing PostgreSQL/NATS/third-party adapters, wiring application services
+  with DI, or reviewing service structure for domain isolation. Covers cmd/,
+  internal/domain/, internal/application/, internal/ports/, internal/adapters/
+  layout and DI wiring.
+  Triggers: hexagonal, ports and adapters, internal/domain, internal/ports, internal/adapters, DI wiring, package layout.
 ---
 
 

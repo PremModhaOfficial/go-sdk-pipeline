@@ -1,12 +1,12 @@
 ---
 name: circuit-breaker-policy
-description: Thresholds, open/half-open/closed transitions, and integration with motadatagosdk/core/circuitbreaker for SDK clients that guard external dependencies.
-version: 1.0.0
-status: stable
-authored-in: v0.3.0-straighten
-priority: SHOULD
-tags: [resilience, circuit-breaker, core, target-sdk-convention]
-trigger-keywords: [circuit breaker, CircuitBreaker, ErrCircuitOpen, gobreaker, FailureThreshold, half-open, StateOpen, fail-fast, transient failure]
+description: >
+  Use this when wrapping an external-dependency call site (Redis, NATS, HTTP,
+  SQL) with motadatagosdk/core/circuitbreaker — picking thresholds, classifying
+  caller-bug vs server-fault errors, wiring OnStateChange + ErrCircuitOpen
+  through the public error model, and observing transitions without leaking
+  goroutines.
+  Triggers: circuit breaker, CircuitBreaker, ErrCircuitOpen, gobreaker, FailureThreshold, half-open, StateOpen, fail-fast, transient failure.
 ---
 
 # circuit-breaker-policy (v1.0.0)

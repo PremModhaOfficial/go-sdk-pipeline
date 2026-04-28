@@ -1,12 +1,12 @@
 ---
 name: python-class-design
-description: Config + factory pattern for Python SDK clients — frozen slotted dataclass Config, factory function, Protocol structural typing, validation in __post_init__.
-version: 1.0.0
-status: stable
-authored-in: v0.5.0-python-pilot
-priority: MUST
-tags: [python, class, dataclass, protocol, config, sdk, factory]
-trigger-keywords: [dataclass, frozen, slots, __post_init__, Protocol, new_client, Config, validation, mutable default]
+description: >
+  Use this when designing a Python SDK Config class, a Client class, a factory
+  function, or a Protocol for caller-supplied callbacks. Covers
+  @dataclass(frozen=True, slots=True) Config, validation in __post_init__,
+  new_client(config) factory, Protocol structural typing, composition over
+  multi-inheritance, and __slots__ for hot-path classes.
+  Triggers: dataclass, frozen, slots, __post_init__, Protocol, new_client, Config, validation, mutable default.
 ---
 
 # python-class-design (v1.0.0)
