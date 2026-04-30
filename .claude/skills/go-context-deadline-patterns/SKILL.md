@@ -1,12 +1,13 @@
 ---
 name: go-context-deadline-patterns
-description: ctx.Deadline() inheritance, cancellation safety, deadline-to-timeout bridging, and shortest-deadline-wins composition for SDK clients that stack over other clients.
-version: 1.0.0
-status: stable
-authored-in: v0.3.0-straighten
-priority: MUST
-tags: [resilience, context, deadline, cancellation, timeout, target-sdk-convention]
-trigger-keywords: [ctx.Deadline, context.WithTimeout, context.WithDeadline, cancel, defer cancel, deadline propagation, timeout, context.Canceled, shortest deadline wins]
+description: >
+  Use this when writing any I/O method whose first param is ctx context.Context,
+  wrapping another ctx-aware client, designing Close(ctx)/Drain(ctx) shutdown
+  contracts, choosing a package-default timeout, or responding to reviewer
+  flags about missing deadline checks or undeferred cancels. Covers ctx.Deadline()
+  inheritance, cancellation safety, deadline-to-timeout bridging, and
+  shortest-deadline-wins composition for stacked clients.
+  Triggers: ctx.Deadline, context.WithTimeout, context.WithDeadline, cancel, defer cancel, deadline propagation, timeout, context.Canceled, shortest deadline wins.
 ---
 
 # go-context-deadline-patterns (v1.0.0)

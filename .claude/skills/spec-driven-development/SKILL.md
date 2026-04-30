@@ -1,10 +1,14 @@
 ---
 name: spec-driven-development
-description: Story-to-impl mapping, story-level TDD, feature-level validation, dependency graph. Re-scoped for SDK as TPRD-to-symbol mapping — every TPRD §7 API symbol gets (impl, test, godoc, bench, Example_*, [traces-to] marker). Ported with SDK delta.
-version: 1.0.0
-created-in-run: bootstrap-seed
-status: stable
-tags: [meta, spec, tprd, traceability, symbol-coverage]
+description: >
+  Use this when intake extracts FRs from a TPRD, when design maps FRs to
+  symbols in api.go.stub, when impl verifies every TPRD §7 symbol has TDD
+  red-green-refactor evidence, or when feedback computes symbol-coverage.
+  Covers TPRD-to-symbol traceability — every §7 symbol gains impl + godoc +
+  table-driven test + Example_* (where applicable) + benchmark (hot path) +
+  [traces-to: TPRD-<section>-<id>] marker — plus feature-level validation
+  and intra-package dependency ordering.
+  Triggers: TPRD, FR, symbol coverage, traces-to, story, acceptance criteria, TDD, red-green-refactor, Example_, benchmark, godoc, traceability.
 ---
 
 # spec-driven-development (SDK-mode)

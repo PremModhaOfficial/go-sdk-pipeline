@@ -1,12 +1,12 @@
 ---
 name: python-asyncio-patterns
-description: Structured concurrency for Python SDK code. asyncio.TaskGroup as default fan-out primitive (Python 3.11+); gather only when its specific semantics are wanted; explicit Task references; Semaphore / Lock / Event for synchronization; cancellation propagation; never asyncio.run from library code.
-version: 1.0.0
-authored-in: v0.5.0-phase-b
-status: stable
-priority: MUST
-tags: [python, asyncio, concurrency, structured-concurrency, sdk]
-trigger-keywords: [asyncio, "async def", "await", TaskGroup, gather, create_task, Semaphore, Lock, cancel, CancelledError, "asyncio.run", "asyncio.timeout", "asyncio.wait_for"]
+description: >
+  Use this when writing async I/O methods, fan-out work, background workers, or
+  bridging blocking code into a Python SDK client. Covers asyncio.TaskGroup
+  structured concurrency, strong-ref task storage to prevent mid-flight GC,
+  gather vs wait selection, asyncio.to_thread / run_in_executor for sync
+  bridging, and Task.cancel() semantics.
+  Triggers: asyncio, create_task, ensure_future, TaskGroup, gather, wait, run_in_executor, fire-and-forget, async, await.
 ---
 
 # python-asyncio-patterns (v1.0.0)

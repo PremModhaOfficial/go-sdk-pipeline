@@ -1,12 +1,11 @@
 ---
 name: go-client-tls-configuration
-description: tls.Config for SDK clients — minimum version TLS 1.2 floor (prefer 1.3), cert chain validation, custom CA pool layered on system roots, SNI server name required.
-version: 1.0.0
-status: stable
-authored-in: v0.3.0-straighten
-priority: MUST
-tags: [tls, security, crypto, ca-pool, sni, mtls]
-trigger-keywords: ["tls.Config", "MinVersion", "RootCAs", "ServerName", "InsecureSkipVerify", "x509.SystemCertPool", "LoadX509KeyPair"]
+description: >
+  Use this when wiring tls.Config into a new SDK client that dials a remote
+  endpoint — TLS 1.2 floor (1.3 preferred), SNI ServerName required, mTLS via
+  LoadX509KeyPair, custom CA layered on x509.SystemCertPool, and ErrTLS
+  sentinel wrapping. Covers Mozilla / CIS / NIST guidance.
+  Triggers: tls.Config, MinVersion, RootCAs, ServerName, InsecureSkipVerify, x509.SystemCertPool, LoadX509KeyPair.
 ---
 
 # go-client-tls-configuration (v1.0.0)

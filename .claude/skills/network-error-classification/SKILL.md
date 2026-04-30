@@ -1,12 +1,11 @@
 ---
 name: network-error-classification
-description: Classify wire errors into retriable / fatal / auth-failure sentinel classes; wrap with fmt.Errorf %w so errors.Is composes; typed errors.As for tls.CertificateVerificationError and net.Error.Timeout.
-version: 1.0.0
-status: stable
-authored-in: v0.3.0-straighten
-priority: MUST
-tags: [error-handling, retry, network, sentinel, wrapping, errors-is, errors-as]
-trigger-keywords: ["errors.Is", "errors.As", "fmt.Errorf %w", "sentinel", "ErrTimeout", "ErrAuth", "ErrUnavailable", "net.Error", "tls.CertificateVerificationError", "mapErr"]
+description: >
+  Use this when an SDK client returns errors from a wire call and callers need
+  to know whether to retry, fail-fast, or re-auth — building the sentinel
+  taxonomy (retriable / fatal / auth-failure), the mapErr precedence ladder,
+  and wrapping with %w (Go) or `raise … from` (Python). Cross-language.
+  Triggers: errors.Is, errors.As, fmt.Errorf %w, sentinel, ErrTimeout, ErrAuth, ErrUnavailable, net.Error, tls.CertificateVerificationError, mapErr, raise from, PoolError, PoolTimeout, asyncio.TimeoutError.
 ---
 
 # network-error-classification (v1.0.0)

@@ -1,10 +1,12 @@
 ---
 name: go-testing-patterns
-description: Go testing fundamentals — table-driven, testcontainers, gomock, httptest, fixtures, benchmarks, coverage enforcement.
-version: 1.0.0
-created-in-run: bootstrap-seed
-status: stable
-tags: [go, testing, coverage, benchmark]
+description: >
+  Use this when writing unit, integration, or benchmark tests, setting up test
+  infrastructure (PostgreSQL, NATS, Redis via testcontainers), or generating
+  and using mocks for port interfaces. Covers table-driven units, testcontainers
+  reuse, gomock for port isolation, httptest, fixtures, benchmark structure,
+  and coverage enforcement.
+  Triggers: testing, table-driven, testcontainers, gomock, httptest, benchmark, coverage.
 ---
 
 

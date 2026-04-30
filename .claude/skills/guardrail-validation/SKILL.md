@@ -1,10 +1,15 @@
 ---
 name: guardrail-validation
-description: Mechanical PASS/FAIL checks at phase exits. G01-G110 including supply-chain (G32-G34), benchmark-regression (G65), marker-ownership (G95-G103), dependency-vetting, SDK-convention gates, and the seven perf-confidence gates G104-G110 (alloc-budget, soak-MMD, soak-drift, complexity, oracle-margin, profile-no-surprise, perf-exception pairing). Multi-tenancy checks inverted (now check ABSENCE).
-version: 1.2.0
-created-in-run: bootstrap-seed
-status: stable
-tags: [meta, guardrail, validator, mechanical, perf-confidence]
+description: >
+  Use this when running mechanical PASS/FAIL guardrail checks at any phase
+  exit, when guardrail-validator emits a verdict, or when authoring/diagnosing
+  a G-numbered gate. Covers G01-G110: supply-chain (G32-G34),
+  benchmark-regression (G65), marker-ownership (G95-G103), dependency-vetting,
+  SDK-convention gates, and the seven perf-confidence gates G104-G110
+  (alloc-budget, soak-MMD, soak-drift, complexity, oracle-margin,
+  profile-no-surprise, perf-exception pairing). Multi-tenancy checks inverted
+  to check ABSENCE.
+  Triggers: guardrail, validator, PASS, FAIL, G01, G110, supply-chain, marker-ownership, perf-confidence, alloc-budget, oracle-margin, soak, complexity, phase-exit.
 ---
 
 # guardrail-validation (SDK-mode, v1.2.0)

@@ -1,10 +1,11 @@
 ---
 name: go-concurrency-patterns
-description: Go concurrency patterns for goroutines, errgroup, channels, context cancellation, worker pools, sync.Pool, race detection.
-version: 1.0.0
-created-in-run: bootstrap-seed
-status: stable
-tags: [go, concurrency, goroutine, channel, errgroup, context, worker-pool]
+description: >
+  Use this when writing goroutine-spawning Go code, designing worker pools,
+  wiring graceful shutdown, choosing between channels and mutexes, or reviewing
+  concurrent code for races. Covers errgroup, channels, context cancellation,
+  worker pools, sync.Pool, and the race detector.
+  Triggers: goroutine, errgroup, channel, context cancellation, worker pool, sync.Pool, race detection.
 ---
 
 

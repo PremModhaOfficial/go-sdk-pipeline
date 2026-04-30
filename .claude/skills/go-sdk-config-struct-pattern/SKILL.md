@@ -1,15 +1,11 @@
 ---
 name: go-sdk-config-struct-pattern
-description: Target SDK constructor convention — Config struct + New(cfg) as primary; functional options only where the target package already uses them.
-version: 1.0.0
-authored-in: v0.3.0-straighten
-created-in-run: bootstrap-seed
-last-evolved-in-run: v0.3.0-straighten
-source-pattern: core/l2cache/dragonfly/, otel/
-status: stable
-priority: MUST
-tags: [sdk, config, constructor, api-shape, convention]
-trigger-keywords: [Config, "func New", "WithX", Option, constructor, applyDefaults, validate, functional-options]
+description: >
+  Use this when designing the constructor for a new motadatagosdk client —
+  picking between Config struct + New(cfg) (otel/, events/jetstream/) or
+  functional options + exported Config (core/l2cache/dragonfly/) based on
+  sibling-package shape and field count, with applyDefaults + validate split.
+  Triggers: Config, func New, WithX, Option, constructor, applyDefaults, validate, functional-options.
 ---
 
 # go-sdk-config-struct-pattern (v1.0.0)

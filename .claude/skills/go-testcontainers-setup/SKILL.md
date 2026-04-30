@@ -1,10 +1,13 @@
 ---
 name: go-testcontainers-setup
-description: testcontainers-go patterns — PostgreSQL, NATS, Redis containers, shared TestMain, sync.Once reuse. Ported. SDK extends with recipes for Dragonfly, MinIO, LocalStack, Kafka, RabbitMQ.
-version: 1.0.0
-created-in-run: bootstrap-seed
-status: stable
-tags: [testing, integration, testcontainers, docker]
+description: >
+  Use this when writing integration tests that need a real backing service —
+  PostgreSQL, NATS JetStream, Redis, Dragonfly, MinIO, LocalStack, Kafka, or
+  RabbitMQ — set up via testcontainers-go. Covers shared TestMain, sync.Once
+  container reuse, schema-per-tenant isolation, and reproducible-isolated test
+  infrastructure. Triggers: testcontainers, TestMain, sync.Once, integration
+  test, container reuse, postgres container, nats container, redis container,
+  dragonfly, minio, localstack, kafka, rabbitmq, docker.
 ---
 
 

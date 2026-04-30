@@ -1,10 +1,12 @@
 ---
 name: tdd-patterns
-description: Go TDD skeleton→failing-test→impl→verify cycle, interface-driven test design, mock-based TDD, RED/GREEN/REFACTOR.
-version: 1.0.0
-created-in-run: bootstrap-seed
-status: stable
-tags: [go, testing, tdd, red-green-refactor]
+description: >
+  Use this when running the multi-agent SKELETON→RED→GREEN→REFACTOR TDD cycle,
+  designing interface-driven tests against compilable stubs, or coordinating
+  mock-based TDD between code-generator and test-spec-generator. Covers the
+  three-agent cycle, interface skeletons, failing-test design, impl-to-pass,
+  and refactor-with-tests-green discipline.
+  Triggers: TDD, RED, GREEN, REFACTOR, skeleton, failing test, interface-driven.
 ---
 
 

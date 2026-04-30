@@ -1,10 +1,12 @@
 ---
 name: decision-logging
-description: Canonical JSON schemas + entry limits for `runs/<run-id>/decision-log.jsonl`.. adds `skill-evolution` and `budget` entry types .
-version: 1.2.0
-created-in-run: bootstrap-seed
-status: stable
-tags: [meta, logging, decision-log, schema]
+description: >
+  Use this when writing any entry to runs/<run-id>/decision-log.jsonl —
+  decision, lifecycle, communication, event, failure, refactor, skill-evolution,
+  or budget. Covers canonical JSON schemas, per-agent entry caps, rework-wave
+  cap-reset rules, and the skill-evolution / budget entry types added for the
+  SDK pipeline.
+  Triggers: decision-log, JSONL, schema, entry cap, skill-evolution, budget, lifecycle, communication, refactor, failure.
 ---
 
 # decision-logging (SDK-mode, v1.2.0)

@@ -1,12 +1,11 @@
 ---
 name: go-connection-pool-tuning
-description: Sizing heuristics for motadatagosdk/core/pool (memorypool, resourcepool, workerpool) — min/max, idle timeout, healthcheck cadence, backoff on exhaustion.
-version: 1.0.0
-status: stable
-authored-in: v0.3.0-straighten
-priority: MUST
-tags: [pool, connection, performance, memorypool, resourcepool, workerpool]
-trigger-keywords: ["pool sizing", "MaxSize", "MinWorkers", "MaxWorkers", "pool exhaustion", "ErrPoolOverload", "ErrPoolExhausted", "connection pool", "worker pool", "resource pool"]
+description: >
+  Use this when sizing motadatagosdk/core/pool — memorypool (PoolSize ≤ 64,
+  PoolLength = p95), resourcepool (MaxSize, OnCreate/OnReset/OnDestroy),
+  workerpool (MinWorkers, MaxWorkers, MaxQueueSize). Covers healthcheck
+  cadence, backoff on exhaustion, and the symptom-to-dial decision table.
+  Triggers: pool sizing, MaxSize, MinWorkers, MaxWorkers, pool exhaustion, ErrPoolOverload, ErrPoolExhausted, connection pool, worker pool, resource pool.
 ---
 
 # go-connection-pool-tuning (v1.0.0)

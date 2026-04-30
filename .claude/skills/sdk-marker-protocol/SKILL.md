@@ -1,15 +1,11 @@
 ---
 name: sdk-marker-protocol
-description: Machine-readable code provenance markers — traces-to, constraint, stable-since, deprecated-in, do-not-regenerate, owned-by, perf-exception — drive marker-scanner, constraint-devil, marker-hygiene-devil, and Mode B/C merge safety.
-version: 1.0.0
-authored-in: v0.3.0-straighten
-created-in-run: bootstrap-seed
-last-evolved-in-run: v0.3.0-straighten
-source-pattern: core/l2cache/dragonfly/
-status: stable
-priority: MUST
-tags: [markers, provenance, merge, mode-b, mode-c, perf-exception, meta]
-trigger-keywords: [traces-to, constraint, stable-since, deprecated-in, do-not-regenerate, owned-by, perf-exception, ownership-map, marker-hygiene, MANUAL, byte-hash]
+description: >
+  Use this when emitting or auditing machine-readable code provenance
+  markers — traces-to, constraint, stable-since, deprecated-in,
+  do-not-regenerate, owned-by, perf-exception — that drive marker-scanner,
+  constraint-devil, marker-hygiene-devil, and Mode B/C merge safety.
+  Triggers: traces-to, constraint, stable-since, deprecated-in, do-not-regenerate, owned-by, perf-exception, ownership-map, marker-hygiene, MANUAL, byte-hash.
 ---
 
 # sdk-marker-protocol (v1.0.0)

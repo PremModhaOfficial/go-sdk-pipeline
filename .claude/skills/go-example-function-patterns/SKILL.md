@@ -1,12 +1,12 @@
 ---
 name: go-example-function-patterns
-description: Example_* testable godoc patterns — Output: comment contract, ExampleFoo_Bar naming, Ordered variants, package _test conventions per stdlib testing docs.
-version: 1.0.0
-status: stable
-authored-in: v0.3.0-straighten
-priority: SHOULD
-tags: [godoc, examples, testing, documentation]
-trigger-keywords: ["ExampleCache_", "godoc example", "Example_ function", "docs wave", "// Output:", "Example_", "testable example"]
+description: >
+  Use this when authoring or reviewing Example_* testable godoc functions for
+  exported SDK symbols, deciding between in-package and _test black-box examples,
+  or wiring deterministic // Output: blocks. Covers ExampleFoo_Bar naming,
+  Ordered/Unordered output variants, package _test conventions, and the
+  [traces-to:] marker requirement.
+  Triggers: ExampleCache_, godoc example, Example_ function, docs wave, // Output:, Example_, testable example.
 ---
 
 # go-example-function-patterns (v1.0.0)

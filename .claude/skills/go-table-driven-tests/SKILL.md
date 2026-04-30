@@ -1,10 +1,12 @@
 ---
 name: go-table-driven-tests
-description: Go table-driven test structure — test struct, t.Run subtests, t.Cleanup, t.Parallel, naming, require/assert, gomock per-test.
-version: 1.0.0
-created-in-run: bootstrap-seed
-status: stable
-tags: [go, testing, table-driven, subtests]
+description: >
+  Use this when writing unit tests for handlers, services, or repositories,
+  structuring multi-scenario test cases for a single function, or setting up
+  per-test gomock expectations. Covers test struct shape, t.Run subtests,
+  t.Cleanup, t.Parallel, case naming, require vs assert, and gomock per-test
+  controller setup.
+  Triggers: table-driven, t.Run, t.Cleanup, t.Parallel, subtests, require, assert.
 ---
 
 

@@ -1,12 +1,12 @@
 ---
 name: go-backpressure-flow-control
-description: Bounded channels, counting semaphores, bounded queues, and the drop-vs-block decision for SDK components that admit work faster than the downstream can absorb it.
-version: 1.0.0
-status: stable
-authored-in: v0.3.0-straighten
-priority: MUST
-tags: [resilience, backpressure, concurrency, flow-control, bounded-queue, semaphore]
-trigger-keywords: [backpressure, bounded channel, semaphore, ErrQueueFull, MaxQueueSize, drop, block, flow control, ants, x/sync/semaphore]
+description: >
+  Use this when designing an SDK component that admits work (publish, submit,
+  send, fan-out) faster than its downstream can drain — picking between
+  bounded-channel block, ErrQueueFull fail-fast, or counted-drop policy.
+  Covers semaphores, bounded worker queues, JetStream MaxAckPending, and
+  size heuristics.
+  Triggers: backpressure, bounded channel, semaphore, ErrQueueFull, MaxQueueSize, drop, block, flow control, ants, x/sync/semaphore.
 ---
 
 # go-backpressure-flow-control (v1.0.0)

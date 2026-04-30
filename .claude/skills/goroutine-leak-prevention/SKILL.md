@@ -1,12 +1,13 @@
 ---
 name: goroutine-leak-prevention
-description: Cleanup contracts, `goleak.VerifyTestMain`, fan-out patterns that leak, and the rules that keep them from shipping.
-version: 1.0.0
-status: stable
-authored-in: v0.3.0-straighten
-priority: MUST
-tags: [perf, goroutine, leak, testing, concurrency]
-trigger-keywords: ["goleak", "goroutine leak", "VerifyTestMain", "Close() leak", "context cancellation leak", "fan-out leak", "errgroup leak"]
+description: >
+  Use this when designing any io.Closer / Close(ctx) / Stop() type, adding
+  background workers/tickers/pubsub listeners, writing integration tests that
+  exercise shutdown, or responding to an sdk-leak-hunter G63 failure. Covers
+  cleanup contracts, goleak.VerifyTestMain wiring, leaky fan-out patterns
+  (errgroup / sync.WaitGroup / context.WithCancel without Wait/cancel), and the
+  shipping rules that prevent regressions.
+  Triggers: goleak, goroutine leak, VerifyTestMain, Close() leak, context cancellation leak, fan-out leak, errgroup leak.
 ---
 
 # goroutine-leak-prevention (v1.0.0)
