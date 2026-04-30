@@ -1,12 +1,16 @@
 ---
 name: python-testcontainers-setup
-description: testcontainers-python integration test patterns — session-scoped fixtures for PostgreSQL, Redis, Kafka, MinIO, NATS, Mongo; @pytest.mark.integration marker; Docker availability gate; container log capture on failure; reuse vs per-test isolation; healthcheck wait policies.
-version: 1.0.0
-authored-in: v0.5.0-phase-b
-status: stable
-priority: SHOULD
-tags: [python, testing, testcontainers, integration, docker, fixtures]
-trigger-keywords: [testcontainers, "PostgresContainer", "RedisContainer", "KafkaContainer", "MinioContainer", "MongoDbContainer", "NatsContainer", docker, integration, "@pytest.mark.integration"]
+description: >
+  Use this when authoring integration tests against a real backend (PostgreSQL,
+  Redis, Kafka, MinIO, NATS, MongoDB), debugging slow or flaky container-backed
+  tests, gating tests on Docker availability, or capturing container logs on
+  failure. Covers session-scoped fixtures, state reset between tests
+  (TRUNCATE / transactional rollback / per-test schema), the
+  @pytest.mark.integration marker plus pytest_collection_modifyitems Docker
+  gate, healthcheck/wait policies, log dumping via request.addfinalizer, image
+  version pinning, dynamic port discovery, TC_REUSE for dev iteration,
+  DOCKER_HOST discovery, and per-service connection-URL recipes.
+  Triggers: testcontainers, PostgresContainer, RedisContainer, KafkaContainer, MinioContainer, MongoDbContainer, NatsContainer, docker, integration, @pytest.mark.integration.
 ---
 
 # python-testcontainers-setup (v1.0.0)

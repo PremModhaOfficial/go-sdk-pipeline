@@ -1,12 +1,14 @@
 ---
 name: python-doctest-patterns
-description: Runnable docstring examples for Python SDK code — Google-style Examples block, doctest output-matching, # doctest: +SKIP for I/O-bound calls, ELLIPSIS / NORMALIZE_WHITESPACE flags, pytest --doctest-modules wiring, and pytest --doctest-glob for README.
-version: 1.1.0
-authored-in: v0.5.0-phase-b
-status: stable
-priority: MUST
-tags: [python, doctest, examples, documentation, pep-257]
-trigger-keywords: [doctest, "Examples:", ">>>", "+SKIP", "+ELLIPSIS", "+NORMALIZE_WHITESPACE", "--doctest-modules", "--doctest-glob"]
+description: >
+  Use this when authoring an Examples block in a public Python SDK docstring,
+  reviewing a docstring that lacks runnable examples, wiring pytest to discover
+  doctests, or fixing a doctest broken by a signature change. Covers Google-style
+  Examples placement, # doctest: +SKIP for I/O-bound calls, ELLIPSIS and
+  NORMALIZE_WHITESPACE flags, multi-line continuations and <BLANKLINE>, exception
+  expected-output form, README doctests via --doctest-glob, and pyproject.toml
+  addopts wiring for --doctest-modules.
+  Triggers: doctest, Examples:, >>>, +SKIP, +ELLIPSIS, +NORMALIZE_WHITESPACE, --doctest-modules, --doctest-glob, BLANKLINE, IGNORE_EXCEPTION_DETAIL.
 ---
 
 # python-doctest-patterns (v1.1.0)

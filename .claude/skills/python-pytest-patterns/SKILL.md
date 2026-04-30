@@ -1,12 +1,16 @@
 ---
 name: python-pytest-patterns
-description: Pytest fundamentals for Python SDK code — fixtures with appropriate scope, parametrize for table-driven tests, pytest-asyncio mode=auto for async test functions, marker registration in pyproject.toml, conftest.py placement, monkeypatch isolation, tmp_path / tmp_path_factory, capfd / caplog. Pyramid: unit → integration (testcontainers) → benchmark.
-version: 1.0.0
-authored-in: v0.5.0-phase-b
-status: stable
-priority: MUST
-tags: [python, testing, pytest, fixtures, parametrize, async]
-trigger-keywords: [pytest, fixture, parametrize, conftest, "async def test_", "@pytest.mark", monkeypatch, tmp_path, caplog, asyncio_mode]
+description: >
+  Use this when authoring or reviewing any test under tests/, designing a new
+  fixture and choosing its scope, wiring async tests via pytest-asyncio,
+  registering custom markers, or replacing a unittest.TestCase / for-loop with
+  idiomatic pytest. Covers function/module/session fixture scope, yield-based
+  cleanup, conftest.py placement, parametrize with pytest.param ids,
+  asyncio_mode=auto, marker registration in pyproject.toml, monkeypatch for env
+  isolation, caplog/capsys/capfd capture, indirect parametrization, skip/xfail,
+  pytest.raises with match, fakes vs mocks, and the recommended pyproject
+  template (strict-markers, filterwarnings=error).
+  Triggers: pytest, fixture, parametrize, conftest, async def test_, @pytest.mark, monkeypatch, tmp_path, caplog, asyncio_mode, pytest.raises, xfail.
 ---
 
 # python-pytest-patterns (v1.0.0)

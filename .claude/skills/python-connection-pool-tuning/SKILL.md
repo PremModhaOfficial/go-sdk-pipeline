@@ -1,12 +1,17 @@
 ---
 name: python-connection-pool-tuning
-description: Connection pool sizing for Python SDK clients — aiohttp.TCPConnector / asyncpg.Pool / redis.ConnectionPool / aiokafka producer; min/max sizing heuristic; idle timeout; healthcheck cadence; backoff on exhaustion; pool exhaustion as PoolExhaustedError, not silent block.
-version: 1.0.0
-authored-in: v0.5.0-phase-b
-status: stable
-priority: SHOULD
-tags: [python, connection-pool, aiohttp, asyncpg, redis, sizing, performance]
-trigger-keywords: ["TCPConnector", "create_pool", "ConnectionPool", "max_connections", "min_size", "max_size", "pool_recycle", "pool_pre_ping", idle, exhaustion]
+description: >
+  Use this when a Python SDK uses aiohttp / httpx / asyncpg / redis / aiokafka,
+  recovering from a pool-exhaustion incident, sizing a pool for a declared
+  throughput target, or hitting file-descriptor exhaustion at scale. Covers the
+  ceil(rps × p99_latency) sizing heuristic, per-library Config-driven mappings
+  (TCPConnector limit / limit_per_host, asyncpg min_size / max_size /
+  max_inactive_connection_lifetime, redis max_connections / health_check_interval,
+  httpx Limits, aiokafka max_in_flight_requests), PoolExhaustedError on
+  acquire-timeout instead of silent block, pool-depth observable gauges,
+  __aexit__ close ordering, cloud-DB idle-recycle / pre-ping, fork-safe
+  post-fork construction, and DNS TTL tuning.
+  Triggers: TCPConnector, create_pool, ConnectionPool, max_connections, min_size, max_size, pool_recycle, pool_pre_ping, idle, exhaustion, PoolExhaustedError.
 ---
 
 # python-connection-pool-tuning (v1.0.0)

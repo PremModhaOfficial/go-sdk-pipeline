@@ -1,12 +1,18 @@
 ---
 name: python-hexagonal-architecture
-description: Hexagonal (ports & adapters) layout for Python SDKs — src/<pkg>/{domain,ports,adapters,application}/; Protocol-typed ports; pure-function domain; adapter wraps external library; constructor-injected dependencies; mypy --strict friendly.
-version: 1.0.0
-authored-in: v0.5.0-phase-b
-status: stable
-priority: SHOULD
-tags: [python, architecture, hexagonal, ports, adapters, domain, ddd]
-trigger-keywords: [hexagonal, ports, adapters, domain, application, "Protocol", "dependency injection", "ports and adapters", "clean architecture"]
+description: >
+  Use this when laying out a Python SDK with non-trivial domain logic, when
+  multiple adapter implementations (HTTP + gRPC, prod + in-memory) are
+  anticipated, when domain tests are slow because they boot real adapters, or
+  when reviewing whether a future backend swap is feasible. Covers the
+  src/<pkg>/{domain,ports,adapters,application}/ layout with a client.py
+  composition root, the inner-only-imports dependency rule, pure
+  frozen-dataclass domain entities + pure-function policies, Protocol (with
+  optional @runtime_checkable) over ABC for ports, constructor-injected
+  adapters that wrap external libraries, per-layer test strategy (unit / use
+  case with fakes / integration), __all__ hygiene, import-linter layered
+  contracts, and when a thin single-file SDK is the right call instead.
+  Triggers: hexagonal, ports, adapters, domain, application, Protocol, dependency injection, ports and adapters, clean architecture.
 ---
 
 # python-hexagonal-architecture (v1.0.0)

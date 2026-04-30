@@ -1,12 +1,15 @@
 ---
 name: python-client-shutdown-lifecycle
-description: Close() contract for Python SDK clients — async with __aenter__/__aexit__ as canonical, manual aclose() as fallback; idempotent via _closed flag; cancellation-safe drain with timeout; ordered sub-resource teardown (tasks → sessions → executors); leak-clean per python-asyncio-leak-prevention.
-version: 1.0.0
-authored-in: v0.5.0-phase-b
-status: stable
-priority: MUST
-tags: [python, lifecycle, shutdown, async-context-manager, close, sdk]
-trigger-keywords: [aclose, close, "__aenter__", "__aexit__", "async with", shutdown, cleanup, idempotent, "_closed"]
+description: >
+  Use this when designing a new Python SDK client class, reviewing a __del__
+  method or non-idempotent close(), seeing aclose() that lacks a drain timeout,
+  or auditing whether the test suite ever exercises the close path. Covers the
+  async with canonical surface with aclose() fallback, the _closed flag plus
+  optional asyncio.Lock for idempotency, ordered teardown (tasks → drain →
+  sessions → executors), aclose vs close naming, bounded drain with force-cancel,
+  asyncio.shield for cancellation safety, post-close InvalidStateError raising,
+  __aexit__ delegation, and AsyncExitStack composition.
+  Triggers: aclose, close, __aenter__, __aexit__, async with, shutdown, cleanup, idempotent, _closed.
 ---
 
 # python-client-shutdown-lifecycle (v1.0.0)

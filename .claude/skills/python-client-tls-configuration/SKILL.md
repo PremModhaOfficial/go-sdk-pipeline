@@ -1,12 +1,17 @@
 ---
 name: python-client-tls-configuration
-description: TLS for Python SDK clients — ssl.SSLContext via ssl.create_default_context() then hardened; TLS 1.2 floor, 1.3 preferred; custom CA pool layered on system roots; SNI + check_hostname required; never check_hostname=False; mTLS via load_cert_chain; pinned cert via verify_mode + custom verify; integration with httpx / aiohttp.
-version: 1.0.0
-authored-in: v0.5.0-phase-b
-status: stable
-priority: MUST
-tags: [python, tls, ssl, security, mtls, certificate, ca]
-trigger-keywords: ["ssl.SSLContext", "create_default_context", "load_verify_locations", "load_cert_chain", "TLSv1_2", "TLSv1_3", check_hostname, "verify_mode", "CERT_REQUIRED", SNI, mtls]
+description: >
+  Use this when a Python SDK opens an HTTPS / TLS connection, reviewing code
+  that touches ssl.SSLContext or sets check_hostname / verify_mode, supporting
+  a private-CA or mTLS deployment, or auditing whether the TLS floor matches
+  compliance baselines. Covers ssl.create_default_context() as the secure
+  baseline + minimum_version pinning to TLS 1.2/1.3, layered custom-CA via
+  load_verify_locations, mTLS via load_cert_chain with key password from a
+  CredentialProvider, the never-weaken rule (no check_hostname=False, no
+  CERT_NONE, no _create_unverified_context), httpx / aiohttp / asyncpg /
+  aiokafka / nats integration, optional SHA-256 cert pinning, and wrapping
+  ssl.SSLError / SSLCertVerificationError as AuthError / NetworkError.
+  Triggers: ssl.SSLContext, create_default_context, load_verify_locations, load_cert_chain, TLSv1_2, TLSv1_3, check_hostname, verify_mode, CERT_REQUIRED, SNI, mTLS.
 ---
 
 # python-client-tls-configuration (v1.0.0)

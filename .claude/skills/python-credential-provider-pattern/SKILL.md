@@ -1,12 +1,17 @@
 ---
 name: python-credential-provider-pattern
-description: Pluggable credential source for Python SDK clients — async CredentialProvider Protocol with refresh policy; static / env / file / K8s mounted-secret / cloud IAM providers; SecretStr redacting wrapper; mtime-based refresh on file providers; never log secrets, never put literals in source.
-version: 1.0.0
-authored-in: v0.5.0-phase-b
-status: stable
-priority: MUST
-tags: [python, credentials, secrets, security, provider, k8s, vault]
-trigger-keywords: [credential, secret, token, api_key, password, SecretStr, "mounted-secret", "AWS_ACCESS_KEY", refresh, "x-api-key", "Authorization"]
+description: >
+  Use this when designing a client that authenticates to an external service,
+  reviewing an api_key: str field on a Config, spotting a credential in a log
+  message or span attribute, or asking whether tokens can rotate without
+  restarting the consumer. Covers the async CredentialProvider Protocol, a
+  redacting SecretStr wrapper with hmac.compare_digest equality, Static / Env /
+  File / CachedFile (mtime-based) / OAuth (refresh-coalesced) provider
+  implementations, keyword-only Provider injection on the Client, per-request
+  fetch (no instance cache), credential_provider_from_spec helpers, never-log
+  rules for span attributes / HTTP debug logs / exception messages, and
+  Provider aclose() ownership.
+  Triggers: credential, secret, token, api_key, password, SecretStr, mounted-secret, AWS_ACCESS_KEY, refresh, x-api-key, Authorization.
 ---
 
 # python-credential-provider-pattern (v1.0.0)

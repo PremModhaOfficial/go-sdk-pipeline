@@ -1,12 +1,15 @@
 ---
 name: python-client-rate-limiting
-description: Client-side rate limiting for Python SDK — aiolimiter token bucket; adaptive shaping from 429 responses + Retry-After header; per-method scoping; OTel throttle signals; integration with retry + circuit breaker.
-version: 1.0.0
-authored-in: v0.5.0-phase-b
-status: stable
-priority: SHOULD
-tags: [python, rate-limiting, throttle, aiolimiter, token-bucket, retry-after]
-trigger-keywords: [aiolimiter, AsyncLimiter, rate, throttle, "429", "Retry-After", "X-RateLimit", token, bucket, leaky]
+description: >
+  Use this when an SDK calls a server that publishes a rate limit, recovering
+  from a 429-amplification incident, reviewing fan-out for global-rate respect,
+  or wiring Retry-After / X-RateLimit-* header handling. Covers aiolimiter
+  AsyncLimiter leaky-bucket per-method scoping, Retry-After parsing
+  (delta-seconds + HTTP-date), AIMD adaptive shaping on sustained 429s,
+  proactive shaping from X-RateLimit-Remaining/Reset, RateLimitError surfacing,
+  retry that honors server hints instead of exponential backoff, and throttle
+  wait-time + 429-count OTel signals.
+  Triggers: aiolimiter, AsyncLimiter, rate, throttle, 429, Retry-After, X-RateLimit, token bucket, leaky bucket, RateLimitError.
 ---
 
 # python-client-rate-limiting (v1.0.0)

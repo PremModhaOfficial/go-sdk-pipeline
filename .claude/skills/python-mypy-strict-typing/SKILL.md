@@ -1,12 +1,18 @@
 ---
 name: python-mypy-strict-typing
-description: Type annotations for mypy --strict — PEP 484 / 526 / 563 / 695 syntax; full annotations on every public function; X | None over Optional[X]; Self over TypeVar; Protocol over ABC for structural typing; py.typed marker; no bare dict/list; assert isinstance over cast; minimize # type: ignore; TypedDict for kwargs schemas.
-version: 1.0.0
-authored-in: v0.5.0-phase-b
-status: stable
-priority: MUST
-tags: [python, typing, mypy, type-hints, pep-484, pep-695, py-typed]
-trigger-keywords: [mypy, "--strict", "type:", typing, Protocol, ABC, TypeVar, "Optional", "Union", Self, "py.typed", "TypedDict", cast, "type: ignore", overload]
+description: >
+  Use this when designing the signature of a new public Python function or
+  class, reviewing code that uses bare dict / list / Optional / Union / Any,
+  weighing a # type: ignore against fixing the underlying issue, or shipping
+  a new package that consumers will type-check. Covers PEP 484 / 563 / 604 /
+  655 / 673 / 695 syntax, full annotations on every public symbol, X | None
+  and X | Y shorthand, parametrized collection types, Self for fluent
+  builders and factories, Protocol (with @runtime_checkable) over ABC, the
+  py.typed PEP 561 marker, assert isinstance over cast, scoped # type:
+  ignore[code] with rationale, TypedDict + Required / NotRequired for kwargs,
+  Generic[T] vs PEP 695 type-parameter syntax, @overload, Literal, Final, and
+  avoiding Any in favor of object + narrowing.
+  Triggers: mypy, --strict, type:, typing, Protocol, ABC, TypeVar, Optional, Union, Self, py.typed, TypedDict, cast, type: ignore, overload.
 ---
 
 # python-mypy-strict-typing (v1.0.0)

@@ -1,12 +1,14 @@
 ---
 name: python-backpressure-flow-control
-description: Backpressure primitives for Python SDK clients — asyncio.Semaphore for inflight cap, asyncio.Queue(maxsize=N) for bounded buffers, drop-vs-block decision per workload, queue-depth metric, never an unbounded buffer.
-version: 1.0.0
-authored-in: v0.5.0-phase-b
-status: stable
-priority: SHOULD
-tags: [python, asyncio, backpressure, flow-control, semaphore, queue]
-trigger-keywords: ["asyncio.Semaphore", "asyncio.Queue", "asyncio.BoundedSemaphore", maxsize, drop, block, "queue.put_nowait", "queue.full", inflight, backpressure]
+description: >
+  Use this when designing fan-out methods that publish downstream, reviewing
+  unbounded list/queue buffers, sizing producer/consumer pipelines for a
+  throughput target, or debugging OOM under production load. Covers
+  asyncio.BoundedSemaphore inflight caps, bounded asyncio.Queue(maxsize=N) with
+  block-vs-drop submit shapes, drop-newest / drop-oldest / block strategy
+  selection, worker pools with task_done pairing, BackpressureError surfacing,
+  and queue-depth + drop-count OTel signals.
+  Triggers: asyncio.Semaphore, asyncio.BoundedSemaphore, asyncio.Queue, maxsize, drop, block, put_nowait, QueueFull, inflight, backpressure.
 ---
 
 # python-backpressure-flow-control (v1.0.0)

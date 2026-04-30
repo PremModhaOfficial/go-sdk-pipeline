@@ -1,12 +1,15 @@
 ---
 name: python-circuit-breaker-policy
-description: Async circuit breaker for Python SDK clients — purgatory or aiocircuitbreaker; thresholds + open / half-open / closed transitions; per-endpoint isolation; integration with retry skill; fail-fast under sustained downstream failure; OTel signals on state transition.
-version: 1.0.0
-authored-in: v0.5.0-phase-b
-status: stable
-priority: SHOULD
-tags: [python, resilience, circuit-breaker, async, asyncio, downstream]
-trigger-keywords: [circuit, breaker, purgatory, aiocircuitbreaker, pybreaker, "open state", "half-open", failure_threshold, recovery_timeout, OpenError]
+description: >
+  Use this when wrapping a Python SDK client around an external dependency that
+  can go down, adding a backstop to a retry loop, designing fail-fast behavior
+  for sustained downstream outage, or reviewing whether breaker scope and
+  thresholds are right. Covers purgatory (default) / aiocircuitbreaker library
+  choice, closed/open/half-open transitions, per-endpoint factory-cached
+  breakers, ValidationError exclusion, CircuitOpenError wrap of OpenedState,
+  retry pairing that doesn't retry an open circuit, OTel state-transition hooks,
+  and Config-driven thresholds.
+  Triggers: circuit, breaker, purgatory, aiocircuitbreaker, pybreaker, open state, half-open, failure_threshold, recovery_timeout, OpenedState, CircuitOpenError.
 ---
 
 # python-circuit-breaker-policy (v1.0.0)

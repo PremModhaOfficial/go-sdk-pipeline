@@ -1,12 +1,16 @@
 ---
 name: python-mock-strategy
-description: Test-double strategy for Python SDK code — Protocol-based in-memory Fakes for behavior, unittest.mock.AsyncMock(spec=Class) for narrow call-pattern assertions, respx for HTTP, freezegun for time, no monkey-patching public surface; mock at the dependency-injection seam, not at internal call sites.
-version: 1.0.0
-authored-in: v0.5.0-phase-b
-status: stable
-priority: MUST
-tags: [python, testing, mock, fake, spec, AsyncMock, protocol, respx, freezegun]
-trigger-keywords: [Mock, MagicMock, AsyncMock, "spec=", patch, fake, fakeable, "Protocol", respx, freezegun, "monkeypatch.setattr", create_autospec]
+description: >
+  Use this when designing tests for a class with external dependencies, deciding
+  whether to fake or mock a collaborator, reviewing a test that uses bare Mock()
+  without spec=, replacing monkeypatch hacks with a Protocol-typed seam, or
+  picking a test-double for HTTP / time / random / filesystem. Covers the
+  Fake-first decision tree, Protocol-based dependency-injection seams,
+  unittest.mock.AsyncMock(spec=...) and create_autospec for call-pattern
+  assertions, respx and aioresponses for HTTP, freezegun for time, seeded
+  random.Random and uuid patching, tmp_path vs pyfakefs, the pytest-mock mocker
+  fixture, and patch-where-used import-path rules.
+  Triggers: Mock, MagicMock, AsyncMock, spec=, patch, fake, Protocol, respx, freezegun, monkeypatch.setattr, create_autospec, pytest-mock.
 ---
 
 # python-mock-strategy (v1.0.0)

@@ -1,12 +1,15 @@
 ---
 name: python-asyncio-leak-prevention
-description: Cleanup contracts for Python SDK clients — track every asyncio.create_task and cancel on shutdown; close every aiohttp.ClientSession / asyncpg.Pool / aiokafka producer; release every file/socket handle; pytest fixtures asyncio_task_tracker + unclosed_session_tracker; pytest-repeat --count=5 to amplify rare leaks; gc-based handle scan in shutdown tests.
-version: 1.1.0
-authored-in: v0.5.0-phase-b
-status: stable
-priority: MUST
-tags: [python, asyncio, leak, cleanup, shutdown, pytest, fixture]
-trigger-keywords: [leak, asyncio, "create_task", ClientSession, Connection, Pool, Producer, "tracemalloc", gc, "open file", file descriptor, "asyncio_task_tracker", "unclosed_session_tracker"]
+description: >
+  Use this when adding a Python SDK client class that holds long-lived async
+  resources, reviewing code that discards an asyncio.create_task return value,
+  designing pytest gates for shutdown, or chasing a ResourceWarning about an
+  unclosed session/socket. Covers the leak categories L-A through L-E (tasks,
+  aiohttp/asyncpg/aiokafka sessions, file/socket handles, custom executors,
+  subprocess pipes), autouse asyncio_task_tracker + unclosed_session_tracker
+  fixtures, fd_tracker via psutil, pytest-repeat --count=5 amplification,
+  tracemalloc snapshot diffs, and threading.enumerate gates.
+  Triggers: leak, asyncio, create_task, ClientSession, Connection, Pool, Producer, tracemalloc, gc, open file, file descriptor, asyncio_task_tracker, unclosed_session_tracker.
 ---
 
 # python-asyncio-leak-prevention (v1.1.0)

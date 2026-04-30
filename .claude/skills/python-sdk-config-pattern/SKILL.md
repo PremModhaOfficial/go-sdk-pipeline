@@ -1,12 +1,15 @@
 ---
 name: python-sdk-config-pattern
-description: Python SDK constructor convention — frozen @dataclass Config primary, pydantic.BaseModel(frozen=True) secondary; immutable after construction; from_url / from_env classmethod factories; never **kwargs. Cited from conventions.yaml `parameter_count` rule.
-version: 1.0.0
-authored-in: v0.5.0-phase-b
-status: stable
-priority: MUST
-tags: [python, sdk, config, constructor, api-shape, convention, dataclass, pydantic]
-trigger-keywords: [Config, "@dataclass", frozen, pydantic, BaseModel, "model_config", "ConfigDict", from_url, from_env, classmethod, "__init__"]
+description: >
+  Use this when designing a new client class, reviewing a constructor with
+  more than four parameters or a **kwargs signature, finding post-construction
+  mutation of Config, or evaluating Quick start ergonomics. Covers the frozen
+  @dataclass(slots=True, kw_only=True) primary form, pydantic.BaseModel(frozen,
+  extra="forbid") secondary form for non-trivial validation, classmethod
+  factories (from_url / from_env / from_dict), __post_init__ validators that
+  raise but never mutate, dataclasses.replace for variation, mutable-default
+  avoidance via field(default_factory=...), and Self-typed factory returns.
+  Triggers: Config, @dataclass, frozen, pydantic, BaseModel, model_config, ConfigDict, from_url, from_env, classmethod, __init__.
 ---
 
 # python-sdk-config-pattern (v1.0.0)

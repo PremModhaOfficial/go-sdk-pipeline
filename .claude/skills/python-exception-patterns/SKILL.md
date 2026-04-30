@@ -1,12 +1,17 @@
 ---
 name: python-exception-patterns
-description: Python SDK exception design — base SDK error class subclassing Exception; specific subclasses for taxonomy (NetworkError, AuthError, ValidationError, RateLimitError, ServerError, ClientError); raise X from y for chains; never raise bare Exception/RuntimeError; class names end in Error; never except: pass; never broaden except Exception unless re-raising.
-version: 1.1.0
-authored-in: v0.5.0-phase-b
-status: stable
-priority: MUST
-tags: [python, exceptions, error-handling, sdk]
-trigger-keywords: [Exception, raise, "raise from", except, ExceptionGroup, "BaseException", traceback, "__cause__", "__context__", BaseSDKError]
+description: >
+  Use this when designing the errors module of a new Python SDK, reviewing code
+  that raises bare Exception / RuntimeError or uses bare-except / except
+  BaseException, refactoring async code that mishandles CancelledError, or
+  documenting Raises: blocks on public API. Covers a single MotadataError base
+  with shallow typed subclasses (NetworkError, TimeoutError, AuthError,
+  RateLimitError, ValidationError, ServerError, ClientError), raise X from y
+  chaining vs from None suppression, the Error suffix rule, except-narrowing
+  away from BaseException so asyncio.CancelledError propagates, full-sentence
+  exception messages, __cause__ vs __context__, ExceptionGroup / except*
+  handling for TaskGroup, and accurate Raises: docstring blocks.
+  Triggers: Exception, raise, raise from, except, ExceptionGroup, BaseException, traceback, __cause__, __context__, BaseSDKError.
 ---
 
 # python-exception-patterns (v1.1.0)

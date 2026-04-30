@@ -1,12 +1,17 @@
 ---
 name: python-otel-instrumentation
-description: OpenTelemetry instrumentation for Python SDK code — module-scope tracer + meter; start_as_current_span context manager; semconv attribute keys; record_exception + set_status on errors; OTLP gRPC/HTTP exporter; graceful TracerProvider/MeterProvider shutdown; structured logging via logging + LoggingHandler bridge; never wrap raw opentelemetry calls per-request.
-version: 1.0.0
-authored-in: v0.5.0-phase-b
-status: stable
-priority: MUST
-tags: [python, otel, opentelemetry, observability, tracing, metrics, logging]
-trigger-keywords: [opentelemetry, otel, tracer, meter, "TracerProvider", "MeterProvider", "start_as_current_span", "record_exception", "set_status", OTLP, "BatchSpanProcessor", semconv]
+description: >
+  Use this when adding OpenTelemetry instrumentation to a Python SDK client,
+  reviewing a tracer = trace.get_tracer() call inside a function body, finding
+  custom or dynamic span attribute keys, or auditing exception handling inside
+  an instrumented span. Covers module-scope tracer / meter / counter /
+  histogram instruments, start_as_current_span context-manager spans, static
+  low-cardinality span names, OTel semantic-convention attribute keys
+  (messaging.*, http.*, db.*, rpc.*, net.*), paired record_exception +
+  set_status on errors with CancelledError treated as UNSET, contextvars-based
+  async propagation across await and create_task, LoggingHandler logs bridge,
+  consumer-owned TracerProvider / MeterProvider setup and shutdown.
+  Triggers: opentelemetry, otel, tracer, meter, TracerProvider, MeterProvider, start_as_current_span, record_exception, set_status, OTLP, BatchSpanProcessor, semconv.
 ---
 
 # python-otel-instrumentation (v1.0.0)

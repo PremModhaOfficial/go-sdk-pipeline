@@ -1,12 +1,15 @@
 ---
 name: python-dependency-vetting
-description: Vet every new Python dep before pyproject.toml — license allowlist, pip-audit + safety vulnerability scan, package size, last-release age, transitive count, PyPI download adoption, GitHub maintenance signals, Sigstore attestation, typosquatting check, native-code provenance. Drives sdk-dep-vet-devil-python verdicts.
-version: 1.0.0
-authored-in: v0.5.0-phase-b
-status: stable
-priority: MUST
-tags: [python, dependencies, security, supply-chain, license, cve, vetting]
-trigger-keywords: ["pip-audit", safety, license, CVE, "Trove classifier", "pip install", PyPI, Sigstore, typosquat, "py.typed", "manylinux", abi3, dependencies]
+description: >
+  Use this when adding a new entry to pyproject.toml dependencies, bumping a major
+  version of an existing dep, reviewing TPRD §10 dependency declarations, or
+  rendering an sdk-dep-vet-devil-python verdict at H6. Covers the license
+  allowlist, pip-audit + safety + osv-scanner vulnerability tiers, package size /
+  last-release-age / transitive-count / PyPI-adoption / GitHub-maintenance
+  buckets, Sigstore (PEP 740) attestation checks, typosquatting Levenshtein
+  scan, native-code provenance for wheels, and ACCEPT / CONDITIONAL / REJECT /
+  INCOMPLETE aggregate verdict logic.
+  Triggers: pip-audit, safety, license, CVE, Trove classifier, pip install, PyPI, Sigstore, typosquat, py.typed, manylinux, abi3, dependencies.
 ---
 
 # python-dependency-vetting (v1.0.0)
