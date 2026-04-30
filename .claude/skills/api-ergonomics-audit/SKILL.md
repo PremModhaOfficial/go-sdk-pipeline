@@ -1,6 +1,6 @@
 ---
 name: api-ergonomics-audit
-description: Consumer-side ergonomics checklist — constructor shape, godoc discoverability, Example_* presence, error-value discoverability, idiomatic-Go surface checks. Feeds sdk-api-ergonomics-devil.
+description: Consumer-side ergonomics checklist — constructor shape, godoc discoverability, Example_* presence, error-value discoverability, idiomatic-Go surface checks. Feeds sdk-api-ergonomics-devil-go.
 version: 1.0.0
 authored-in: v0.3.0-straighten
 created-in-run: bootstrap-seed
@@ -16,12 +16,12 @@ trigger-keywords: [quickstart, godoc, Example_, boilerplate, "consumer experienc
 
 ## Rationale
 
-An SDK succeeds or fails on the first ten minutes of a new integrator's experience. Every extra line in "hello world", every missing `Example_*` in godoc, every sentinel error that does not surface via `errors.Is`, and every parameter named `timeout` that takes seconds-as-int instead of `time.Duration` costs hundreds of future-user hours. The Go standard library's ergonomics — `http.Client{}` works zero-config, `errors.Is` is the canonical matching verb, `Example_*` renders on pkg.go.dev — is the bar motadatagosdk should meet. This skill is a checklist the design-phase `sdk-api-ergonomics-devil` evaluates against; because it is SHOULD-priority (not MUST), findings are NEEDS-FIX rather than BLOCKER unless combined with a MUST-violation.
+An SDK succeeds or fails on the first ten minutes of a new integrator's experience. Every extra line in "hello world", every missing `Example_*` in godoc, every sentinel error that does not surface via `errors.Is`, and every parameter named `timeout` that takes seconds-as-int instead of `time.Duration` costs hundreds of future-user hours. The Go standard library's ergonomics — `http.Client{}` works zero-config, `errors.Is` is the canonical matching verb, `Example_*` renders on pkg.go.dev — is the bar motadatagosdk should meet. This skill is a checklist the design-phase `sdk-api-ergonomics-devil-go` evaluates against; because it is SHOULD-priority (not MUST), findings are NEEDS-FIX rather than BLOCKER unless combined with a MUST-violation.
 
 ## Activation signals
 
 - Phase 1 design exit — any new exported package gets the audit
-- Phase 2 review wave — `sdk-api-ergonomics-devil` scheduled
+- Phase 2 review wave — `sdk-api-ergonomics-devil-go` scheduled
 - TPRD §11 "Usage examples" section is empty or thin
 - No `Example_*` functions in `*_test.go` of a new package
 - Quickstart in README exceeds ~10 lines
@@ -30,7 +30,7 @@ An SDK succeeds or fails on the first ten minutes of a new integrator's experien
 ## The 8-point audit checklist
 
 1. **Quickstart ≤5 lines (excluding imports + error handling).** "Hello world" is construct → use → close. If it takes more, either Config has too many required fields (consider defaults) or `New` signature is wrong shape.
-2. **Constructor shape matches sibling package** (see `sdk-config-struct-pattern`). Config struct for low-field clients; functional options for wide configs.
+2. **Constructor shape matches sibling package** (see `go-sdk-config-struct-pattern`). Config struct for low-field clients; functional options for wide configs.
 3. **`context.Context` is the FIRST parameter on every I/O method.** Never 2nd, never last. CLAUDE.md rule 6.
 4. **Every exported function+method pair has a godoc starting with the symbol name.** `Get fetches ...`, `New constructs ...`. gofmt/staticcheck enforces this; missing first-word-is-name is a NEEDS-FIX.
 5. **At least one `Example_*` per exported symbol where applicable.** Package-level `Example()` for quickstart; `ExampleType_Method()` for each significant method. These render in godoc. Missing Example is HIGH.
@@ -121,7 +121,7 @@ Context-as-last-param — violates Go-stdlib + motadatagosdk convention (CLAUDE.
 // BAD
 func (c *Cache) Get(key string, ctx context.Context) (string, error) { ... }
 ```
-Why it breaks: staticcheck/`golint` + every Go reviewer flags this. It also defeats code-generated wrappers that assume ctx-first. `sdk-api-ergonomics-devil` marks it BLOCKER because fixing after v1.0.0 requires a major bump.
+Why it breaks: staticcheck/`golint` + every Go reviewer flags this. It also defeats code-generated wrappers that assume ctx-first. `sdk-api-ergonomics-devil-go` marks it BLOCKER because fixing after v1.0.0 requires a major bump.
 
 Missing `Example_*` — godoc page renders without runnable code:
 
@@ -150,14 +150,14 @@ Severity ladder for findings:
 - **MEDIUM** — inconsistency with siblings (Shutdown vs Close, int-seconds vs Duration), missing `Default()`, field naming drift
 - **LOW** — godoc phrasing, ordering of options functions, package-doc thinness
 
-Audit output format (see `.claude/agents/sdk-api-ergonomics-devil.md`): re-write the quickstart by hand from the README; if the result is >5 lines OR needs unfamiliar primitives, mark NEEDS-FIX with a finding id like `IM-401`. Every finding carries a suggested fix.
+Audit output format (see `.claude/agents/sdk-api-ergonomics-devil-go.md`): re-write the quickstart by hand from the README; if the result is >5 lines OR needs unfamiliar primitives, mark NEEDS-FIX with a finding id like `IM-401`. Every finding carries a suggested fix.
 
 Greenfield vs retrofit: in Mode A (new package) fix every HIGH+ finding before Phase 2 exit — the cost of shipping a bad API is lifetime-of-the-SDK. In Mode B/C fix HIGH+ where the change is source-compatible; if it requires a semver-major bump, defer to the next major release and record in `docs/PROPOSED-API-CHANGES.md`.
 
 ## Cross-references
 
-- `sdk-config-struct-pattern` — constructor shape drives quickstart length; this audit is a downstream check
-- `sdk-otel-hook-integration` — ergonomics audit includes "is the instrumentation invisible to the consumer?" — it should be (dragonfly achieves this — consumer never touches `otel.*`)
+- `go-sdk-config-struct-pattern` — constructor shape drives quickstart length; this audit is a downstream check
+- `go-sdk-otel-hook-integration` — ergonomics audit includes "is the instrumentation invisible to the consumer?" — it should be (dragonfly achieves this — consumer never touches `otel.*`)
 - `go-example-function-patterns` — example-function structure, `// Output:` discipline, runnability
 - `go-error-handling-patterns` — sentinel-error taxonomy, `errors.Is`/`errors.As` discipline
 - `sdk-semver-governance` — an ergonomics-driven API rewrite that changes signatures triggers a major bump
@@ -165,7 +165,7 @@ Greenfield vs retrofit: in Mode A (new package) fix every HIGH+ finding before P
 
 ## Guardrail hooks
 
-No single `Gxx.sh` enforces ergonomics directly — this is a judgment-call skill expressed through `sdk-api-ergonomics-devil`'s `NEEDS-FIX` findings. Related guardrails that partially enforce:
+No single `Gxx.sh` enforces ergonomics directly — this is a judgment-call skill expressed through `sdk-api-ergonomics-devil-go`'s `NEEDS-FIX` findings. Related guardrails that partially enforce:
 
 - **G63** (if present — verify) / `go vet` + staticcheck — first-word-is-name godoc.
 - **G16** — every exported function has `Example_*` where applicable. HIGH (SHOULD, not BLOCKER).

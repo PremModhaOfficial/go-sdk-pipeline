@@ -25,7 +25,7 @@ The SDK is a mixed ownership codebase — pipeline-authored code coexists with h
 - TPRD §12 declares a signature change on a `[stable-since:]` symbol — verify semver-major + MAJOR declaration
 - Adding a `[perf-exception:]` — pair with `runs/<id>/design/perf-exceptions.md` entry
 - Declaring a perf constraint in godoc — must reference an extant benchmark
-- `sdk-marker-hygiene-devil`, `sdk-marker-scanner`, `sdk-merge-planner`, or `sdk-constraint-devil` in the active agent list
+- `sdk-marker-hygiene-devil`, `sdk-marker-scanner`, `sdk-merge-planner`, or `sdk-constraint-devil-go` in the active agent list
 
 ## The 7 marker taxonomy
 
@@ -51,7 +51,7 @@ func (c *Cache) Get(ctx context.Context, key string) (string, error) { ... }
 
 ### 3. `[stable-since: vX.Y.Z]`
 
-Symbol signature frozen at this version. Any signature change without a TPRD §12 MAJOR declaration is a G101 BLOCKER. Baselines live in `baselines/go/stable-signatures.json`, normalized through whitespace collapse.
+Symbol signature frozen at this version. Any signature change without a TPRD §12 MAJOR declaration is a G101 BLOCKER. Baselines live in `baselines/<target_language>/stable-signatures.json` (per-language partition; G101 resolves the path from `runs/<run-id>/context/active-packages.json:target_language` with fallback to `go` for legacy replays), normalized through whitespace collapse.
 
 ### 4. `[deprecated-in: vX.Y.Z]`
 
@@ -59,7 +59,7 @@ Paired with godoc `Deprecated:` line. Removing the symbol before an actual relea
 
 ### 5. `[do-not-regenerate]`
 
-Bare marker (no value). File's first 1024 bytes trigger a whole-file hash lock in `baselines/go/do-not-regenerate-hashes.json` (G100). Any subsequent byte change is BLOCKER until the baseline hash is refreshed via human PR.
+Bare marker (no value). File's first 1024 bytes trigger a whole-file hash lock in `baselines/<target_language>/do-not-regenerate-hashes.json` (G100; per-language partition). Any subsequent byte change is BLOCKER until the baseline hash is refreshed via human PR.
 
 ### 6. `[owned-by: MANUAL | pipeline | pipeline:<agent>]`
 
@@ -67,7 +67,7 @@ Per-symbol ownership declaration. MANUAL symbols are byte-hashed in `ownership-m
 
 ### 7. `[perf-exception: <reason> bench/<BenchmarkName>]`
 
-Escapes a symbol from `sdk-overengineering-critic` findings when complexity is measurably justified. Requires a paired entry in `runs/<id>/design/perf-exceptions.md` authored by `sdk-perf-architect` at design time (G110). Orphan markers (no entry) = BLOCKER; orphan entries (no marker) = BLOCKER.
+Escapes a symbol from `sdk-overengineering-critic` findings when complexity is measurably justified. Requires a paired entry in `runs/<id>/design/perf-exceptions.md` authored by `sdk-perf-architect-go` at design time (G110). Orphan markers (no entry) = BLOCKER; orphan entries (no marker) = BLOCKER.
 
 ## GOOD examples
 
@@ -139,7 +139,7 @@ Unverified `[perf-exception:]` — orphan marker, G110 BLOCKER:
 // [perf-exception: avoids reflection overhead bench/BenchmarkMemcpy]
 func unsafeMemcpyInto(...) { ... }
 ```
-Why it breaks: no matching entry in `runs/<id>/design/perf-exceptions.md`. The exception marker is only valid as a pair — `sdk-perf-architect` must have declared the exemption at design time AND `sdk-profile-auditor` must have profile evidence. A lone marker is a bypass attempt of the cleanliness gates.
+Why it breaks: no matching entry in `runs/<id>/design/perf-exceptions.md`. The exception marker is only valid as a pair — `sdk-perf-architect-go` must have declared the exemption at design time AND `sdk-profile-auditor-go` must have profile evidence. A lone marker is a bypass attempt of the cleanliness gates.
 
 ## Decision criteria
 

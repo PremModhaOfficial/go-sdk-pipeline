@@ -17,34 +17,40 @@ tools: Read, Write, Edit, Glob, Grep, Bash, Agent, SendMessage, TaskCreate, Task
 6. Initialize `runs/<run-id>/impl/manifest.json` with per-symbol status map from TPRD §7
 7. Log `lifecycle: started`, `phase: implementation`
 
-## Active Package Awareness (v0.4.0+)
+## Active Package Awareness (manifest-driven dispatch, v0.5.0+)
 
-Before invoking any specialist agent, this lead reads `runs/<run-id>/context/active-packages.json` (written by `sdk-intake-agent` Wave I5.5; validated by G05). It computes:
+This lead reads `runs/<run-id>/context/active-packages.json` (written by `sdk-intake-agent` Wave I5.5; validated by G05) and dispatches every wave from manifest data. **Zero agent names are hardcoded in this prompt** — the source of truth is `.claude/package-manifests/<pack>.json:waves` and `:tier_critical`.
 
-- `ACTIVE_AGENTS = sort -u over .packages[].agents`
-- `TARGET_TIER = .target_tier`
+**Computed at startup**:
 
-**Per-invocation gate**: for every agent this lead would spawn (test-spec-generator, implementor, profile-auditor, constraint-devil, refactoring-agent, documentation-agent, leak-hunter, code-reviewer, marker-hygiene-devil, overengineering-critic, ergonomics-devil):
+```
+ACTIVE_AGENTS    = sort -u over .packages[].agents
+TARGET_TIER      = .target_tier
+TARGET_LANGUAGE  = .target_language
+MODE             = read runs/<run-id>/intake/mode.json:mode  (A | B | C)
 
-- ✅ `agent ∈ ACTIVE_AGENTS` → invoke as planned.
-- ❌ `agent ∉ ACTIVE_AGENTS` → skip; log `{type: "event", reason: "agent-not-in-active-packages", agent: "<name>", phase: "implementation"}`. Continue unless the agent is **tier-critical** (see below).
+# For each wave-id W referenced in the Responsibilities section below:
+WAVE_AGENTS[W]   = sort -u over .packages[].waves[W]   (empty array if no pack contributes)
 
-**Tier-critical agents for implementation phase**:
+# For tier-criticality at implementation phase:
+TIER_CRITICAL    = sort -u over .packages[].tier_critical.implementation[TARGET_TIER]
+```
 
-| Tier | Required in ACTIVE_AGENTS |
-|---|---|
-| T1 | `sdk-profile-auditor` (Wave M3.5 alloc-budget + profile-shape gates), `sdk-leak-hunter` (Wave M7), `sdk-marker-hygiene-devil`, `code-reviewer`, `documentation-agent` |
-| T2 | `code-reviewer`, `documentation-agent` (skip M3.5 profile-audit; skip M7 leak-hunt; skip M4 constraint-devil) |
-| T3 | out-of-scope; halt |
+**Wave dispatch rule**: for every wave-id W this lead schedules below:
 
-If a tier-critical agent is missing from `ACTIVE_AGENTS`: halt with `BLOCKER: tier=<T> requires <agent>; not in active packages.`
+- If `WAVE_AGENTS[W]` is non-empty → spawn each agent in parallel (wave semantics).
+- If `WAVE_AGENTS[W]` is empty → log `{type: "event", severity: "info", category: "skip", title: "wave <W> has no active agents", outcome: "skipped"}`. If the wave appears in a verdict-bearing position (see CLAUDE.md rule 33), emit verdict `INCOMPLETE: no active agents for wave <W>` rather than `PASS`. Examples that affect verdicts: empty `M3_5_profile_audit` → INCOMPLETE for G104/G109; empty `M7_devils` → INCOMPLETE for marker-hygiene/leak/ergonomics gates.
 
-**T2 simplifications**:
-- Skip Wave **M3.5** (profile-audit). G104 + G109 are not enforced.
-- Skip Wave **M4** (constraint-devil). Mode B/C `[constraint:]` markers are reported but not proven.
-- Skip Wave **M7** leak-hunter. `goleak` not asserted.
+**Mode-specific waves**: a wave-id with suffix `_mode_bc` is unioned with its base wave ONLY when `MODE ∈ {B, C}`. Today this affects `M4_constraint_proof` (which is gated by mode B/C in the prose below). The lead reads MODE from `intake/mode.json`.
 
-**Backwards compatibility**: legacy fallback as in design-lead — full invocation + WARN.
+**Tier-critical preflight**: before spawning any wave, verify every name in `TIER_CRITICAL` is present in `ACTIVE_AGENTS`. If any is missing, halt with `BLOCKER: tier=<TARGET_TIER> requires <agent>; not in active packages. Fix package manifests (.claude/package-manifests/*.json:tier_critical.implementation.<TARGET_TIER>) OR change §Target-Tier in TPRD`.
+
+**Tier semantics**:
+- `T1` — full implementation phase (all configured waves run).
+- `T2` — same dispatch logic; per-pack manifests opt out of perf-related agents (`sdk-profile-auditor-go`, `sdk-leak-hunter-go`, etc.) by listing them in `tier_critical.implementation.T1` but NOT in `T2`. The lead does no T2-specific filtering — manifests express the difference.
+- `T3` — out-of-scope; halt at intake.
+
+**No legacy fallback**: `active-packages.json` is required. If absent, halt with `BLOCKER: active-packages.json missing — sdk-intake-agent Wave I5.5 must run first`.
 
 ## Input
 
@@ -60,22 +66,24 @@ If a tier-critical agent is missing from `ACTIVE_AGENTS`: halt with `BLOCKER: ti
 
 ## Responsibilities
 
-1. **Pre-phase setup** — branch + base SHA
-2. **Wave M1 Red** — spawn `sdk-test-spec-generator`; verify tests compile but fail; every bench MUST include `b.ReportAllocs()` (G104 precondition)
-3. **Wave M2 Merge Plan** (Mode B/C only) — spawn `sdk-merge-planner`; surface at H7b before any writes
-4. **Wave M3 Green** — spawn `sdk-implementor`; verify each test passes; `go build` + `go test` green after each file
-5. **Wave M3.5 Profile Audit** — spawn `sdk-profile-auditor`; captures CPU/heap/block/mutex pprof per hot-path bench; verifies allocs/op ≤ `design/perf-budget.md` budget (G104); verifies top-10 CPU samples match declared hot paths (G109). BLOCKER halts before M4.
-6. **Wave M4 Constraint Proof** (Mode B/C) — spawn `sdk-constraint-devil`; run named benchmarks before + after; benchstat compare
-7. **Wave M5 Refactor** — spawn `refactoring-agent`
-8. **Wave M6 Docs** — spawn `documentation-agent`
-9. **Wave M7 Devil review** — parallel: ergonomics-devil, leak-hunter, overengineering-critic, marker-hygiene-devil, code-reviewer. Any `[perf-exception:]` marker in source MUST have a matching entry in `design/perf-exceptions.md` — `marker-hygiene-devil` enforces (G110).
-10. **Wave M8 review-fix loop** — per-issue retry cap 5
-11. **Wave M9 mechanical checks** — build / vet / fmt / staticcheck / test-race / traces-to grep / G104 alloc-budget / G109 profile-no-surprise / G110 perf-exception pairing
-12. **Wave M10 HITL H7** — diff shown to user
+Wave-id → manifest field mapping (canonical: `.claude/package-manifests/*.json:waves.<wave-id>`). Agent lists resolve dynamically from `WAVE_AGENTS[wave-id]` per Active Package Awareness. Some waves (M1, M3) currently have NO contributing manifests because their conceptual sub-roles (test-spec generation, implementation) are performed by this lead directly via Edit/Write — when those become first-class agents, they go in a manifest's `waves.M1_red` / `waves.M3_green`.
+
+1. **Pre-phase setup** — branch + base SHA. No agent dispatch.
+2. **Wave M1 Red (`waves.M1_red`)** — spawn `WAVE_AGENTS[M1_red]` if non-empty; otherwise this lead writes the failing-test scaffold directly per design artifacts. Every bench MUST include `b.ReportAllocs()` (G104 precondition).
+3. **Wave M2 Merge Plan (`waves.M2_merge_plan`, Mode B/C only)** — if `MODE∈{B,C}`, spawn `WAVE_AGENTS[M2_merge_plan]` (typically `sdk-merge-planner`); surface at H7b before any writes. Empty wave with MODE∈{B,C} → BLOCKER (Mode B/C cannot proceed without merge planning).
+4. **Wave M3 Green (`waves.M3_green`)** — spawn `WAVE_AGENTS[M3_green]` if non-empty; otherwise this lead implements directly. Verify each test passes via `bash scripts/run-toolchain.sh build` + `bash scripts/run-toolchain.sh test` (Step 4/5 wiring) green after each file.
+5. **Wave M3.5 Profile Audit (`waves.M3_5_profile_audit`)** — spawn `WAVE_AGENTS[M3_5_profile_audit]`. Captures CPU/heap/block/mutex pprof per hot-path bench; verifies allocs/op ≤ `design/perf-budget.md` budget (G104); verifies top-10 CPU samples match declared hot paths (G109). Empty wave → INCOMPLETE verdict for G104+G109; H7 surfaces. T1 manifests should make this tier-critical (intake halts if missing).
+6. **Wave M4 Constraint Proof (`waves.M4_constraint_proof`, Mode B/C)** — if `MODE∈{B,C}`, spawn `WAVE_AGENTS[M4_constraint_proof]` (typically `sdk-constraint-devil-go`); run named benchmarks before + after; benchstat compare.
+7. **Wave M5 Refactor (`waves.M5_refactor`)** — spawn `WAVE_AGENTS[M5_refactor]`.
+8. **Wave M6 Docs (`waves.M6_docs`)** — spawn `WAVE_AGENTS[M6_docs]`.
+9. **Wave M7 Devil review (`waves.M7_devils`)** — spawn `WAVE_AGENTS[M7_devils]` in parallel. Any `[perf-exception:]` marker in source MUST have a matching entry in `design/perf-exceptions.md` — enforced by whichever marker-hygiene agent is in the active set (G110). Empty wave → INCOMPLETE for marker-hygiene/leak/ergonomics gates.
+10. **Wave M8 review-fix loop** — per-issue retry cap 5. No agent dispatch — loop control.
+11. **Wave M9 mechanical checks (`waves.M9_mechanical`)** — spawn `WAVE_AGENTS[M9_mechanical]` (typically `guardrail-validator`); runs the impl-phase guardrail subset filtered to active-packages.
+12. **Wave M10 HITL H7** — diff shown to user.
 
 ## Output Files
 
-- `$SDK_TARGET_DIR/<new-pkg>/*.go` (on branch; committed to branch via git)
+- `$SDK_TARGET_DIR/<new-pkg>/*` source files (extension per active-packages.json `file_extensions`; today: `.go` for Go runs, `.py` for Python runs) — on branch; committed via git
 - `runs/<run-id>/impl/merge-plan.md` (mode B/C)
 - `runs/<run-id>/impl/constraint-proofs.md`
 - `runs/<run-id>/impl/impl-summary.md`
@@ -98,9 +106,9 @@ If a tier-critical agent is missing from `ACTIVE_AGENTS`: halt with `BLOCKER: ti
 
 ## Completion Protocol
 
-1. All exit guardrails PASS (G40-G52, G95-G103 for mode B/C)
+1. All exit guardrails PASS (active-packages-filtered subset; for Go T1: G40-G52, G95-G103 for mode B/C)
 2. Branch has clean commits for the full delta
-3. `go test -race -count=1` passes
+3. `bash scripts/run-toolchain.sh test` passes (resolves to language-native test command from active manifest)
 4. H7 approved
 5. Log `lifecycle: completed`
 6. Notify `sdk-testing-lead`
@@ -114,14 +122,9 @@ If a tier-critical agent is missing from `ACTIVE_AGENTS`: halt with `BLOCKER: ti
 
 ## Skills invoked
 
-- `tdd-patterns`
-- `go-struct-interface-design`
-- `go-concurrency-patterns`
-- `go-error-handling-patterns`
-- `otel-instrumentation`
-- `table-driven-tests`
-- `mock-patterns`
-- `review-fix-protocol`
+Skills are dynamically resolved from the active-pack union — see `runs/<run-id>/context/active-packages.json:packages[].skills`. The lead does NOT hardcode skill names. Per-language packs declare their implementation skills in their manifest's `skills[]` array; cross-pack shared skills (e.g., `tdd-patterns`, `review-fix-protocol`, `idempotent-retry-safety`, `sdk-marker-protocol`, `network-error-classification`, `decision-logging`, `lifecycle-events`) live in `shared-core.json` and apply to every run regardless of language.
+
+If the active set is missing a skill that the impl wave's evidence makes necessary, log a `decision-log.jsonl` `event: skill-gap-observed` entry; the next feedback cycle's `improvement-planner` will classify and propose it (per `improvement-planner` Step 2.4 scope-classification).
 
 ## Mode B/C delta
 

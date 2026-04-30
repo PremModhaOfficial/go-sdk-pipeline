@@ -1,0 +1,68 @@
+{
+  "schema_version": "1.1.0",
+  "pipeline_version": "sdk-pipeline@0.5.0",
+  "scope": "per-language",
+  "language": "python",
+  "scope_note": "Per CLAUDE.md Rule 28 (D1=B partitioning). Example_* materialization is language-specific: Go uses Example_* testable functions; Python uses Examples: blocks / runnable doctests. Agents read this file only on Python-targeted runs.",
+  "note": "First Python run — SEED MODE. Per-package branch coverage + doctest count baselines. New packages default to 90% branch floor (CLAUDE.md Rule #14). Doctest count is raise-only with ≥2-prior-runs precondition; first run just SEEDs the count. Established from runs/sdk-resourcepool-py-pilot-v1/impl/phase-summary.md and testing-lead T1 wave verdict.",
+  "captured_at": "2026-04-29T17:01:00Z",
+  "baseline_run": "sdk-resourcepool-py-pilot-v1",
+  "git_sha": "11c772c",
+  "packages": {
+    "motadata_py_sdk.resourcepool": {
+      "baseline_branch_coverage_pct": 92.10,
+      "baseline_run": "sdk-resourcepool-py-pilot-v1",
+      "captured_at": "2026-04-29T17:01:00Z",
+      "mode": "A-greenfield-first-run",
+      "tier": "T1",
+      "git_sha": "11c772c",
+      "git_branch": "sdk-pipeline/sdk-resourcepool-py-pilot-v1",
+      "source": "runs/sdk-resourcepool-py-pilot-v1/impl/phase-summary.md (M3-M6 verified) + testing-lead T1 wave (62/62 tests pass, gate=90%)",
+      "coverage_tool": "pytest --cov=src --cov-report=json",
+      "runs_tracked": 1,
+      "trend": "insufficient-data",
+      "test_counts_at_baseline": {
+        "unit_pass": 62,
+        "unit_skip": 0,
+        "unit_fail": 0,
+        "integration_pass": 1,
+        "leak_pass": 1,
+        "property_pass": 1,
+        "bench_pass": 11,
+        "bench_incomplete": 2
+      },
+      "per_module_coverage": {
+        "__init__.py": 100.0,
+        "_acquired.py": 94.0,
+        "_config.py": 100.0,
+        "_errors.py": 100.0,
+        "_pool.py": 91.0,
+        "_stats.py": 100.0
+      },
+      "doctest_count_per_package": {
+        "motadata_py_sdk.resourcepool": {
+          "doctest_count": 6,
+          "computation_note": "PEP 257 docstring + Examples: blocks on 6 of 9 public symbols (Pool, PoolConfig, PoolStats, AcquiredResource — class docstring; Pool.acquire — Examples block; module-level USAGE.md doctest). Sentinel exception classes (PoolError, PoolClosedError, PoolEmptyError, ConfigError, ResourceCreationError) intentionally have no Examples blocks. Raise-only with ≥2-prior-runs precondition per CLAUDE.md Rule 28.",
+          "raise_only": true,
+          "drop_warn_threshold": "prior_runs >= 2"
+        }
+      },
+      "last_updated": "2026-04-29T17:01:00Z",
+      "history": [
+        {
+          "run_id": "sdk-resourcepool-py-pilot-v1",
+          "ts": "2026-04-29T17:01:00Z",
+          "git_sha": "11c772c",
+          "coverage_pct": 92.10,
+          "doctest_count": 6
+        }
+      ]
+    }
+  },
+  "raise_policy": {
+    "threshold_pct": 5,
+    "description": "Raise baseline only if current coverage exceeds baseline by >5%. Keep baseline on regression. Never lower without learning-engine reset authorization. Doctest count is raise-only; drop emits WARN only when ≥2 prior runs exist.",
+    "reset_interval_runs": 5,
+    "next_reset_due_after_run_number": 5
+  }
+}

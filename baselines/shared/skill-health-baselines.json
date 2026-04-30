@@ -3,50 +3,77 @@
   "pipeline_version": "sdk-pipeline@0.5.0",
   "scope": "shared",
   "scope_note": "v0.4.0 declares this baseline as shared (skill stability is intrinsically about the SKILL, language-agnostic). Decision D2 (resolved 2026-04-27 post-R2): Lenient default — one shared score across languages. Progressive fallback: shared-core skills with generalization_debt (tdd-patterns, idempotent-retry-safety, network-error-classification) flip to per-language only if Phase B data shows ≥3pp divergence; D6=Split (rule shared, examples in <pack>/conventions.yaml) is the canonical resolution. See docs/LANGUAGE-AGNOSTIC-DECISIONS.md and docs/R2-DEBT-REWRITE-FEASIBILITY.md.",
-  "note": "SDK-mode skill-health baseline per CLAUDE.md Rule #23 and baseline-manager SDK-MODE Delta 2. Tracks longitudinal skill stability under learning-engine body-patch regime (no runtime skill synthesis). First baseline established from sdk-dragonfly-s2 F4a/F4b/F7 signals.",
-  "run_id": "sdk-dragonfly-s2",
+  "note": "SDK-mode skill-health baseline per CLAUDE.md Rule #23 and baseline-manager SDK-MODE Delta 2. Tracks longitudinal skill stability under learning-engine body-patch regime (no runtime skill synthesis). First baseline established from sdk-dragonfly-s2 F4a/F4b/F7 signals. Run 2 appended from first Python pilot sdk-resourcepool-py-pilot-v1 (2026-04-29). Metrics raise-only per their natural direction; baseline kept on regression.",
+  "run_id": "sdk-resourcepool-py-pilot-v1",
   "baseline_run": "sdk-dragonfly-s2",
   "captured_at": "2026-04-18T15:30:00Z",
-  "runs_tracked": 1,
+  "runs_tracked": 2,
   "trend": "insufficient-data",
-  "last_updated": "2026-04-18T15:30:00Z",
+  "last_updated": "2026-04-29T18:15:00Z",
 
   "metrics": {
     "skill_stability": {
       "value_patches_per_skill": 0.105,
-      "computation_note": "2 patch-level bumps applied (go-error-handling-patterns 1.0.0→1.0.1, go-example-function-patterns 0.1.0→0.1.1) across 19 skills invoked this run = 2/19 = 0.105. Target <0.3 after 10-run rolling avg. Current single-run value is below target.",
+      "baseline_run": "sdk-dragonfly-s2",
+      "computation_note": "2 patch-level bumps applied (go-error-handling-patterns 1.0.0→1.0.1, go-example-function-patterns 0.1.0→0.1.1) across 19 skills invoked Run 1 = 2/19 = 0.105. Target <0.3 after 10-run rolling avg. Rolling avg over Run 1 + Run 2 (Python) = (0.105 + 0.0) / 2 = 0.053 — below target. Baseline kept at 0.105 (raise-only on stability metric direction).",
+      "history": [
+        {"run_id": "sdk-dragonfly-s2", "language": "go", "value": 0.105},
+        {"run_id": "sdk-resourcepool-py-pilot-v1", "language": "python", "value": 0.0, "note": "0 skill patches applied this run; learning-engine F6 not yet invoked at time of baseline-manager."}
+      ],
       "target_max": 0.3,
       "rolling_window_runs": 10,
       "status": "insufficient-data-for-trend"
     },
     "existing_skill_patch_accept_rate": {
       "value": 1.0,
+      "baseline_run": "sdk-dragonfly-s2",
       "computation_note": "2/2 F7 patch-level skill bumps applied without rollback (SP-01 error-handling triggers, SP-02 example-function triggers). No golden-corpus gate executed (golden-corpus/dragonfly-v1/ empty; human-seed pending per seq 151). Accept rate is nominal 1.0 but caveat: corpus-gate bypassed.",
+      "history": [
+        {"run_id": "sdk-dragonfly-s2", "language": "go", "value": 1.0},
+        {"run_id": "sdk-resourcepool-py-pilot-v1", "language": "python", "value": null, "note": "No patches issued by learning-engine F6 at the time baseline-manager ran; metric not measurable this run. Inherits prior baseline."}
+      ],
       "target_min": 0.8,
       "status": "PASS-with-caveat-corpus-empty"
     },
     "manifest_miss_rate": {
       "blocking_rate": 0.0,
-      "warn_rate": 0.296,
-      "computation_note": "G24 §Guardrails-Manifest PASS (0 blocking misses of 38 scripts). G23 §Skills-Manifest WARN (8/27 misses = 0.296 warn-rate, non-blocking). Target 0 for blocking after library stabilizes; WARN tracked separately per SDK-MODE Delta 2.",
+      "warn_rate": 0.0,
+      "baseline_run": "sdk-resourcepool-py-pilot-v1",
+      "computation_note": "Run 1 (Go): G24 §Guardrails-Manifest PASS (0/38 BLOCKER misses). G23 §Skills-Manifest WARN (8/27 misses = 0.296). Run 2 (Python): G24 PASS (0/19), G23 PASS (0/22). Both rates IMPROVED to 0.0. Rolling: blocking still 0.0; warn improved Run 1→Run 2 from 0.296→0.0. Target-direction: down. Baseline updated to Run 2 values (improvement permits raise of the 'better' baseline).",
+      "history": [
+        {"run_id": "sdk-dragonfly-s2", "language": "go", "blocking_rate": 0.0, "warn_rate": 0.296},
+        {"run_id": "sdk-resourcepool-py-pilot-v1", "language": "python", "blocking_rate": 0.0, "warn_rate": 0.0}
+      ],
       "target_blocking_max": 0.0,
+      "target_warn_max": 0.1,
       "status_blocking": "PASS",
-      "status_warn": "TRACKING-8-proposals-filed-to-PROPOSED-SKILLS.md"
+      "status_warn": "PASS-improved-from-Go-run"
     },
     "learning_patches_reverted_by_user": {
       "value": null,
-      "computation_note": "Replaces the retired golden_regression_rate metric (full-replay regression retired post-sdk-dragonfly-s2 — dominated Phase 4 token spend with no signal beyond the devil fleet). Counts how many learning-engine patches the user reverted at H10 review of feedback/learning-notifications.md. Target: trending down (well-calibrated notifications).",
+      "baseline_run": "sdk-dragonfly-s2",
+      "computation_note": "Replaces the retired golden_regression_rate metric (full-replay regression retired post-sdk-dragonfly-s2 — dominated Phase 4 token spend with no signal beyond the devil fleet). Counts how many learning-engine patches the user reverted at H10 review of feedback/learning-notifications.md. Target: trending down (well-calibrated notifications). Run 2 H10 not yet reached; pending.",
+      "history": [
+        {"run_id": "sdk-dragonfly-s2", "language": "go", "value": null, "note": "first measurement pending"},
+        {"run_id": "sdk-resourcepool-py-pilot-v1", "language": "python", "value": null, "note": "H10 not yet reached at baseline-manager F7 time"}
+      ],
       "target_max_per_run": 0,
       "rolling_window_runs": 5,
       "status": "first-measurement-pending"
     },
     "mean_time_to_green_sec": {
       "value": null,
-      "computation_note": "Not measured this run (no wall-clock instrumentation for first-green-test). Monitor trend once metrics-collector F1 adds this signal.",
+      "baseline_run": null,
+      "computation_note": "Not measured this run (no wall-clock instrumentation for first-green-test). Run 2 also not instrumented. Monitor trend once metrics-collector F1 adds this signal.",
+      "history": [
+        {"run_id": "sdk-dragonfly-s2", "language": "go", "value": null},
+        {"run_id": "sdk-resourcepool-py-pilot-v1", "language": "python", "value": null}
+      ],
       "status": "not-instrumented"
     },
     "user_intervention_rate": {
       "value_per_run": 2,
+      "baseline_run": "sdk-dragonfly-s2",
       "hitl_approvals_count": 5,
       "hitl_approvals": ["H1", "H5", "H6-conditional", "H7", "H8-waiver", "H9"],
       "user_overrides_count": 2,
@@ -54,17 +81,21 @@
         "Mode A override at run-start (TPRD §16 declared Mode B; user directed greenfield regeneration)",
         "DEP-BUMP-UNAPPROVED Option A resolution at seq 38/39 (testcontainers-go MVS bumps approved)"
       ],
-      "computation_note": "Counting 'overrides' = user directives that deviated from declared pipeline path; not all HITL approvals count as interventions. Baseline = 2 overrides. Target trending down; flat or up signals gate miscalibration.",
-      "status": "baseline-set"
+      "computation_note": "Counting 'overrides' = user directives that deviated from declared pipeline path; not all HITL approvals count as interventions. Run 1 baseline = 2 overrides. Target trending down; flat or up signals gate miscalibration. Run 2 (Python) overrides: 1 (H7 option-1 accept-INCOMPLETE-on-G43-py); H8-calibration-warn was a documented disposition not an override. Net: 1 override (down from 2 — improvement direction). Baseline updated: minimum trend.",
+      "history": [
+        {"run_id": "sdk-dragonfly-s2", "language": "go", "value": 2},
+        {"run_id": "sdk-resourcepool-py-pilot-v1", "language": "python", "value": 1, "note": "H7 option-1 INCOMPLETE-G43-py acceptance was the only directive override; H8 PA-013 calibration-warn and H9 3-disposition acceptance were standard HITL gate-pass approvals."}
+      ],
+      "status": "improving-direction"
     }
   },
 
   "per_skill": {
     "go-error-handling-patterns": {
       "baseline_version": "1.0.1",
-      "version_bumps_this_run": 1,
-      "bump_kind": "patch",
-      "reason": "SP-01 trigger-keyword expansion (added mapErr, sentinel switch, precedence order, errors.Is, fmt.Errorf %w chain); no body change.",
+      "version_bumps_this_run": 0,
+      "bump_kind": null,
+      "reason": "Not invoked this run (Python pilot). Inherits prior state.",
       "drift_severity": "MODERATE",
       "drift_finding_id": "SKD-005",
       "pending_bumps": ["MINOR v1.1.0 body split (service-mode vs SDK-client-mode branch) deferred — awaiting golden-corpus seed"],
@@ -73,46 +104,184 @@
     },
     "go-example-function-patterns": {
       "baseline_version": "0.1.1",
-      "version_bumps_this_run": 1,
-      "bump_kind": "patch",
-      "reason": "SP-02 trigger-keyword expansion (added ExampleCache_, godoc example, Example_ function, docs wave); no body change. Preserved v0.1.x draft semantics (plan named v1.0.0→v1.0.1 but actual frontmatter was draft; patch-level bump preserved).",
+      "version_bumps_this_run": 0,
+      "bump_kind": null,
+      "reason": "Not invoked this run (Python pilot). Inherits prior state.",
       "drift_severity": "NONE",
       "drift_finding_id": null,
       "pending_bumps": [],
       "runs_tracked": 1,
       "last_updated": "2026-04-18T15:30:00Z"
+    },
+    "python-asyncio-patterns": {
+      "baseline_version": "1.0.0",
+      "version_bumps_this_run": 0,
+      "bump_kind": null,
+      "reason": "First Python pilot. SEED. 3 invocations, 0 devil findings.",
+      "drift_severity": null,
+      "drift_finding_id": null,
+      "pending_bumps": [],
+      "runs_tracked": 1,
+      "last_updated": "2026-04-29T18:15:00Z",
+      "first_invoked_run": "sdk-resourcepool-py-pilot-v1"
+    },
+    "python-asyncio-leak-prevention": {
+      "baseline_version": "1.0.0",
+      "version_bumps_this_run": 0,
+      "bump_kind": null,
+      "reason": "First Python pilot. SEED. 2 invocations, 0 devil findings, T6 leak gate PASS.",
+      "drift_severity": null,
+      "drift_finding_id": null,
+      "pending_bumps": [],
+      "runs_tracked": 1,
+      "last_updated": "2026-04-29T18:15:00Z",
+      "first_invoked_run": "sdk-resourcepool-py-pilot-v1"
+    },
+    "python-mypy-strict-typing": {
+      "baseline_version": "1.0.0",
+      "version_bumps_this_run": 0,
+      "bump_kind": null,
+      "reason": "First Python pilot. SEED. 1 LOW finding (CV-001) closed at M5; not a skill defect.",
+      "drift_severity": null,
+      "drift_finding_id": null,
+      "pending_bumps": [],
+      "runs_tracked": 1,
+      "last_updated": "2026-04-29T18:15:00Z",
+      "first_invoked_run": "sdk-resourcepool-py-pilot-v1"
+    },
+    "python-pytest-patterns": {
+      "baseline_version": "1.0.0",
+      "version_bumps_this_run": 0,
+      "bump_kind": null,
+      "reason": "First Python pilot. SEED. 62/62 unit tests PASS, 0 flakes; skill effective.",
+      "drift_severity": null,
+      "drift_finding_id": null,
+      "pending_bumps": [],
+      "runs_tracked": 1,
+      "last_updated": "2026-04-29T18:15:00Z",
+      "first_invoked_run": "sdk-resourcepool-py-pilot-v1"
+    },
+    "python-doctest-patterns": {
+      "baseline_version": "1.0.0",
+      "version_bumps_this_run": 0,
+      "bump_kind": null,
+      "reason": "First Python pilot. SEED. 6 Examples blocks generated; doctests run cleanly under live pytest.",
+      "drift_severity": null,
+      "drift_finding_id": null,
+      "pending_bumps": [],
+      "runs_tracked": 1,
+      "last_updated": "2026-04-29T18:15:00Z",
+      "first_invoked_run": "sdk-resourcepool-py-pilot-v1"
+    },
+    "python-hypothesis-patterns": {
+      "baseline_version": "1.0.0",
+      "version_bumps_this_run": 0,
+      "bump_kind": null,
+      "reason": "First Python pilot. SEED. 1 hypothesis property test module passes.",
+      "drift_severity": null,
+      "drift_finding_id": null,
+      "pending_bumps": [],
+      "runs_tracked": 1,
+      "last_updated": "2026-04-29T18:15:00Z",
+      "first_invoked_run": "sdk-resourcepool-py-pilot-v1"
+    },
+    "python-sdk-config-pattern": {
+      "baseline_version": "1.0.0",
+      "version_bumps_this_run": 0,
+      "bump_kind": null,
+      "reason": "First Python pilot. SEED. Frozen+slotted dataclass PoolConfig pattern produced and validated.",
+      "drift_severity": null,
+      "drift_finding_id": null,
+      "pending_bumps": [],
+      "runs_tracked": 1,
+      "last_updated": "2026-04-29T18:15:00Z",
+      "first_invoked_run": "sdk-resourcepool-py-pilot-v1"
+    },
+    "python-exception-patterns": {
+      "baseline_version": "1.0.0",
+      "version_bumps_this_run": 0,
+      "bump_kind": null,
+      "reason": "First Python pilot. SEED. 5 exception subclasses (PoolError + 4 children) produced cleanly.",
+      "drift_severity": null,
+      "drift_finding_id": null,
+      "pending_bumps": [],
+      "runs_tracked": 1,
+      "last_updated": "2026-04-29T18:15:00Z",
+      "first_invoked_run": "sdk-resourcepool-py-pilot-v1"
+    },
+    "python-dependency-vetting": {
+      "baseline_version": "1.0.0",
+      "version_bumps_this_run": 0,
+      "bump_kind": null,
+      "reason": "First Python pilot. SEED. 11/11 deps ACCEPT (0 runtime + 11 dev).",
+      "drift_severity": null,
+      "drift_finding_id": null,
+      "pending_bumps": [],
+      "runs_tracked": 1,
+      "last_updated": "2026-04-29T18:15:00Z",
+      "first_invoked_run": "sdk-resourcepool-py-pilot-v1"
     }
   },
 
   "drift_scoreboard": {
-    "captured_at": "2026-04-18T15:30:00Z",
-    "source": "runs/sdk-dragonfly-s2/feedback/skill-drift.md (F4a)",
-    "total_skills_examined": 19,
-    "MAJOR": 0,
-    "MODERATE": 1,
-    "MINOR": 3,
-    "NONE": 14,
-    "MODERATE_ids": ["SKD-005"],
-    "MINOR_ids": ["SKD-001", "SKD-012", "SKD-013"],
-    "NONE_ids": ["SKD-002","SKD-003","SKD-004","SKD-006","SKD-007","SKD-008","SKD-009","SKD-010","SKD-011","SKD-014","SKD-015","SKD-016","SKD-017","SKD-018","SKD-019"]
+    "captured_at": "2026-04-29T18:15:00Z",
+    "current_run_source": "runs/sdk-resourcepool-py-pilot-v1/ — feedback/skill-drift.md not yet authored at baseline-manager F7 time",
+    "current_run_status": "PENDING-skill-drift-detector-F4a-on-Python-pack",
+    "history": [
+      {
+        "run_id": "sdk-dragonfly-s2",
+        "language": "go",
+        "source": "runs/sdk-dragonfly-s2/feedback/skill-drift.md (F4a)",
+        "total_skills_examined": 19,
+        "MAJOR": 0,
+        "MODERATE": 1,
+        "MINOR": 3,
+        "NONE": 14,
+        "MODERATE_ids": ["SKD-005"],
+        "MINOR_ids": ["SKD-001", "SKD-012", "SKD-013"],
+        "NONE_ids": ["SKD-002","SKD-003","SKD-004","SKD-006","SKD-007","SKD-008","SKD-009","SKD-010","SKD-011","SKD-014","SKD-015","SKD-016","SKD-017","SKD-018","SKD-019"]
+      },
+      {
+        "run_id": "sdk-resourcepool-py-pilot-v1",
+        "language": "python",
+        "source": "PENDING-F4a",
+        "total_skills_examined": null,
+        "note": "skill-drift-detector F4a wave runs in parallel with baseline-manager F7; final scoreboard appended by drift-detector or learning-engine."
+      }
+    ]
   },
 
   "coverage_scoreboard": {
-    "captured_at": "2026-04-18T15:30:00Z",
-    "source": "runs/sdk-dragonfly-s2/feedback/skill-coverage.md (F4b)",
-    "declared_present": 19,
-    "declared_warn_absent": 8,
-    "invoked_across_phases": 18,
-    "declared_and_invoked_healthy": 16,
-    "TRIGGERS_GAP": 3,
-    "TRIGGERS_GAP_ids": ["go-error-handling-patterns", "go-example-function-patterns", "tdd-patterns"],
-    "invoked_undeclared_lateral": 4,
-    "manifest_gaps": 2,
-    "manifest_gap_ids": ["review-fix-protocol", "context-deadline-patterns"]
+    "captured_at": "2026-04-29T18:15:00Z",
+    "current_run_source": "runs/sdk-resourcepool-py-pilot-v1/ — feedback/skill-coverage.md not yet authored at baseline-manager F7 time",
+    "current_run_status": "PENDING-skill-coverage-reporter-F4b-on-Python-pack",
+    "history": [
+      {
+        "run_id": "sdk-dragonfly-s2",
+        "language": "go",
+        "source": "runs/sdk-dragonfly-s2/feedback/skill-coverage.md (F4b)",
+        "declared_present": 19,
+        "declared_warn_absent": 8,
+        "invoked_across_phases": 18,
+        "declared_and_invoked_healthy": 16,
+        "TRIGGERS_GAP": 3,
+        "TRIGGERS_GAP_ids": ["go-error-handling-patterns", "go-example-function-patterns", "tdd-patterns"],
+        "invoked_undeclared_lateral": 4,
+        "manifest_gaps": 2,
+        "manifest_gap_ids": ["review-fix-protocol", "context-deadline-patterns"]
+      },
+      {
+        "run_id": "sdk-resourcepool-py-pilot-v1",
+        "language": "python",
+        "source": "PENDING-F4b",
+        "note": "skill-coverage-reporter F4b wave runs in parallel with baseline-manager F7."
+      }
+    ]
   },
 
   "raise_policy": {
-    "description": "Skill-health is a mixed-direction dashboard: stability/accept-rate/green-time target improvement; miss-rate/intervention-rate/learning_patches_reverted_by_user target decrease. Baselines are locked at current values on first run; future runs are evaluated per-metric.",
-    "reset_interval_runs": 5
+    "description": "Skill-health is a mixed-direction dashboard: stability/accept-rate/green-time target improvement; miss-rate/intervention-rate/learning_patches_reverted_by_user target decrease. Baselines are locked at current values on first run; future runs are evaluated per-metric in their natural direction. Never lower a 'better' baseline (lower-is-better metrics keep their minimum; higher-is-better metrics keep their maximum) without learning-engine reset authorization.",
+    "reset_interval_runs": 5,
+    "next_reset_due_after_run_number": 5
   }
 }

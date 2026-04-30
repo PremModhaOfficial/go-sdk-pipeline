@@ -10,7 +10,7 @@ Every skill MUST declare a semver:
 
 ```yaml
 ---
-name: sdk-config-struct-pattern
+name: go-sdk-config-struct-pattern
 description: ...
 version: 1.0.0
 created-in-run: <run-id>

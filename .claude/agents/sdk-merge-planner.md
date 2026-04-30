@@ -65,7 +65,7 @@ For every symbol in touched files:
 | `mapRows` | human | `[traces-to: MANUAL-IDT-001]` + `[constraint: ... BenchmarkList 0%]` | PRESERVE | Human-owned; no change requested |
 | `Get` | pipeline | `[traces-to: TPRD-4-FR-1]` `[stable-since: v1.4.0]` | PRESERVE | Not in TPRD §2 modified list |
 
-## Constraint proofs required (executed by sdk-constraint-devil in Wave M4)
+## Constraint proofs required (executed by sdk-constraint-devil-go in Wave M4)
 
 - `BenchmarkList` — tolerance 0% (default, unstated) — must run before + after
 
@@ -95,7 +95,7 @@ Gate auto-advances (no co-owned conflicts).
 1. `merge-plan.md` written + reviewed by `sdk-impl-lead`
 2. H7b gate passed (auto or user-approved)
 3. Log `lifecycle: completed`
-4. Notify `sdk-impl-lead` + `sdk-implementor`
+4. Notify `sdk-impl-lead`
 
 ## On Failure Protocol
 

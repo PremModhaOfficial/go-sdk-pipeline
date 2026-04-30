@@ -5,6 +5,8 @@ status: candidate
 priority: MUST
 tags: [redis, dragonfly, pubsub, goroutine-leak, shutdown]
 target_consumers: [sdk-impl-lead, sdk-leak-hunter, sdk-testing-lead]
+scope: go
+scope_rationale: Body uses goroutine + channel + goleak idioms; target consumer `sdk-leak-hunter` is the Go-suffix sibling. Python equivalent (asyncio task + queue + asyncio-leak-hunter) requires a parallel Python rewrite — not a token rename. Tagged go until split per D6 into shared-core rule body + per-language code overlays.
 provenance: synthesized-from-tprd(sdk-dragonfly-s2, §5.5, §7)
 ---
 

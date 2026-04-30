@@ -51,7 +51,7 @@ For each failing test:
 **Exit per file**: `go build ./...` + `go test ./<pkg>/... -race -count=1` pass.
 
 ### Wave M4 — Constraint Proof (Mode B/C only)
-**Agent**: `sdk-constraint-devil`
+**Agent**: `sdk-constraint-devil-go`
 For each `[constraint]` with named bench in touched files:
 - Run bench BEFORE changes (from `bench-baseline.txt`)
 - Run bench AFTER changes
@@ -59,13 +59,13 @@ For each `[constraint]` with named bench in touched files:
 - FAIL = BLOCKER; halt, surface to user
 
 ### Wave M5 — Refactor
-**Agent**: `refactoring-agent`
+**Agent**: `refactoring-agent-go`
 - Remove duplication
 - Apply `simplify` skill patterns
 - Maintain test green
 
 ### Wave M6 — Docs
-**Agent**: `documentation-agent`
+**Agent**: `documentation-agent-go`
 - Godoc on every exported symbol (first word = symbol name)
 - Add `Example_*` functions where applicable
 - Write / update `<pkg>/README.md`
@@ -74,11 +74,11 @@ For each `[constraint]` with named bench in touched files:
 
 | Agent | Role |
 |-------|------|
-| `sdk-api-ergonomics-devil` | SDK-consumer POV: boilerplate, surprising defaults, missing examples |
-| `sdk-leak-hunter` | Run `go test -race -count=5` + `goleak.VerifyTestMain`; report leaks as BLOCKER |
+| `sdk-api-ergonomics-devil-go` | SDK-consumer POV: boilerplate, surprising defaults, missing examples |
+| `sdk-leak-hunter-go` | Run `go test -race -count=5` + `goleak.VerifyTestMain`; report leaks as BLOCKER |
 | `sdk-overengineering-critic` | Reject unused options, speculative interfaces, dead abstractions |
 | `sdk-marker-hygiene-devil` | Every pipeline-authored symbol has `[traces-to: TPRD-*]`; every preserved MANUAL symbol retained its marker byte-identical; no forged MANUAL markers |
-| `code-reviewer` | Go idioms, error wrapping, naming, package structure |
+| `code-reviewer-go` | Go idioms, error wrapping, naming, package structure |
 
 ### Wave M8 — Review-Fix Loop
 Same protocol as Design. Route fixes to implementer; re-run devils after each batch.

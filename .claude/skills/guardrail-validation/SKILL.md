@@ -32,20 +32,26 @@ tags: [meta, guardrail, validator, mechanical, perf-confidence]
 - SQL JOINs / QueryStruct DSL / pg_duckdb routing (no SQL in SDK)
 - Optimistic locking / soft delete (domain concerns, not SDK)
 
-### NEW checks (G01–G103, full catalog in plan §Guardrails Catalog)
+### NEW checks (G01–G110, full catalog in plan §Guardrails Catalog)
 
-| Band | IDs | Domain |
-|------|-----|--------|
-| Universal | G01–G07 | log validity, target-dir discipline, run_id stamping |
-| Bootstrap | G10–G15 | skill frontmatter, devil verdict, agent-creation-guide compliance |
-| Intake | G20–G22 | TPRD completeness, non-goals, clarification cap |
-| Design | G30–G38 | api.go.stub compile, dep vetting, govulncheck, osv-scanner, license allowlist, semver verdict, convention match |
-| Impl | G40–G52 | no TODO, go build/vet/fmt/staticcheck, godoc, context-first, goroutine-cancellation, Close()-drain |
-| Testing | G60–G69 | race, coverage ≥90%, goleak, flake check, benchmark delta gate, Example_*, no-creds |
-| Feedback | G80, G81, G83, G84, G85, G86 | evolution-report, baselines not lowered, evolution-log update, per-run caps, learning-notifications written, quality regression ≥5% cap (tightened post-golden-corpus). G82 (golden regression) retired — replaced by four compensating baselines + G86 (see CLAUDE.md Rule 28). |
-| Meta | G90–G94 | skill-index consistency, empty-evolution-log, deprecated-skill references, CLAUDE.md rule contiguity, determinism |
-| Markers | G95–G103 | MANUAL-byte-preservation, constraint-bench-proof, marker-delete consent, do-not-regenerate hash, stable-since semver, deprecated-in-horizon, no-forged-traces-to |
-| Perf-Confidence | G104–G110 | alloc-budget (G104), soak-MMD (G105), soak-drift (G106), complexity-mismatch (G107), oracle-margin (G108), profile-no-surprise (G109), perf-exception pairing (G110) |
+The **Pack** column shows which package manifest owns each band. Pack = **shared** means the guardrail is language-neutral and lives in `shared-core.json`. Pack = **go** means it's Go-specific (Go tooling, Go AST). Pack = **shared (aspirational)** / **go (aspirational)** means the script isn't yet authored — design intent is recorded in the manifest's `aspirational_guardrails` field. Aspirational entries are tracked but never executed at runtime.
+
+| Band | IDs | Pack | Domain |
+|------|-----|------|--------|
+| Universal | G01–G07 | shared | log validity, target-dir discipline, run_id stamping, active-packages.json validation (G05), pipeline_version drift (G06) |
+| Intake | G20–G24, G69, G116 | shared | TPRD completeness, non-goals, clarification cap, §Skills-Manifest validation (G23), §Guardrails-Manifest validation (G24), creds hygiene (G69), retired-doc drift (G116) |
+| Design (Go) | G30–G38 | go | api.go.stub compile (Go), Go dep vetting, govulncheck, osv-scanner, license allowlist, semver verdict, Go convention match |
+| Impl (Go) | G40–G48 | go | no TODO in Go src, `go build`/`go vet`/`gofmt`/staticcheck, godoc, context-first, init-forbidden |
+| Testing (Go) | G60–G65 | go | `go test -race`, coverage ≥90%, goleak, flake check, benchmark delta gate, Example_* presence |
+| Feedback | G80, G85, G86 | shared | evolution-report, learning-notifications written, quality regression ≥5% cap (tightened post-golden-corpus). G82 (golden regression) retired — replaced by four compensating baselines + G86 (see CLAUDE.md Rule 28). |
+| Feedback (aspirational) | G81, G83, G84 | shared (aspirational) | baselines-not-lowered (G81), per-run decision-log entry caps (G83), output-shape hash compensating baseline (G84). All forward-declared per CLAUDE.md rule 28; scripts not yet authored. |
+| Meta | G90, G93 | shared | skill-index consistency (G90 strict), CLAUDE.md rule contiguity (G93). G91/G92/G94 retired or moved. |
+| Markers (Go) | G95–G103 | go | MANUAL-byte-preservation, constraint-bench-proof, marker-delete consent, do-not-regenerate hash, stable-since semver, deprecated-in-horizon, no-forged-traces-to. Backed by Go AST-hash backend (`scripts/ast-hash/go-backend.go`). |
+| Perf-Confidence (aspirational) | G104–G110 | go (aspirational) | alloc-budget (G104), soak-MMD (G105), soak-drift (G106), complexity-mismatch (G107), oracle-margin (G108), profile-no-surprise (G109), perf-exception pairing (G110). All forward-declared per CLAUDE.md rule 32; scripts not yet authored. Owners: sdk-profile-auditor-go, sdk-drift-detector, sdk-complexity-devil-go, sdk-benchmark-devil-go, sdk-marker-hygiene-devil. |
+
+**Catalog–manifest drift rule**: when adding a new G* script, update both this catalog AND the owning package manifest (`.claude/package-manifests/<pack>.json:guardrails` for live, or `:aspirational_guardrails` for forward-declared). `scripts/validate-packages.sh` enforces filesystem ↔ manifest consistency. Catalog drift is checked at PR review.
+
+**Python pack**: empty as of v0.5.0 Phase A (per CLAUDE.md rule 34 hybrid plan). Phase B authors Python equivalents of Go-pack guardrails (G30-equiv, G60-equiv, etc.) plus a Python AST-hash backend for the Markers band.
 
 ### Perf-Confidence band (G104–G110)
 
@@ -53,12 +59,12 @@ These seven gates collectively enforce CLAUDE.md rule 32 (Performance-Confidence
 
 | ID | Severity | Phase | Owner agent | Script | Check |
 |----|---|---|---|---|---|
-| G104 | BLOCKER | Impl (M3.5) | `sdk-profile-auditor` | `scripts/guardrails/G104-alloc-budget.sh` | For every bench with a declared `allocs_per_op` in `design/perf-budget.md`, measured allocs/op ≤ budget. Reads `-benchmem` output. Mandates `b.ReportAllocs()` on every benchmark. |
+| G104 | BLOCKER | Impl (M3.5) | `sdk-profile-auditor-go` | `scripts/guardrails/G104-alloc-budget.sh` | For every bench with a declared `allocs_per_op` in `design/perf-budget.md`, measured allocs/op ≤ budget. Reads `-benchmem` output. Mandates `b.ReportAllocs()` on every benchmark. |
 | G105 | BLOCKER(INCOMPLETE-gated) | Testing (T-SOAK) | `sdk-drift-detector` | `scripts/guardrails/G105-soak-mmd.sh` | For every soak-enabled symbol, final `t_elapsed_s` in state.jsonl ≥ `mmd_seconds`. Verdict < MMD = INCOMPLETE (rule 33) — never auto-passes to PASS. |
 | G106 | BLOCKER | Testing (T-SOAK) | `sdk-drift-detector` | `scripts/guardrails/G106-soak-drift.sh` | For every declared drift_signal, linear regression over the soak timeline has slope ≤ 0 OR p-value ≥ 0.05 OR R² ≤ 0.5. Warmup-excluded first 2 minutes. |
-| G107 | BLOCKER | Testing (T5) | `sdk-complexity-devil` | `scripts/guardrails/G107-complexity.sh` | For every symbol with declared `complexity.time` in perf-budget.md, scaling benchmark at N ∈ {10, 100, 1k, 10k} curve-fits to declared or better. Measured > declared = FAIL. |
-| G108 | BLOCKER | Testing (T5) | `sdk-benchmark-devil` | `scripts/guardrails/G108-oracle-margin.sh` | For every symbol with a non-`none` oracle in perf-budget.md, measured p50 ≤ `oracle.measured_p50_us × margin_multiplier`. NOT waivable via `--accept-perf-regression`. |
-| G109 | BLOCKER | Impl (M3.5) | `sdk-profile-auditor` | `scripts/guardrails/G109-profile-no-surprise.sh` | Top-10 CPU samples from pprof ≥ 0.80 coverage over declared hot-path functions. Also flags `runtime.mallocgc` > 15%, `runtime.gcBgMarkWorker` > 10%, unexpected `sync.Mutex.Lock` > 5% on single-threaded paths, unexpected syscalls on non-I/O benches. |
+| G107 | BLOCKER | Testing (T5) | `sdk-complexity-devil-go` | `scripts/guardrails/G107-complexity.sh` | For every symbol with declared `complexity.time` in perf-budget.md, scaling benchmark at N ∈ {10, 100, 1k, 10k} curve-fits to declared or better. Measured > declared = FAIL. |
+| G108 | BLOCKER | Testing (T5) | `sdk-benchmark-devil-go` | `scripts/guardrails/G108-oracle-margin.sh` | For every symbol with a non-`none` oracle in perf-budget.md, measured p50 ≤ `oracle.measured_p50_us × margin_multiplier`. NOT waivable via `--accept-perf-regression`. |
+| G109 | BLOCKER | Impl (M3.5) | `sdk-profile-auditor-go` | `scripts/guardrails/G109-profile-no-surprise.sh` | Top-10 CPU samples from pprof ≥ 0.80 coverage over declared hot-path functions. Also flags `runtime.mallocgc` > 15%, `runtime.gcBgMarkWorker` > 10%, unexpected `sync.Mutex.Lock` > 5% on single-threaded paths, unexpected syscalls on non-I/O benches. |
 | G110 | BLOCKER | Impl (M7 + M9) | `sdk-marker-hygiene-devil` | `scripts/guardrails/G110-perf-exception.sh` | Every `[perf-exception: ... bench/X]` marker in source has a matching entry in `design/perf-exceptions.md` with the same bench name. Orphan markers or orphan entries = FAIL. |
 
 ### Verdict Taxonomy integration (rule 33)

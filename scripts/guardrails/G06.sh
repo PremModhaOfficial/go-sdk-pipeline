@@ -27,6 +27,9 @@ fi
 #   - evolution/knowledge-base/neo4j-seed.json  historical run observations
 #   - evolution/knowledge-base/*.jsonl  append-only per-run history; each line stamps the version of its originating run
 #   - scripts/guardrails/G06.sh  this file (quoted AUTH_VERSION in a message)
+#   - multi-lang-plan.md  frozen v0.4.0 planning narrative; cites historical step "0.2.0 → 0.3.0"
+#   - multi-lang-pipeline-strategy.md  same era; planning prose, not live config
+#   - multi-lang-remaining.md  same era
 EXCLUDES=(
   --exclude-dir=runs
   --exclude-dir=.git
@@ -36,6 +39,9 @@ EXCLUDES=(
   --exclude-dir=knowledge-base
   --exclude=improvement-plan-sdk-dragonfly-s2.md
   --exclude=G06.sh
+  --exclude=multi-lang-plan.md
+  --exclude=multi-lang-pipeline-strategy.md
+  --exclude=multi-lang-remaining.md
 )
 
 # Pattern: pipeline_version="X.Y.Z" or pipeline_version: "X.Y.Z" or sdk-pipeline@X.Y.Z

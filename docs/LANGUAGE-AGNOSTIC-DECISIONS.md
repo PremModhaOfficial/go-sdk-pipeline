@@ -54,7 +54,7 @@ This is the load-bearing artifact. For each Go-specific concept in the pipeline,
 
 | Touchpoint | Shape (v0.4.0+, shipped) | Future evolution | Governed by | Notes |
 |---|---|---|---|---|
-| **Baselines: perf, coverage, output-shape, devil-verdict, do-not-regenerate-hashes, stable-signatures, regression-report** | `baselines/go/<file>` with `scope: per-language, language: go` stamp. Manifest declares `owns_per_language` + `owns_per_language_paths`. | v0.5.0 adds `baselines/python/<file>` parallel partition. | D1=B | Done in v0.4.0: file moves + consumer path-refactor across baseline-manager, metrics-collector, learning-engine, sdk-benchmark-devil, sdk-intake-agent, sdk-skill-coverage-reporter, sdk-testing-lead, G81/G86/G101, etc. Mechanical extension to Python. |
+| **Baselines: perf, coverage, output-shape, devil-verdict, do-not-regenerate-hashes, stable-signatures, regression-report** | `baselines/go/<file>` with `scope: per-language, language: go` stamp. Manifest declares `owns_per_language` + `owns_per_language_paths`. | v0.5.0 adds `baselines/python/<file>` parallel partition. | D1=B | Done in v0.4.0: file moves + consumer path-refactor across baseline-manager, metrics-collector, learning-engine, sdk-benchmark-devil-go, sdk-intake-agent, sdk-skill-coverage-reporter, sdk-testing-lead, G81/G86/G101, etc. Mechanical extension to Python. |
 | **Baselines: quality, skill-health, baseline-history** | `baselines/shared/<file>` with `scope: shared` stamp. Manifest declares `owns_shared` + `owns_shared_paths`. | If D2 lands as Strict in v0.5.0, debt-bearer subset moves to `languages.<lang>` partition until rewritten. | D1=B | Done in v0.4.0. |
 | **Cross-language baseline comparison** (e.g. is `sdk-design-devil`'s quality systematically lower in Python runs?) | n/a | **NOT a v0.5.0 goal.** Each adapter compares against its own history. | D1=B + D2 deferred | Don't build cross-language reporting. If pressure builds, do R1 study first. |
 | **Output-shape AST hash** | Go AST → SHA256 of sorted exported-symbol signatures | Per-language native: `baselines/go/output-shape-history.jsonl` uses Go AST; `baselines/python/output-shape-history.jsonl` uses Python `ast` module. No cross-language hash equivalence. | D3=native | Each adapter ships its own hasher. Coarse cross-lang sanity (symbol-count delta) is a possible add-on but not required. |
@@ -63,19 +63,19 @@ This is the load-bearing artifact. For each Go-specific concept in the pipeline,
 | **Marker comment syntax** (`//`, `/* */`) | `marker_comment_syntax` field on language manifest | Same — already neutralized via per-lang declaration | (already in shape) | No work. |
 | **Marker payloads** (`[constraint: bench/BenchmarkX]`) | Go-shaped (literal Go bench path) | Two options being considered: (a) keep Go-style per-language, adapter-resolved, (b) introduce neutral form `[constraint: <metric> <op> <value> on workload <W>]` and let adapters resolve to local bench id. | T2-4 (decide during Python pilot) | First Python `[constraint:]` marker forces this. |
 | **Toolchain commands** | Inline strings in manifest `toolchain` block | Externalized to `adapters/<seam>.sh` referenced by manifest path. Adapter emits normalized JSON to stdout. | L3 + T2-7 | v0.5.0 work. |
-| **Profile artifact** (Go pprof in M3.5) | Hardcoded pprof in `sdk-profile-auditor` agent | `seam:profile` adapter runs language-native profiler (pprof / py-spy / cargo-flamegraph). Parser emits normalized JSON profile schema (top-N functions + alloc sites + mutex contention). Agent reads schema, not raw tool output. | T2-7 | v0.5.0; the parser is the load-bearing artifact. |
+| **Profile artifact** (Go pprof in M3.5) | Hardcoded pprof in `sdk-profile-auditor-go` agent | `seam:profile` adapter runs language-native profiler (pprof / py-spy / cargo-flamegraph). Parser emits normalized JSON profile schema (top-N functions + alloc sites + mutex contention). Agent reads schema, not raw tool output. | T2-7 | v0.5.0; the parser is the load-bearing artifact. |
 | **Bench output** (benchstat-formatted) | Hardcoded `go test -bench` parsing | `seam:bench` adapter runs language-native bench, parser emits normalized: `{benchmark, language, metric, unit, p50, p95, p99, allocs}`. Agent's regression math is shared. | T2-7 | v0.5.0. |
-| **Leak detection** (goleak) | Hardcoded in `sdk-leak-hunter` | `seam:leak-check` adapter runs goleak (Go) / asyncio leak detector (Python) / miri (Rust). Returns boolean + leaked-resources list. | T2-7 | v0.5.0. |
+| **Leak detection** (goleak) | Hardcoded in `sdk-leak-hunter-go` | `seam:leak-check` adapter runs goleak (Go) / asyncio leak detector (Python) / miri (Rust). Returns boolean + leaked-resources list. | T2-7 | v0.5.0. |
 | **Soak harness** (`run_in_background` + state file) | Generic state-file shape | State file format already neutral; per-lang harness writes `ops`, `heap_bytes`, `concurrency_units` (renamed from `goroutines` — see drift signals below) | T2-3 (drift signals taxonomy) | The harness is fine; only the FIELD NAMES need neutralizing. |
 | **Drift signals** (`heap_bytes`, `goroutines`, `gc_pause_p99_ns`) | Go-named (`goroutines` is Go-only) | Neutral abstraction: `concurrency_units` (count of OS threads OR async tasks OR goroutines). `heap_bytes` and `gc_pause_p99_ns` already neutral but Python's GC is a different beast — define what we MEAN by gc_pause when applied cross-language. | T2-3 | Pilot Python soak; rename surfaces naturally. |
-| **Big-O scaling sweep** (Go `testing.B` at N∈{10,100,1k,10k}) | Hardcoded Go bench harness | `seam:scaling-harness` per-language. `sdk-complexity-devil`'s curve-fit + comparison logic is shared. | T2-7 | v0.5.0. |
+| **Big-O scaling sweep** (Go `testing.B` at N∈{10,100,1k,10k}) | Hardcoded Go bench harness | `seam:scaling-harness` per-language. `sdk-complexity-devil-go`'s curve-fit + comparison logic is shared. | T2-7 | v0.5.0. |
 | **Supply-chain scanners** (govulncheck/osv-scanner) | Inline in `toolchain.supply_chain` array | Per-lang scanners (pip-audit / cargo-audit / npm audit). License allowlist stays neutral (MIT/Apache-2.0/BSD/ISC/0BSD/MPL-2.0). | (already in shape) | Python adapter declares `["pip-audit", "safety check"]`; rest is plumbing. |
 | **Type lattice for §7 API symbols** | Free-form §7 in TPRD; agents read Go type literals | Neutral IDL with per-lang type mapping. **DEFER until N=3** (third language). At N=2, free-form is fine. | T3-1 | Don't engineer this in v0.5.0. |
 | **Concurrency idioms in skills** (`go-concurrency-patterns`) | Lives in `go` package | Stay in `go`; v0.5.0 adds `python-asyncio-patterns` etc. as separate skills. | (already in shape) | No work — just author per-lang skills as needed. |
 | **Error idioms** (`go-error-handling-patterns`) | Lives in `go` package | Same — per-language skill. | (already in shape) | No work. |
-| **Convention layer** (`Config struct + New(cfg)`) | Embedded in agent prompts (sdk-convention-devil, sdk-design-devil) | `conventions.yaml` per language pack; `sdk-convention-devil` reads from pack instead of hardcoding. **R2 confirmed: this seam is load-bearing for D6=Split.** | T2-5 + D6 (Split) | First Python `sdk-convention-devil` run forces materialization. |
-| **Mock framework** (gomock) | `mock-patterns` skill | Per-language skill: `gomock-patterns` / `unittest-mock-patterns` / `mockall-patterns`. | T3-2 | Wait for N=3. |
-| **Container test framework** (testcontainers-go) | `testcontainers-setup` skill | Per-language skill; same project family, different bindings. | T3-2 | Wait for N=3. |
+| **Convention layer** (`Config struct + New(cfg)`) | Embedded in agent prompts (sdk-convention-devil-go, sdk-design-devil) | `conventions.yaml` per language pack; `sdk-convention-devil-go` reads from pack instead of hardcoding. **R2 confirmed: this seam is load-bearing for D6=Split.** | T2-5 + D6 (Split) | First Python `sdk-convention-devil-go` run forces materialization. |
+| **Mock framework** (gomock) | `go-mock-patterns` skill | Per-language skill: `gomock-patterns` / `unittest-mock-patterns` / `mockall-patterns`. | T3-2 | Wait for N=3. |
+| **Container test framework** (testcontainers-go) | `go-testcontainers-setup` skill | Per-language skill; same project family, different bindings. | T3-2 | Wait for N=3. |
 | **Intake clarification questions** | Some Go-specific (aws-sdk-go-v2 vs v1) | Question bank per pack; intake asks `<lang>`-relevant subset. | Folds into T2-5 (convention layer) | Pilot Python intake; surfaces. |
 | **Semver application** (Go's v2+ module path suffix) | `sdk-semver-governance` skill | Skill body generic; per-lang exception notes (Go's v2+ requirement, Python's PEP 440, Rust's `^` operator) move to `<lang>/conventions.yaml`. | T2-5 | Pilot Python; small lift. |
 | **HITL gate set** (H0..H10) | Unified across langs | Stay unified; per-lang adapters fill the proof not the gate. | T3-8 | No work. |
@@ -96,7 +96,7 @@ These will *surface* during pilot work; pre-deciding risks getting them wrong.
 | **T2-2** | Reference oracle catalog location: per-`<lang>.json` vs cross-language with per-lang impls | Same surfaces with T2-1 |
 | **T2-3** | Drift signals taxonomy (rename `goroutines` → `concurrency_units`?) | First Python soak run |
 | **T2-4** | Marker payload neutrality (`bench/BenchmarkX` vs neutral `[constraint: throughput >= X on workload W]`) | First Python `[constraint:]` marker |
-| **T2-5** | Convention layer authoring: keep Go conventions in `go.json` only vs extract to `conventions.yaml` per pack | First Python `sdk-convention-devil` invocation |
+| **T2-5** | Convention layer authoring: keep Go conventions in `go.json` only vs extract to `conventions.yaml` per pack | First Python `sdk-convention-devil-go` invocation |
 | **T2-6** | Rule 25 (determinism) reinterpretation: same TPRD → same code modulo language-mechanism, OR same TPRD → same invariants enforced (regardless of code shape) | First Python re-run of a Go TPRD |
 | **T2-7** | Adapter script policy strictness: must be policy-free (just emit normalized stdout) vs allow inline thresholds for one-offs | First Python adapter script with a non-trivial check |
 
@@ -169,7 +169,7 @@ The actual work to onboard Python, in execution order.
 
 9. Author a small Python TPRD (smallest possible client — e.g. a config loader).
 10. Run intake → design → impl → testing → feedback.
-11. Observe: does `sdk-design-devil`'s quality_score drop on this Python run? Does `sdk-convention-devil` produce useful output? **This data answers D2 + T2-5.**
+11. Observe: does `sdk-design-devil`'s quality_score drop on this Python run? Does `sdk-convention-devil-go` produce useful output? **This data answers D2 + T2-5.**
 12. Pair-program the resolution: write the rewrites lazy as the data demands.
 
 ### Phase C — touchpoint hardening (days 7-9)
@@ -207,7 +207,7 @@ So a future reader can mechanically check what's already done:
 - `baselines/go/regression-report-sdk-dragonfly-s2.md` (per-language historical)
 - `baselines/shared/{quality,skill-health,skill-health-baselines}.json` (`scope: shared` / `shared-stub`)
 - `baselines/shared/baseline-history.jsonl` (shared)
-- Consumer path-refactor across: `baseline-manager`, `learning-engine`, `metrics-collector`, `sdk-benchmark-devil`, `sdk-intake-agent`, `sdk-skill-coverage-reporter`, `sdk-testing-lead`, `mcp-knowledge-graph` skill, `sdk-marker-protocol` skill, `sdk-semver-governance` skill, `G81.sh`, `G86.sh`, `G101.sh`, `CLAUDE.md`, `LIFECYCLE.md`, `phases/{FEEDBACK,TESTING}-PHASE.md`, `improvements.md`, `docs/PROPOSED-GUARDRAILS.md`. ~70 path substitutions across 21 files.
+- Consumer path-refactor across: `baseline-manager`, `learning-engine`, `metrics-collector`, `sdk-benchmark-devil-go`, `sdk-intake-agent`, `sdk-skill-coverage-reporter`, `sdk-testing-lead`, `mcp-knowledge-graph` skill, `sdk-marker-protocol` skill, `sdk-semver-governance` skill, `G81.sh`, `G86.sh`, `G101.sh`, `CLAUDE.md`, `LIFECYCLE.md`, `phases/{FEEDBACK,TESTING}-PHASE.md`, `improvements.md`, `docs/PROPOSED-GUARDRAILS.md`. ~70 path substitutions across 21 files.
 
 **Docs**:
 - `docs/PACKAGE-AUTHORING-GUIDE.md` — including §Baselines section

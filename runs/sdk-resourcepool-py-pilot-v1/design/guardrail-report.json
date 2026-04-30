@@ -1,0 +1,335 @@
+{
+  "phase": "design",
+  "run_dir": "runs/sdk-resourcepool-py-pilot-v1",
+  "summary": {
+    "pass": 4,
+    "warn_fail": 0,
+    "blocker_fail": 2,
+    "skipped_not_active": 24,
+    "skipped_phase_mismatch": 24
+  },
+  "results": [
+    {
+      "name": "G01",
+      "status": "PASS",
+      "severity": "BLOCKER"
+    },
+    {
+      "name": "G02",
+      "status": "skipped",
+      "reason": "phase-mismatch",
+      "phases": "feedback",
+      "requested_phase": "design"
+    },
+    {
+      "name": "G03",
+      "status": "skipped",
+      "reason": "phase-mismatch",
+      "phases": "feedback",
+      "requested_phase": "design"
+    },
+    {
+      "name": "G04",
+      "status": "skipped",
+      "reason": "phase-mismatch",
+      "phases": "intake feedback meta",
+      "requested_phase": "design"
+    },
+    {
+      "name": "G05",
+      "status": "skipped",
+      "reason": "phase-mismatch",
+      "phases": "intake",
+      "requested_phase": "design"
+    },
+    {
+      "name": "G06",
+      "status": "skipped",
+      "reason": "phase-mismatch",
+      "phases": "intake meta",
+      "requested_phase": "design"
+    },
+    {
+      "name": "G07",
+      "status": "PASS",
+      "severity": "BLOCKER"
+    },
+    {
+      "name": "G100",
+      "status": "skipped",
+      "reason": "not-in-active-packages"
+    },
+    {
+      "name": "G101",
+      "status": "skipped",
+      "reason": "not-in-active-packages"
+    },
+    {
+      "name": "G102",
+      "status": "skipped",
+      "reason": "not-in-active-packages"
+    },
+    {
+      "name": "G103",
+      "status": "skipped",
+      "reason": "not-in-active-packages"
+    },
+    {
+      "name": "G116",
+      "status": "skipped",
+      "reason": "phase-mismatch",
+      "phases": "intake meta",
+      "requested_phase": "design"
+    },
+    {
+      "name": "G200-py",
+      "status": "FAIL",
+      "severity": "BLOCKER",
+      "exit": 1,
+      "output": "pyproject.toml missing at /home/meet-dadhania/Documents/motadata-ai-pipeline/motadata-sdk"
+    },
+    {
+      "name": "G20",
+      "status": "skipped",
+      "reason": "phase-mismatch",
+      "phases": "intake",
+      "requested_phase": "design"
+    },
+    {
+      "name": "G21",
+      "status": "skipped",
+      "reason": "phase-mismatch",
+      "phases": "intake",
+      "requested_phase": "design"
+    },
+    {
+      "name": "G22",
+      "status": "skipped",
+      "reason": "phase-mismatch",
+      "phases": "intake",
+      "requested_phase": "design"
+    },
+    {
+      "name": "G23",
+      "status": "skipped",
+      "reason": "phase-mismatch",
+      "phases": "intake",
+      "requested_phase": "design"
+    },
+    {
+      "name": "G24",
+      "status": "skipped",
+      "reason": "phase-mismatch",
+      "phases": "intake",
+      "requested_phase": "design"
+    },
+    {
+      "name": "G30",
+      "status": "skipped",
+      "reason": "not-in-active-packages"
+    },
+    {
+      "name": "G31-py",
+      "status": "PASS",
+      "severity": "BLOCKER"
+    },
+    {
+      "name": "G31",
+      "status": "skipped",
+      "reason": "not-in-active-packages"
+    },
+    {
+      "name": "G32-py",
+      "status": "FAIL",
+      "severity": "BLOCKER",
+      "exit": 1,
+      "output": "no pyproject.toml at /home/meet-dadhania/Documents/motadata-ai-pipeline/motadata-sdk — Python pack target expected"
+    },
+    {
+      "name": "G32",
+      "status": "skipped",
+      "reason": "not-in-active-packages"
+    },
+    {
+      "name": "G33",
+      "status": "skipped",
+      "reason": "not-in-active-packages"
+    },
+    {
+      "name": "G34-py",
+      "status": "PASS",
+      "severity": "BLOCKER"
+    },
+    {
+      "name": "G34",
+      "status": "skipped",
+      "reason": "not-in-active-packages"
+    },
+    {
+      "name": "G38",
+      "status": "skipped",
+      "reason": "not-in-active-packages"
+    },
+    {
+      "name": "G40-py",
+      "status": "skipped",
+      "reason": "phase-mismatch",
+      "phases": "impl",
+      "requested_phase": "design"
+    },
+    {
+      "name": "G40",
+      "status": "skipped",
+      "reason": "not-in-active-packages"
+    },
+    {
+      "name": "G41-py",
+      "status": "skipped",
+      "reason": "phase-mismatch",
+      "phases": "impl testing",
+      "requested_phase": "design"
+    },
+    {
+      "name": "G41",
+      "status": "skipped",
+      "reason": "not-in-active-packages"
+    },
+    {
+      "name": "G42-py",
+      "status": "skipped",
+      "reason": "phase-mismatch",
+      "phases": "impl testing",
+      "requested_phase": "design"
+    },
+    {
+      "name": "G42",
+      "status": "skipped",
+      "reason": "not-in-active-packages"
+    },
+    {
+      "name": "G43-py",
+      "status": "skipped",
+      "reason": "phase-mismatch",
+      "phases": "impl",
+      "requested_phase": "design"
+    },
+    {
+      "name": "G43",
+      "status": "skipped",
+      "reason": "not-in-active-packages"
+    },
+    {
+      "name": "G48",
+      "status": "skipped",
+      "reason": "not-in-active-packages"
+    },
+    {
+      "name": "G60-py",
+      "status": "skipped",
+      "reason": "phase-mismatch",
+      "phases": "testing",
+      "requested_phase": "design"
+    },
+    {
+      "name": "G60",
+      "status": "skipped",
+      "reason": "not-in-active-packages"
+    },
+    {
+      "name": "G61-py",
+      "status": "skipped",
+      "reason": "phase-mismatch",
+      "phases": "testing",
+      "requested_phase": "design"
+    },
+    {
+      "name": "G61",
+      "status": "skipped",
+      "reason": "not-in-active-packages"
+    },
+    {
+      "name": "G63-py",
+      "status": "skipped",
+      "reason": "phase-mismatch",
+      "phases": "testing",
+      "requested_phase": "design"
+    },
+    {
+      "name": "G63",
+      "status": "skipped",
+      "reason": "not-in-active-packages"
+    },
+    {
+      "name": "G65",
+      "status": "skipped",
+      "reason": "not-in-active-packages"
+    },
+    {
+      "name": "G69",
+      "status": "skipped",
+      "reason": "phase-mismatch",
+      "phases": "testing",
+      "requested_phase": "design"
+    },
+    {
+      "name": "G80",
+      "status": "skipped",
+      "reason": "phase-mismatch",
+      "phases": "feedback",
+      "requested_phase": "design"
+    },
+    {
+      "name": "G85",
+      "status": "skipped",
+      "reason": "phase-mismatch",
+      "phases": "feedback",
+      "requested_phase": "design"
+    },
+    {
+      "name": "G86",
+      "status": "skipped",
+      "reason": "phase-mismatch",
+      "phases": "feedback",
+      "requested_phase": "design"
+    },
+    {
+      "name": "G90",
+      "status": "skipped",
+      "reason": "phase-mismatch",
+      "phases": "intake meta",
+      "requested_phase": "design"
+    },
+    {
+      "name": "G93",
+      "status": "skipped",
+      "reason": "phase-mismatch",
+      "phases": "meta",
+      "requested_phase": "design"
+    },
+    {
+      "name": "G95",
+      "status": "skipped",
+      "reason": "not-in-active-packages"
+    },
+    {
+      "name": "G96",
+      "status": "skipped",
+      "reason": "not-in-active-packages"
+    },
+    {
+      "name": "G97",
+      "status": "skipped",
+      "reason": "not-in-active-packages"
+    },
+    {
+      "name": "G98",
+      "status": "skipped",
+      "reason": "not-in-active-packages"
+    },
+    {
+      "name": "G99",
+      "status": "skipped",
+      "reason": "not-in-active-packages"
+    }
+  ]
+}

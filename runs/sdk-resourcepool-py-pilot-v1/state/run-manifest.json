@@ -1,0 +1,186 @@
+{
+  "schema_version": "1.0",
+  "run_id": "sdk-resourcepool-py-pilot-v1",
+  "pipeline_version": "0.5.0",
+  "started_at": "2026-04-29T00:00:00Z",
+  "spec_path": "/home/meet-dadhania/Documents/motadata-ai-pipeline/motadata-sdk/TPRD.md",
+  "target_sdk_dir": "/home/meet-dadhania/Documents/motadata-ai-pipeline/motadata-sdk",
+  "language": "python",
+  "tier": "T1",
+  "mode": "A",
+  "active_packages_path": "runs/sdk-resourcepool-py-pilot-v1/context/active-packages.json",
+  "phases": {
+    "intake": {
+      "status": "completed",
+      "started_at": "2026-04-29T07:54:25Z",
+      "completed_at": "2026-04-29T07:57:00Z",
+      "verdict": "PASS",
+      "waves": {
+        "I0_structural": "PASS",
+        "I1_drift_gates": "PASS",
+        "I1_5_required_fields": "PASS",
+        "I2_skills_manifest": "PASS",
+        "I3_guardrails_manifest": "PASS",
+        "I4_clarifications": "PASS",
+        "I5_mode_canonical": "PASS",
+        "I5_5_package_resolve": "PASS",
+        "I5_6_toolchain": "PASS",
+        "I6_skill_orphan": "PASS",
+        "I_RG_run_guardrails": "PASS"
+      },
+      "metrics": {
+        "user_clarifications_asked": 0,
+        "manifest_misses_skills": 0,
+        "manifest_misses_guardrails": 0,
+        "intake_duration_sec_estimate": 180,
+        "blockers": 0,
+        "warns": 0
+      }
+    },
+    "extension": {
+      "status": "skipped",
+      "reason": "Mode A \u2014 new package; no existing API to snapshot"
+    },
+    "design": {
+      "status": "completed",
+      "verdict": "PASS",
+      "completed_at": "2026-04-29T13:55:00Z"
+    },
+    "implementation": {
+      "status": "completed",
+      "verdict": "PASS-WITH-INCOMPLETE",
+      "completed_at": "2026-04-29T15:50:00Z",
+      "branch_head": "11c772c",
+      "incomplete": [
+        "G43-py",
+        "PA-001",
+        "PA-002",
+        "PA-003"
+      ]
+    },
+    "testing": {
+      "status": "completed",
+      "verdict": "PASS-WITH-INCOMPLETE",
+      "completed_at": "2026-04-29T17:00:00Z",
+      "soak_ops": 131000,
+      "soak_duration_s": 600,
+      "coverage_pct": 92.1,
+      "tests_pass": "62/62"
+    },
+    "feedback": {
+      "status": "completed",
+      "verdict": "PASS",
+      "completed_at": "2026-04-30T12:00:00Z",
+      "quality_score": 0.959,
+      "auto_patches_applied": 3,
+      "proposals_filed": 7
+    }
+  },
+  "hitl_gates": {
+    "H0_target_dir": "auto-pass-target-is-git-repo",
+    "H1_tprd": "approved",
+    "H5_design": "approved",
+    "H7_impl": "approved-with-incomplete-G43-py",
+    "H7b_impl_mid": "auto-pass",
+    "H9_testing": "approved-with-incomplete-G32-py-and-PA-001-002",
+    "H10_merge": "approved-pushed-to-remote",
+    "H4_design_loop": "auto-pass",
+    "H6_dep_vet": "auto-pass",
+    "H8_perf": "accepted-calibration-warn-PA-013"
+  },
+  "intake_outputs": {
+    "canonical_tprd": "runs/sdk-resourcepool-py-pilot-v1/tprd.md",
+    "required_fields_check": "runs/sdk-resourcepool-py-pilot-v1/intake/required-fields-check.md",
+    "skills_manifest_check": "runs/sdk-resourcepool-py-pilot-v1/intake/skills-manifest-check.md",
+    "guardrails_manifest_check": "runs/sdk-resourcepool-py-pilot-v1/intake/guardrails-manifest-check.md",
+    "skill_orphan_check": "runs/sdk-resourcepool-py-pilot-v1/intake/skill-orphan-check.md",
+    "canonical_tprd_note": "runs/sdk-resourcepool-py-pilot-v1/intake/canonical-tprd.md",
+    "mode": "runs/sdk-resourcepool-py-pilot-v1/intake/mode.json",
+    "clarifications": "runs/sdk-resourcepool-py-pilot-v1/intake/clarifications.jsonl",
+    "active_packages": "runs/sdk-resourcepool-py-pilot-v1/context/active-packages.json",
+    "toolchain_digest": "runs/sdk-resourcepool-py-pilot-v1/context/toolchain.md",
+    "guardrail_results": "runs/sdk-resourcepool-py-pilot-v1/intake/guardrail-results.md",
+    "guardrail_report_machine": "runs/sdk-resourcepool-py-pilot-v1/intake/guardrail-report.json",
+    "phase_summary": "runs/sdk-resourcepool-py-pilot-v1/intake/phase-summary.md"
+  },
+  "hitl_log": [
+    {
+      "gate": "H1_tprd",
+      "decision": "approve",
+      "at": "2026-04-29T13:30:00Z",
+      "by": "user"
+    },
+    {
+      "gate": "H5_design",
+      "decision": "approve",
+      "at": "2026-04-29T13:55:00Z",
+      "by": "user"
+    },
+    {
+      "gate": "H7_impl",
+      "decision": "approve",
+      "rationale": "option-1: accept INCOMPLETE on G43-py; file PA-004 (ruff>=0.6.5 bump + 26-finding triage) for Phase 4 improvement-planner",
+      "at": "2026-04-29T15:50:00Z",
+      "by": "user"
+    },
+    {
+      "gate": "H9_testing",
+      "decision": "approve",
+      "rationale": "all 3 dispositions accepted: G108-calibration\u2192PA-013, G32-py-pytest-CVE\u2192PA-009, PA-001/002 bench harnesses kept on backlog. Strong signals (G105/G106/G107/leak/coverage) all green.",
+      "at": "2026-04-29T17:00:00Z",
+      "by": "user"
+    },
+    {
+      "gate": "H10_merge",
+      "decision": "pushed-to-remote-collaborator-repo",
+      "rationale": "pushed to PremModhaOfficial/python-sdk under claude-pipeline/* branch namespace to avoid collision with existing sdk-pipeline/sdk-resourcepool-py-pilot-v1 (d8fbc35)",
+      "at": "2026-04-30T13:30:00Z",
+      "by": "user"
+    }
+  ],
+  "phase4_backlog": [
+    {
+      "id": "PA-001",
+      "severity": "MEDIUM",
+      "source": "M3.5",
+      "desc": "Pool.try_acquire bench harness produces INCOMPLETE on G104"
+    },
+    {
+      "id": "PA-002",
+      "severity": "MEDIUM",
+      "source": "M3.5",
+      "desc": "Pool.aclose bench harness produces INCOMPLETE on G104"
+    },
+    {
+      "id": "PA-003",
+      "severity": "MEDIUM",
+      "source": "M3.5",
+      "desc": "perf-budget.md hot_paths declares stub IDs unresolvable in py-spy frames"
+    },
+    {
+      "id": "PA-004",
+      "severity": "MEDIUM",
+      "source": "M9",
+      "desc": "Bump ruff>=0.6.5; tighten python.json toolchain.lint min_version; triage 26 ruff findings (incl. ASYNC109 vs TPRD \u00a710 timeout contract)"
+    },
+    {
+      "id": "PA-005",
+      "severity": "LOW",
+      "source": "M9",
+      "desc": "scripts/run-guardrails.sh: realpath ACTIVE_PACKAGES_JSON before child guardrails cd into TARGET (1-line fix)"
+    },
+    {
+      "id": "PA-006",
+      "severity": "LOW",
+      "source": "docs",
+      "desc": "CLAUDE.md rule 32 prose still names Go agents (sdk-perf-architect-go etc.) \u2014 replace with language-neutral or generic <lang> notation. Also rules 20, 24, 28. Filed under generalization_debt."
+    }
+  ],
+  "ended_at": "2026-04-30T13:30:00Z",
+  "final_state": "COMPLETE-PUSHED",
+  "remote": {
+    "url": "git@github.com:PremModhaOfficial/python-sdk.git",
+    "branch": "claude-pipeline/sdk-resourcepool-py-pilot-v1",
+    "head": "11c772c"
+  }
+}

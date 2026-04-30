@@ -24,7 +24,7 @@ Go's import-compatibility rule (rsc.io/go-import-versioning) makes semver mistak
 - Mode B (extension) or Mode C (incremental update) runs — existing `current-api.json` is present
 - TPRD §12 declares the intended bump; agent must verify the declaration matches the change scope
 - `[stable-since:]` markers change signature (ties in to G101)
-- `sdk-semver-devil` or `sdk-breaking-change-devil` agents are scheduled
+- `sdk-semver-devil` or `sdk-breaking-change-devil-go` agents are scheduled
 
 ## Classification rules (follows gorelease)
 
@@ -142,11 +142,11 @@ For Mode B (extension): verify each new export carries `[stable-since: <current-
 
 - `sdk-marker-protocol` — consumes `[stable-since:]` and `[deprecated-in:]`; G101 is the enforcement arm
 - `go-error-handling-patterns` — sentinel addition is minor; sentinel removal is major
-- `sdk-convention-devil` — flags missing `[stable-since:]` on new exports
+- `sdk-convention-devil-go` — flags missing `[stable-since:]` on new exports
 - `api-ergonomics-audit` — an ergonomics NEEDS-FIX finding may force an API rewrite that triggers major bump
 
 ## Guardrail hooks
 
-- **G101** — `[stable-since:]` signature changes require TPRD §12 `MAJOR` or `breaking` keyword present. BLOCKER. Baseline at `baselines/go/stable-signatures.json`, whitespace-normalized.
+- **G101** — `[stable-since:]` signature changes require TPRD §12 `MAJOR` or `breaking` keyword present. BLOCKER. Baseline at `baselines/<target_language>/stable-signatures.json` (per-language partition; G101 resolves the path from `runs/<run-id>/context/active-packages.json:target_language`), whitespace-normalized.
 - **G102** — `[stable-since:]` value grammar: `^v\d+\.\d+\.\d+$`. BLOCKER on malformed.
 - Reference tool (not run as a guardrail, used at design time): `go run golang.org/x/exp/cmd/gorelease@latest -base=<prev-tag>` — emits the canonical classification. If gorelease and pipeline disagree, pipeline wins (it has TPRD §12 context), but the divergence is logged for human review.

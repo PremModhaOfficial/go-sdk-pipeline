@@ -1,0 +1,181 @@
+{
+  "schema_version": "1.0.0",
+  "pipeline_version": "sdk-pipeline@0.5.0",
+  "scope": "per-language",
+  "language": "python",
+  "scope_note": "Per CLAUDE.md Rule 28 (D1=B partitioning) and Rule 32 (perf is intrinsically per-language). v0.5.0 first Python pilot; cross-language perf comparison NOT a v0.5.0 goal. Agents read this file only on Python-targeted runs.",
+  "note": "First Python run — SEED MODE. G65 regression gate NO-FIRES (precondition: ≥3 prior runs unmet). Established from runs/sdk-resourcepool-py-pilot-v1/testing/bench-results.{md,json} via sdk-benchmark-devil-python (Wave T5).",
+  "units": {
+    "latency": "microseconds (median wall-clock per pytest-benchmark)",
+    "memory": "bytes_per_call (heap_bytes_per_call from py-spy/scalene profile)",
+    "allocs": null,
+    "throughput": "ops/sec",
+    "note_allocs": "Python does not expose per-call allocation count without instrumentation; heap_bytes_per_call substitutes per perf-config.python."
+  },
+  "captured_at": "2026-04-29T17:08:10Z",
+  "baseline_run": "sdk-resourcepool-py-pilot-v1",
+  "git_sha": "11c772c",
+  "git_branch": "sdk-pipeline/sdk-resourcepool-py-pilot-v1",
+  "host": {
+    "os": "Linux 6.17.0-22-generic",
+    "arch": "x86_64",
+    "cpu": "11th Gen Intel(R) Core(TM) i9-11950H @ 2.60GHz",
+    "python": "3.12.3 CPython"
+  },
+  "packages": {
+    "motadata_py_sdk.resourcepool": {
+      "captured_at": "2026-04-29T17:08:10Z",
+      "run_id": "sdk-resourcepool-py-pilot-v1",
+      "mode": "A-greenfield-first-run",
+      "tier": "T1",
+      "bench_runner": "pytest-benchmark",
+      "bench_count": 11,
+      "bench_incomplete": 2,
+      "source": "runs/sdk-resourcepool-py-pilot-v1/testing/bench-results.json",
+      "h8_disposition": "PA-013 calibration-warn accepted (PoolConfig.__init__ Go-oracle floor-bound; AcquiredResource.__aenter__ within IQR)",
+      "benchmarks": {
+        "Pool.acquire": {
+          "median_us": 8.413,
+          "declared_p50_us": 50,
+          "go_oracle_x10_us": 50,
+          "headroom_vs_declared_x": 5.94,
+          "headroom_vs_go_x10_x": 5.94,
+          "heap_bytes_per_call": 0.0,
+          "heap_budget_bytes": 1024,
+          "verdict": "PASS",
+          "hot_path": true
+        },
+        "Pool.acquire_resource": {
+          "median_us": 7.653,
+          "declared_p50_us": 40,
+          "go_oracle_x10_us": 40,
+          "headroom_vs_declared_x": 5.23,
+          "headroom_vs_go_x10_x": 5.23,
+          "heap_bytes_per_call": 0.0,
+          "heap_budget_bytes": 1024,
+          "verdict": "PASS",
+          "hot_path": true
+        },
+        "Pool.release": {
+          "median_us": 7.651,
+          "declared_p50_us": 30,
+          "go_oracle_x10_us": 30,
+          "headroom_vs_declared_x": 3.92,
+          "headroom_vs_go_x10_x": 3.92,
+          "heap_bytes_per_call": 0.0,
+          "heap_budget_bytes": 512,
+          "verdict": "PASS",
+          "hot_path": true
+        },
+        "Pool.try_acquire": {
+          "median_us": null,
+          "declared_p50_us": 5,
+          "go_oracle_x10_us": 10,
+          "verdict": "INCOMPLETE",
+          "incomplete_id": "PA-001",
+          "incomplete_reason": "bench harness fixture mismatch (async on_create vs sync _factory_sync); filed for Phase 4",
+          "hot_path": false
+        },
+        "Pool.aclose": {
+          "median_us": null,
+          "declared_p50_us": 100000,
+          "go_oracle_x10_us": 120000,
+          "verdict": "INCOMPLETE",
+          "incomplete_id": "PA-002",
+          "incomplete_reason": "asyncio.gather called outside event loop; filed for Phase 4",
+          "hot_path": false
+        },
+        "Pool.stats": {
+          "median_us": 0.958,
+          "declared_p50_us": 2,
+          "go_oracle_x10_us": 3.0,
+          "headroom_vs_declared_x": 2.09,
+          "headroom_vs_go_x10_x": 3.13,
+          "heap_bytes_per_call": 0.0,
+          "heap_budget_bytes": 96,
+          "verdict": "PASS",
+          "hot_path": false
+        },
+        "PoolConfig.__init__": {
+          "median_us": 2.337,
+          "declared_p50_us": 3,
+          "go_oracle_x10_us": 1.0,
+          "theoretical_floor_us": 2.0,
+          "headroom_vs_declared_x": 1.28,
+          "headroom_vs_go_x10_x": 0.43,
+          "heap_bytes_per_call": 0.0,
+          "heap_budget_bytes": 320,
+          "verdict": "CALIBRATION-WARN",
+          "verdict_note": "PA-013 floor-bound by Python frozen+slotted dataclass __setattr__ overhead; H8 accepted. Go oracle unreachable on Python.",
+          "hot_path": false
+        },
+        "AcquiredResource.__aenter__": {
+          "median_us": 8.664,
+          "declared_p50_us": 8,
+          "iqr_us": 0.615,
+          "theoretical_floor_us": 3.0,
+          "headroom_vs_declared_x": 0.92,
+          "verdict": "CALIBRATION-WARN",
+          "verdict_note": "PA-013 8% over declared but within IQR (~7% spread). H8 accepted. No Go analog (Go uses defer).",
+          "hot_path": true
+        },
+        "bench_acquire_contention": {
+          "total_us_for_32_acquirers": 173.910,
+          "verdict": "PASS",
+          "verdict_note": "sequence-time bench, not per-op",
+          "hot_path": false
+        }
+      },
+      "complexity_sweep": {
+        "agent": "sdk-complexity-devil-python",
+        "verdict": "G107 PASS",
+        "declared_big_o": "O(1)",
+        "log_log_slope": -0.0585,
+        "slope_threshold": 0.10,
+        "max_min_ratio": 1.527,
+        "ratio_threshold": 2.0,
+        "samples": [
+          {"N": 10, "per_cycle_us": 2.160, "ops_per_sec": 463027},
+          {"N": 100, "per_cycle_us": 1.530, "ops_per_sec": 653787},
+          {"N": 1000, "per_cycle_us": 1.417, "ops_per_sec": 705680},
+          {"N": 10000, "per_cycle_us": 1.414, "ops_per_sec": 707059}
+        ]
+      },
+      "soak": {
+        "agent": "sdk-soak-runner-python",
+        "g105_verdict": "PASS",
+        "g106_drift_verdict": "PASS",
+        "ops_completed": 78665545,
+        "duration_s": 600.0,
+        "mmd_seconds": 600,
+        "drift_signals_pass": 6,
+        "drift_signals_fail": 0
+      },
+      "runs_tracked": 1,
+      "trend": "insufficient-data",
+      "last_updated": "2026-04-29T17:08:10Z",
+      "history": [
+        {
+          "run_id": "sdk-resourcepool-py-pilot-v1",
+          "git_sha": "11c772c",
+          "ts": "2026-04-29T17:08:10Z",
+          "median_us_acquire": 8.413,
+          "median_us_release": 7.651,
+          "median_us_acquire_resource": 7.653,
+          "median_us_stats": 0.958,
+          "median_us_poolconfig_init": 2.337,
+          "median_us_aenter": 8.664,
+          "soak_ops": 78665545,
+          "complexity_slope": -0.0585
+        }
+      ]
+    }
+  },
+  "raise_policy": {
+    "hot_path_regression_threshold_pct": 5,
+    "shared_path_regression_threshold_pct": 10,
+    "description": "Raise baseline only on improvement >10%. Keep baseline if regression. Never lower without learning-engine reset authorization. G65 enforces ≥3-prior-runs precondition before BLOCKER fires.",
+    "reset_interval_runs": 5,
+    "next_reset_due_after_run_number": 5
+  }
+}

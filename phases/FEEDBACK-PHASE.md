@@ -49,13 +49,13 @@ Parallel:
 
 | Agent | Role |
 |-------|------|
-| `sdk-skill-drift-detector` | Compare what each invoked skill PRESCRIBED vs. what the code actually DOES. Example: `sdk-config-struct-pattern` says Config is immutable — code has exported mutable fields. Output: `feedback/skill-drift.md`. |
+| `sdk-skill-drift-detector` | Compare what each invoked skill PRESCRIBED vs. what the code actually DOES. Example: `go-sdk-config-struct-pattern` says Config is immutable — code has exported mutable fields. Output: `feedback/skill-drift.md`. |
 | `sdk-skill-coverage-reporter` | Which skills got invoked per phase? Which were expected-but-unused (based on TPRD tech signals)? Also computes per-skill `devil_fix_rate` + `devil_block_rate` and appends to `baselines/go/devil-verdict-history.jsonl` (compensating baseline for retired golden-corpus). Output: `feedback/skill-coverage.md`. |
 
 Writes drift + coverage observations to neo4j-memory via `mcp-knowledge-graph` skill when available; falls back to markdown artifacts if MCP is down.
 
 ### Wave F5 — (retired)
-Previously: golden-corpus regression replay. Removed because the full-pipeline replay was the single largest Phase 4 token consumer and caught almost nothing the devil fleet (api-ergonomics-devil, leak-hunter, overengineering-critic, marker-hygiene-devil, code-reviewer, constraint-devil, semver-devil, benchmark-devil, security-devil, convention-devil) was not already catching on the live run. Safety net is now: append-only patches + minor-bump versioning + `learning-notifications.md` (user reviews at H10, reverts individual patches if needed).
+Previously: golden-corpus regression replay. Removed because the full-pipeline replay was the single largest Phase 4 token consumer and caught almost nothing the devil fleet (api-ergonomics-devil, leak-hunter, overengineering-critic, marker-hygiene-devil, code-reviewer-go, constraint-devil, semver-devil, benchmark-devil, security-devil, convention-devil) was not already catching on the live run. Safety net is now: append-only patches + minor-bump versioning + `learning-notifications.md` (user reviews at H10, reverts individual patches if needed).
 
 ### Wave F6 — Improvement Planning
 **Agent**: `improvement-planner`

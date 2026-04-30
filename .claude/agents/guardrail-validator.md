@@ -22,47 +22,50 @@ Read ALL files in `docs/detailed-design/` and `docs/architecture/` for cross-ref
 
 ## Validation Checks
 
-### CHECK 1: Architecture Traceability
-For every component/interface/schema: verify it traces to a service in `docs/architecture/decomposition/service-map.md`. Flag orphaned components and uncovered services.
+### CHECK 1: Language Naming Conventions
+Scan all source files matching `active-packages.json:packages[].file_extensions` (today: `.go` for Go runs, `.py` for Python runs). For each language, apply that language's idiom rules:
+- **Go**: package names (lowercase, single word); exported types (PascalCase); no stuttering; correct acronyms (`ID` not `Id`, `HTTP` not `Http`, `URL` not `Url`).
+- **Python**: module names (lowercase + underscores); class names (PascalCase); function/variable names (snake_case); no PEP-8 violations on identifier shape.
 
-### CHECK 2: Interface-API Contract Alignment
-For every DTO in `docs/detailed-design/interfaces/dtos/`: verify alignment with AsyncAPI specs in `docs/architecture/api/async-specs/` (inter-service) and OpenAPI specs in `docs/architecture/api/openapi-specs/` (API Gateway only). Check field names, types, required flags, error codes.
+The naming-convention rule set per language lives in `<pack>/conventions.yaml` (authored in Step 13 of the structure-finalization plan, post-D6=Split rewrite). Until that file exists, this check defers to the active language's per-pack convention agent (`sdk-convention-devil-go` for Go) for full evaluation.
 
-### CHECK 2a: NATS-Only Inter-Service Communication (CRITICAL)
-Scan ALL design files for inter-service HTTP client imports or gRPC imports. **Flag any `net/http` client usage for calling other internal services as CRITICAL FAIL.** Flag any `google.golang.org/grpc` imports as CRITICAL FAIL. Verify every inter-service interaction uses NATS SDK (`pkg/nats/`). The only HTTP handlers allowed are in the API Gateway service.
+### CHECK 2: Error Handling Consistency
+Every I/O function surfaces errors per the active language's idiom (Go: `(T, error)` return + `fmt.Errorf %w` wrap + sentinel matching via `errors.Is`/`As`; Python: typed exceptions with `raise ... from err` chains; both: no swallowed errors). Detailed conventions in per-language skill (e.g. `go-error-handling-patterns`).
 
-### CHECK 3: Go Naming Conventions
-Scan all .go files: package names (lowercase, single word), exported types (PascalCase), no stuttering, correct acronyms (ID not Id, HTTP not Http, URL not Url).
+### CHECK 3: Dependency Cycle Detection
+Build dependency graph from package imports inside `$SDK_TARGET_DIR/<new-pkg>/`. Detect cycles. SDK-pipeline target is one module; cycles are intra-package.
 
-### CHECK 4: Multi-Tenancy Completeness
-Every data-bearing struct has TenantID, every service uses schema-per-tenant isolation with tenant-aware connection routing, every NATS subject has tenant segment, every repository method accepts tenant context.
+### CHECK 4: I/O Cancellation Plumbing
+Every I/O method respects the language's cancellation primitive. Go: `context.Context` as first parameter on every I/O method. Python: async I/O methods accept `asyncio.CancelledError` cleanly OR receive a cancellation token. Per-language enforcement in `<pack>/conventions.yaml`.
 
-### CHECK 5: Error Handling Consistency
-Every I/O function returns error, errors use project error types (not raw errors.New), errors are wrapped with context, no swallowed errors.
+### CHECK 5: Multi-tenancy ABSENCE (inverted from archive)
+Per CLAUDE.md Project Context: SDK is a library, no multi-tenancy. **Flag presence** of `TenantID`, `tenant_id`, `schema-per-tenant` artifacts, or tenant-segmented NATS subjects unless TPRD explicitly opts in. This check is now an absence-check (G38 owns the BLOCKER-level enforcement).
 
-### CHECK 6: Dependency Cycle Detection
-Build dependency graph from package imports, service-to-service calls, NATS event chains. Detect cycles.
+### CHECK 6: Decision Log Completeness
+Every agent that produced output has at least 3 decision entries, all required fields present (per `decision-logging` skill v1.2.0 schema including the `language` envelope field), alternatives_considered not empty.
 
-### CHECK 7: Context.Context Compliance
-Every I/O method has `context.Context` as first parameter.
-
-### CHECK 8: SQL Schema Completeness
-Every table: PRIMARY KEY, FK indexes, created_at/updated_at TIMESTAMPTZ, COMMENT ON TABLE/COLUMN. Schema-per-tenant isolation verified (no tenant_id column needed — each tenant has its own database).
-
-### CHECK 9: SDK Coverage
-Every cross-cutting concern (NATS, auth, logging, tenant, errors) has SDK coverage.
-
-### CHECK 10: Decision Log Completeness
-Every agent that produced output has at least 3 decision entries, all required fields present, alternatives_considered not empty.
+### Removed checks (inherited from non-SDK template, not applicable)
+- ~~Architecture Traceability against `service-map.md`~~ — SDK pipeline has no service decomposition.
+- ~~Interface-API Contract Alignment against AsyncAPI/OpenAPI specs~~ — SDK ships a Go/Python API surface, not HTTP/gRPC service specs.
+- ~~NATS-Only Inter-Service Communication~~ — applies to services; SDK-as-library may EXPOSE a NATS client, doesn't enforce inter-service patterns.
+- ~~SQL Schema Completeness~~ — SDK doesn't ship DB migrations.
+- ~~SDK Coverage of cross-cutting concerns (auth/NATS/logging/tenant)~~ — services concern, not SDK.
 
 ## Automated Script Execution
-After completing manual checks, run: `bash scripts/guardrails/guardrail-runner.sh`
-Include script results in the report.
+After completing manual checks, dispatch the manifest-aware guardrail batch via:
+
+```bash
+bash scripts/run-guardrails.sh <phase> <run-dir> [target-dir]
+```
+
+Where `<phase>` is one of `intake | design | impl | testing | feedback | meta`. The script handles both filters (active-packages union ∩ phase header), runs each applicable guardrail, writes a JSON report at `<run-dir>/<phase>/guardrail-report.json`, and exits 1 on any BLOCKER/HIGH severity FAIL. See Delta 6 below for the full dispatch algorithm.
+
+Read the JSON report and include the summary (`pass`, `warn_fail`, `blocker_fail`, `skipped_not_active`, `skipped_phase_mismatch`) plus a per-guardrail row for any non-PASS result in the markdown report.
 
 ## Output
-Write to `docs/detailed-design/reviews/guardrail-report.md`:
+Write to `runs/<run-id>/<phase>/reviews/guardrail-report.md` (per Delta 5 below).
 
-Start with: `<!-- Generated: <ISO-8601> | Run: <run_id> -->`
+Start with: `<!-- Generated: <ISO-8601> | Run: <run_id> | Phase: <phase> | Language: <lang> -->`
 
 ```markdown
 # Guardrail Validation Report
@@ -70,20 +73,17 @@ Start with: `<!-- Generated: <ISO-8601> | Run: <run_id> -->`
 ## Summary
 | Check | Status | Issues |
 |-------|--------|--------|
-| Architecture Traceability | PASS/FAIL | N issues |
-| Interface-API Alignment | PASS/FAIL | N issues |
-| Go Naming Conventions | PASS/FAIL | N issues |
-| Multi-Tenancy Completeness | PASS/FAIL | N issues |
+| Language Naming Conventions | PASS/FAIL | N issues |
 | Error Handling Consistency | PASS/FAIL | N issues |
 | Dependency Cycles | PASS/FAIL | N issues |
-| Context.Context Compliance | PASS/FAIL | N issues |
-| SQL Schema Completeness | PASS/FAIL | N issues |
-| NATS-Only Communication | PASS/FAIL | N issues |
-| SDK Coverage | PASS/FAIL | N issues |
+| I/O Cancellation Plumbing | PASS/FAIL | N issues |
+| Multi-tenancy ABSENCE | PASS/FAIL | N flagged (any flagged = FAIL) |
 | Decision Log Completeness | PASS/FAIL | N issues |
 
+## Mechanical script summary (from run-guardrails.sh)
+[paste the JSON summary block from <run-dir>/<phase>/guardrail-report.json]
+
 ## Overall: PASS / FAIL (N passed, M failed)
-NOTE: CHECK 2a (NATS-Only Communication) is a HARD BLOCKER — any FAIL here blocks the entire phase.
 
 ## Details
 [per-check detailed findings]
@@ -158,7 +158,7 @@ G10-G15 (bootstrap-specific) REMOVED with Phase -1.
 Some guardrails (G96, G97, G99-G103) require reading `ownership-map.json`. Skip these gracefully on Mode A (no pre-existing markers); run fully on Mode B/C.
 
 ### Delta 3: Supply chain checks
-G32 (govulncheck) and G33 (osv-scanner) — delegates to `sdk-dep-vet-devil` for interpretation; guardrail-validator runs the scanners and stores raw output.
+G32 (govulncheck) and G33 (osv-scanner) — delegates to `sdk-dep-vet-devil-go` for interpretation; guardrail-validator runs the scanners and stores raw output.
 
 ### Delta 4: Determinism check (G94)
 Only runs on `--seed <int>` mode. Compares two consecutive runs; flags byte-diff on pipeline-owned regions.
@@ -167,37 +167,48 @@ Only runs on `--seed <int>` mode. Compares two consecutive runs; flags byte-diff
 - Archive writes to `docs/<phase>/reviews/guardrail-report.md`
 - SDK pipeline writes to `runs/<run-id>/<phase>/reviews/guardrail-report.md`
 
-### Delta 6: Package-scoped dispatch (v0.4.0+)
+### Delta 6: Package-scoped dispatch (v0.5.0+)
 
-After v0.4.0, guardrail-validator only runs scripts that are in the run's **active package set**. This means a TPRD that targets a non-Go language (future) will not invoke Go-specific guardrails like G104 (alloc budget) or G110 (perf-exception pairing).
+guardrail-validator delegates the script-batch loop to `scripts/run-guardrails.sh`. The script handles both filters (active-packages union AND phase-header match), generates the machine-readable report, and surfaces verdict via exit code. **Do not reimplement the dispatch algorithm in this agent's code paths** — call the script.
 
-**Dispatch algorithm** (runs at every phase invocation, before the script loop):
+**Invocation**:
 
-1. Read `runs/<run-id>/context/active-packages.json` (written by `sdk-intake-agent` at Wave I5.5; verified by G05).
-2. `ACTIVE_GATES = sort -u over .packages[].guardrails` — the full union across resolved packages.
-3. For the **current phase** (`intake | design | implementation | testing | feedback | meta`):
-   - For each `<G>` in `ACTIVE_GATES`, parse the `# phases:` header from `scripts/guardrails/<G>.sh`.
-   - Include `<G>` in the run set iff its phases header matches the current phase OR includes `meta`.
-4. Run only the filtered set.
-5. Any `scripts/guardrails/G*.sh` file present on disk but **not** in `ACTIVE_GATES` is reported as `skipped: not-in-active-packages` with the package list it would have needed.
-
-**Report extension**:
-
-```markdown
-## Package-scoped dispatch
-- Active packages: shared-core@1.0.0, go@1.0.0
-- ACTIVE_GATES total: 53
-- Phase-applicable: 9 (e.g. intake)
-- Gates run: 9 (PASS=8, FAIL=0, SKIP=1)
-- Gates skipped (not in active packages): 0 (none — full Go set covers all on-disk guardrails)
+```bash
+bash scripts/run-guardrails.sh <phase> <run-dir> [target-dir]
 ```
 
-**Failure modes**:
-- `active-packages.json` missing → BLOCKER: cannot dispatch. Halt and notify `sdk-design-lead` (or current phase lead) to escalate to intake.
-- A guardrail script referenced by `ACTIVE_GATES` is missing on disk → BLOCKER (validate-packages.sh should have caught this; treat as drift).
-- A guardrail script on disk is not in `ACTIVE_GATES` → INFO (silently skip; report under `gates_skipped`).
+**What the script does** (canonical algorithm, kept here for reference):
 
-**Backwards compatibility**: if `runs/<run-id>/context/active-packages.json` is absent (older pipeline runs replayed under v0.4.0), fall back to running every `scripts/guardrails/G*.sh` for the phase (legacy behavior). Log a WARN; this branch goes away in v0.5.0.
+1. Reads `runs/<run-id>/context/active-packages.json` (written by `sdk-intake-agent` Wave I5.5; verified by G05).
+2. Computes `ACTIVE_GATES = sort -u over .packages[].guardrails` — full union across resolved packages. Falls back to `shared-core ∪ <target_language>` manifests if `.packages` array is empty.
+3. For each `scripts/guardrails/G*.sh` file:
+   - Skip with reason `not-in-active-packages` if name is not in `ACTIVE_GATES`.
+   - Skip with reason `phase-mismatch` if its `# phases:` header does NOT include the requested phase.
+   - Otherwise run with args `(run-dir, target-dir)` and record verdict.
+4. Severity-aware exit: any BLOCKER or HIGH FAIL → exit 1; WARN/INFO/LOW/MEDIUM FAIL records but does not block.
+
+**Report consumption** — read `<run-dir>/<phase>/guardrail-report.json`:
+
+```json
+{
+  "phase": "testing",
+  "summary": {
+    "pass": 6, "warn_fail": 0, "blocker_fail": 1,
+    "skipped_not_active": 31, "skipped_phase_mismatch": 5
+  },
+  "results": [{"name":"G60","status":"PASS","severity":"BLOCKER"}, ...]
+}
+```
+
+Surface the summary plus FAIL/SKIP rows in the markdown guardrail-report.md.
+
+**Failure modes**:
+- `active-packages.json` missing → script exits 2 (config error). guardrail-validator MUST halt and ESCALATE to the phase lead — intake's Wave I5.5 must run first.
+- A guardrail script referenced by `ACTIVE_GATES` is missing on disk → `validate-packages.sh` should catch as dangling at PR time. At runtime, the script silently skips and reports nothing for that name; absent file is not a runtime error since the file iteration is filesystem-driven.
+- A guardrail in `ACTIVE_GATES` whose script exits 0 → recorded as PASS.
+- A guardrail in `ACTIVE_GATES` whose script exits non-zero with severity ∈ {BLOCKER, HIGH} → entire phase fails with exit 1.
+
+**No legacy fallback**: v0.5.0 requires `active-packages.json`. The v0.4.0 fallback (run every G*.sh on a missing manifest) is removed.
 
 ## Evolution patches
 Apply from `evolution/prompt-patches/guardrail-validator.md`.

@@ -16,31 +16,44 @@ tools: Read, Write, Edit, Glob, Grep, Bash, Agent, SendMessage, TaskCreate, Task
 5. Read target SDK tree (package structure, existing clients for pattern reference)
 6. Log `lifecycle: started`, `phase: design`
 
-## Active Package Awareness (v0.4.0+)
+## Active Package Awareness (manifest-driven dispatch, v0.5.0+)
 
-Before invoking any specialist agent, this lead reads `runs/<run-id>/context/active-packages.json` (written by `sdk-intake-agent` Wave I5.5; validated by G05). It computes:
+This lead reads `runs/<run-id>/context/active-packages.json` (written by `sdk-intake-agent` Wave I5.5; validated by G05) and dispatches every wave from manifest data. **Zero agent names are hardcoded in this prompt** — the source of truth is `.claude/package-manifests/<pack>.json:waves` and `:tier_critical`.
 
-- `ACTIVE_AGENTS = sort -u over .packages[].agents`
-- `TARGET_TIER = .target_tier`
+**Computed at startup**:
 
-**Per-invocation gate**: for every agent this lead would spawn:
+```
+ACTIVE_AGENTS    = sort -u over .packages[].agents
+TARGET_TIER      = .target_tier
+TARGET_LANGUAGE  = .target_language
+MODE             = read runs/<run-id>/intake/mode.json:mode  (A | B | C)
 
-- ✅ `agent ∈ ACTIVE_AGENTS` → invoke as planned.
-- ❌ `agent ∉ ACTIVE_AGENTS` → skip; log `{type: "event", reason: "agent-not-in-active-packages", agent: "<name>", phase: "design"}`. Continue unless the agent is **tier-critical** (see below).
+# For each wave-id W referenced in the Responsibilities section below:
+WAVE_AGENTS[W]   = sort -u over .packages[].waves[W]   (empty array if no pack contributes)
 
-**Tier-critical agents for design phase**:
+# For tier-criticality at design phase:
+TIER_CRITICAL    = sort -u over .packages[].tier_critical.design[TARGET_TIER]
+```
 
-| Tier | Required in ACTIVE_AGENTS |
-|---|---|
-| T1 | `sdk-perf-architect`, `sdk-design-devil`, `sdk-dep-vet-devil`, `sdk-semver-devil`, `sdk-convention-devil`, `sdk-security-devil` |
-| T2 | `sdk-design-devil`, `sdk-dep-vet-devil`, `sdk-semver-devil` (skip perf-architect; D1 runs without `perf-budget.md`) |
-| T3 | out-of-scope; halt |
+**Wave dispatch rule**: for every wave-id W this lead schedules below:
 
-If a tier-critical agent is missing from `ACTIVE_AGENTS`: halt with `BLOCKER: tier=<T> requires <agent>; not in active packages. Fix package manifests OR change §Target-Tier in TPRD`.
+- If `WAVE_AGENTS[W]` is non-empty → spawn each agent in parallel (wave semantics).
+- If `WAVE_AGENTS[W]` is empty → log `{type: "event", severity: "info", category: "skip", title: "wave <W> has no active agents", outcome: "skipped"}`. If the wave appears in a verdict-bearing position (see CLAUDE.md rule 33), emit verdict `INCOMPLETE: no active agents for wave <W>` rather than `PASS`.
 
-**T2 simplification**: skip `sdk-perf-architect` (D1) and `sdk-constraint-devil` (D3); HITL H5 reviews API design without `perf-budget.md`. The D5 H8 perf gate becomes a no-op.
+**Mode-specific waves**: wave-ids with suffixes are unioned with their base wave only when MODE matches:
+- `_mode_bc` (e.g. `D3_devils_mode_bc`) — unioned ONLY when `MODE ∈ {B, C}`. Today this affects `sdk-breaking-change-devil-go`, `sdk-constraint-devil-go`, `sdk-breaking-change-devil-python`, `sdk-constraint-devil-python`.
+- `_mode_a` (e.g. `D3_devils_mode_a`) — unioned ONLY when `MODE == A`. Today this affects `sdk-packaging-devil-python` (greenfield Python packages need PEP 517/518/621 packaging validation; non-greenfield extensions inherit the host package's existing packaging).
 
-**Backwards compatibility**: if `active-packages.json` absent, fall back to legacy behavior (invoke every default agent) and log a WARN. This fallback is removed in v0.5.0.
+Suffix unions are the only mode-conditional dispatch logic — everything else is data-driven from the manifest.
+
+**Tier-critical preflight**: before spawning any wave, verify every name in `TIER_CRITICAL` is present in `ACTIVE_AGENTS`. If any is missing, halt with `BLOCKER: tier=<TARGET_TIER> requires <agent>; not in active packages. Fix package manifests (.claude/package-manifests/*.json:tier_critical.design.<TARGET_TIER>) OR change §Target-Tier in TPRD`.
+
+**Tier semantics**:
+- `T1` — full design phase (all configured waves run).
+- `T2` — same dispatch logic; per-pack manifests opt out of perf-budget-related agents (`sdk-perf-architect-go`, `sdk-constraint-devil-go` etc.) by listing them in `tier_critical.design.T1` but NOT in `T2`. This lead does no T2-specific filtering — it just unions whatever the active manifests declare.
+- `T3` — out-of-scope; halt at intake (caught by `sdk-intake-agent`, not here).
+
+**No legacy fallback**: `active-packages.json` is required (G05 enforces). If absent, halt with `BLOCKER: active-packages.json missing — sdk-intake-agent Wave I5.5 must run first`.
 
 ## Input
 
@@ -56,22 +69,24 @@ If a tier-critical agent is missing from `ACTIVE_AGENTS`: halt with `BLOCKER: ti
 
 ## Responsibilities
 
-1. **Spawn design wave (D1)** — 6 agents in parallel: `sdk-designer`, `interface-designer`, `algorithm-designer`, `concurrency-designer`, `pattern-advisor`, `sdk-perf-architect`. Each writes to `runs/<run-id>/design/`. `sdk-perf-architect` produces `perf-budget.md` + `perf-exceptions.md` (per-§7-symbol latency/allocs/throughput/oracle/floor/complexity/MMD — see rule 32).
-2. **Mechanical checks (D2)** — run `guardrail-validator` for G30–G38 + G108 (oracle-margin sanity pre-check) subset applicable to design phase
-3. **Devil wave (D3)** — spawn devils in parallel: `sdk-design-devil`, `sdk-dep-vet-devil`, `sdk-semver-devil`, `sdk-convention-devil`, `sdk-security-devil`; add `sdk-breaking-change-devil` + `sdk-constraint-devil` if mode B/C
-4. **Review-fix loop (D4)** — per `review-fix-protocol`; per-issue retry cap 5; stuck at 2; route fixes to owning agent; re-run ALL devils after each batch (rule #13)
+Wave-id → manifest field mapping (canonical: `.claude/package-manifests/*.json:waves.<wave-id>`). All agent lists below resolve dynamically from `WAVE_AGENTS[wave-id]` per Active Package Awareness.
+
+1. **Spawn design wave (`D1_design`)** — spawn `WAVE_AGENTS[D1_design]` in parallel. Each writes to `runs/<run-id>/design/`. When `sdk-perf-architect-go` is in the active set, it produces `perf-budget.md` + `perf-exceptions.md` (per-§7-symbol latency/allocs/throughput/oracle/floor/complexity/MMD — see rule 32). Empty wave → INCOMPLETE design (no perf-budget); H5 surfaces this.
+2. **Mechanical checks (`D2_mechanical`)** — spawn `WAVE_AGENTS[D2_mechanical]` (typically `guardrail-validator`) to run the design-phase guardrail subset (today: G30–G38 + G108 oracle-margin sanity pre-check). Guardrail filtering is per-pack; the validator picks up only active-packages guardrails (Step 6 wiring).
+3. **Devil wave (`D3_devils` ∪ `D3_devils_mode_a` if MODE==A ∪ `D3_devils_mode_bc` if MODE∈{B,C})** — spawn the unioned set in parallel. Suffix-conditional extras come from the manifest automatically per the suffix-union logic in Active Package Awareness above. Today: `_mode_a` brings `sdk-packaging-devil-python` on Python Mode A; `_mode_bc` brings `sdk-breaking-change-devil-{go,python}` + `sdk-constraint-devil-{go,python}` on Mode B/C.
+4. **Review-fix loop (D4)** — per `review-fix-protocol`; per-issue retry cap 5; stuck at 2; route fixes to owning agent; re-run ALL devils after each batch (rule #13). No agent dispatch — this is loop control, not a wave.
 5. **HITL gates (D5)**:
-   - H6 (dep vet, if CONDITIONAL)
-   - H4 (breaking change, mode B/C only, if found)
-   - H5 (overall design — MUST surface `perf-budget.md` oracle-margins, MMDs, and any `perf-exceptions.md` entries alongside the API design)
-6. **Exit** — write `design-summary.md`; verify G30 (api.go.stub compiles); verify every TPRD §7 symbol has a perf-budget.md entry; notify `sdk-impl-lead`
+   - H6 (dep vet, if CONDITIONAL — only fires if the active set contains a dep-vet devil)
+   - H4 (breaking change — only fires if MODE∈{B,C} AND the active set contains a breaking-change devil AND a finding exists)
+   - H5 (overall design — MUST surface `perf-budget.md` oracle-margins, MMDs, and any `perf-exceptions.md` entries IF perf-architect produced them; if `D1_design` was INCOMPLETE, H5 explicitly notes "no perf-budget — manifests do not include sdk-perf-architect-go for this language/tier")
+6. **Exit** — write `design-summary.md`; verify any design-phase guardrail in active-packages passes (typically G30 if compile gate is configured); verify every TPRD §7 symbol has a perf-budget.md entry IF perf-architect ran; notify `sdk-impl-lead`
 
 ## Output Files
 
 - `runs/<run-id>/design/design-summary.md` (≤200 lines, lead-authored)
 - `runs/<run-id>/design/context/sdk-design-lead-summary.md`
-- `runs/<run-id>/design/perf-budget.md` (authored by `sdk-perf-architect`; lead verifies completeness pre-H5)
-- `runs/<run-id>/design/perf-exceptions.md` (authored by `sdk-perf-architect`; may be empty)
+- `runs/<run-id>/design/perf-budget.md` (authored by `sdk-perf-architect-go`; lead verifies completeness pre-H5)
+- `runs/<run-id>/design/perf-exceptions.md` (authored by `sdk-perf-architect-go`; may be empty)
 - Lead does NOT write individual design artifacts (agents do)
 
 ## Decision Logging
@@ -98,18 +113,14 @@ If a tier-critical agent is missing from `ACTIVE_AGENTS`: halt with `BLOCKER: ti
 
 ## Skills invoked
 
-- `sdk-library-design`
-- `go-struct-interface-design`
-- `go-concurrency-patterns`
-- `go-error-handling-patterns`
-- `openapi-spec-design` (if TPRD §7 contains HTTP API surface for SDK)
-- `dto-validation-design`
-- `review-fix-protocol`
+Skills are dynamically resolved from the active-pack union — see `runs/<run-id>/context/active-packages.json:packages[].skills`. The lead does NOT hardcode skill names. Per-language packs declare their design skills in their manifest's `skills[]` array; cross-pack shared skills (e.g., `review-fix-protocol`, `tdd-patterns`, `sdk-marker-protocol`, `sdk-semver-governance`, `api-ergonomics-audit`) live in `shared-core.json` and apply to every run regardless of language.
+
+If the active set is missing a skill that the design wave's evidence makes necessary, log a `decision-log.jsonl` `event: skill-gap-observed` entry; the next feedback cycle's `improvement-planner` will classify and propose it (per `improvement-planner` Step 2.4 scope-classification).
 
 ## Mode-specific delta
 
 - Mode A: standard 5-agent design wave
-- Mode B: additional analyzer-context used by `sdk-breaking-change-devil`; design agents scoped to extending existing package
+- Mode B: additional analyzer-context used by `sdk-breaking-change-devil-go`; design agents scoped to extending existing package
 - Mode C: design agents produce targeted patch plan, not package skeleton; `sdk-merge-planner` pre-consulted (though runs in Phase 2)
 
 ## Learned Patterns
@@ -137,6 +148,6 @@ If a tier-critical agent is missing from `ACTIVE_AGENTS`: halt with `BLOCKER: ti
 
 ### Pattern: Cross-SDK convention-deviation recording
 
-**Rule**: When `sdk-convention-devil` emits ACCEPT-WITH-NOTE for a deliberate deviation from an existing sibling-package pattern (e.g., dragonfly uses functional `With*` options while most target packages use `Config struct + New(cfg)`), the design-lead MUST record the deviation in `design/convention-deviations.md` with: sibling-package-comparison, rationale, precedent-setting-decision. This file feeds a future `docs/design-standards.md` synthesis.
+**Rule**: When `sdk-convention-devil-go` emits ACCEPT-WITH-NOTE for a deliberate deviation from an existing sibling-package pattern (e.g., dragonfly uses functional `With*` options while most target packages use `Config struct + New(cfg)`), the design-lead MUST record the deviation in `design/convention-deviations.md` with: sibling-package-comparison, rationale, precedent-setting-decision. This file feeds a future `docs/design-standards.md` synthesis.
 
 **Evidence from sdk-dragonfly-s2**: Dragonfly is the first target package to use functional `With*` options alongside `Config`. Justified by alignment with `motadatagosdk/events`, but no cross-SDK design-standards doc exists to record this as a deliberate precedent. Phase 4 improvement-planner proposed creating `docs/design-standards.md` as a process change.

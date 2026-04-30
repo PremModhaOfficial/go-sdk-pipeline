@@ -5,6 +5,8 @@ status: candidate
 priority: MUST
 tags: [redis, dragonfly, hash, hexpire, ttl]
 target_consumers: [sdk-design-lead, sdk-impl-lead, sdk-testing-lead]
+scope: go
+scope_rationale: Synthesized from Go pilot (sdk-dragonfly-s2); body cites motadatagosdk signatures + goleak. Promote to shared-core only after a Python sibling rewrite proves the rule body is language-neutral.
 provenance: synthesized-from-tprd(sdk-dragonfly-s2, §5.3, §14)
 ---
 

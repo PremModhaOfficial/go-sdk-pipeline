@@ -34,12 +34,12 @@ Runs G30–G38, G32 (govulncheck on proposed deps), G33 (osv-scanner), G34 (lice
 | Agent | Role | Output |
 |-------|------|--------|
 | `sdk-design-devil` | Find painful APIs: param count >4, exposed internals, goroutine ownership ambiguity, non-idiomatic naming | `reviews/design-devil.md` |
-| `sdk-dep-vet-devil` | License / CVE / maintenance / size on new deps | `reviews/dep-vet-devil.md` |
+| `sdk-dep-vet-devil-go` | License / CVE / maintenance / size on new deps | `reviews/dep-vet-devil.md` |
 | `sdk-semver-devil` | API-diff vs. existing; flag breaking changes | `reviews/semver-devil.md` |
-| `sdk-convention-devil` | Match target SDK conventions (Config+New, otel/, pool/, circuitbreaker/) | `reviews/convention-devil.md` |
+| `sdk-convention-devil-go` | Match target SDK conventions (Config+New, otel/, pool/, circuitbreaker/) | `reviews/convention-devil.md` |
 | `sdk-security-devil` | TLS defaults, credential handling, log-PII, input validation | `reviews/security-devil.md` |
-| `sdk-breaking-change-devil` | Mode B/C only: enumerate breakage vs. `current-api.json` | `reviews/breaking-change-devil.md` |
-| `sdk-constraint-devil` | Mode B/C only: verify each `[constraint]` in target files can still hold | `reviews/constraint-devil.md` |
+| `sdk-breaking-change-devil-go` | Mode B/C only: enumerate breakage vs. `current-api.json` | `reviews/breaking-change-devil.md` |
+| `sdk-constraint-devil-go` | Mode B/C only: verify each `[constraint]` in target files can still hold | `reviews/constraint-devil.md` |
 
 Verdict format per devil: ACCEPT / NEEDS-FIX / REJECT with prefix-id findings (`DD-<n>`).
 
@@ -55,8 +55,8 @@ Ported `review-fix-protocol`:
 
 | Gate | Trigger | Artifact |
 |------|---------|----------|
-| H6 Dep Vet | `sdk-dep-vet-devil` = CONDITIONAL (not REJECT) | `reviews/dep-rationale.md` |
-| H4 Breaking | Mode B/C + `sdk-breaking-change-devil` finds break | `breaking-changes.md` |
+| H6 Dep Vet | `sdk-dep-vet-devil-go` = CONDITIONAL (not REJECT) | `reviews/dep-rationale.md` |
+| H4 Breaking | Mode B/C + `sdk-breaking-change-devil-go` finds break | `breaking-changes.md` |
 | H5 Design | End of design phase | `design-summary.md` + `api.go.stub` |
 
 ## Exit artifacts
@@ -84,7 +84,7 @@ G30 (stub compiles), G31 (deps documented), G32 (govulncheck), G33 (osv-scanner)
 
 ## Mode B/C additions
 
-Mode B/C runs Wave 0.5 BEFORE this phase. That phase produces `current-api.json`, `test-baseline.json`, `bench-baseline.txt`, `ownership-map.json`. Design agents read all these. `sdk-semver-devil` + `sdk-breaking-change-devil` compare proposed API against `current-api.json`. `sdk-constraint-devil` loads `ownership-map.json` and verifies every `[constraint]` invariant will hold post-change.
+Mode B/C runs Wave 0.5 BEFORE this phase. That phase produces `current-api.json`, `test-baseline.json`, `bench-baseline.txt`, `ownership-map.json`. Design agents read all these. `sdk-semver-devil` + `sdk-breaking-change-devil-go` compare proposed API against `current-api.json`. `sdk-constraint-devil-go` loads `ownership-map.json` and verifies every `[constraint]` invariant will hold post-change.
 
 ## Typical durations
 

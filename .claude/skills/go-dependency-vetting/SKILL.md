@@ -1,6 +1,6 @@
 ---
 name: go-dependency-vetting
-description: License, CVE, maintenance, and size gate for every new go get. Drives sdk-dep-vet-devil verdicts via govulncheck + osv-scanner + license allowlist + transitive + last-commit-age.
+description: License, CVE, maintenance, and size gate for every new go get. Drives sdk-dep-vet-devil-go verdicts via govulncheck + osv-scanner + license allowlist + transitive + last-commit-age.
 version: 1.0.0
 status: stable
 authored-in: v0.3.0-straighten
@@ -21,7 +21,7 @@ Current convention in motadatagosdk:
 - `runs/<run-id>/design/dependencies.md` is the source of truth for dep provenance (name, version, license, size, vuln, age, transitive, justification).
 - License allowlist lives in `.claude/settings.json#license_allowlist`: `MIT`, `Apache-2.0`, `BSD-3-Clause`, `BSD-2-Clause`, `ISC`, `0BSD`, `MPL-2.0`. Everything else = REJECT (GPL/AGPL/LGPL/SSPL/Proprietary) or CONDITIONAL (unknown).
 - Guardrails G31 (dependencies.md exists), G32 (govulncheck clean), G33 (osv-scanner clean), G34 (license allowlist) are BLOCKER-severity at the design phase exit.
-- `sdk-dep-vet-devil` renders the verdict; H6 surfaces CONDITIONAL.
+- `sdk-dep-vet-devil-go` renders the verdict; H6 surfaces CONDITIONAL.
 
 If TPRD requests divergence (e.g., accepting a CONDITIONAL dep): user must explicitly amend the allowlist in settings.json AND provide rationale in `dependencies.md` §Justification — never silent-pass.
 
@@ -29,7 +29,7 @@ If TPRD requests divergence (e.g., accepting a CONDITIONAL dep): user must expli
 
 - PR diff adds a line to `go.mod` (any `require` block change).
 - TPRD §7 API references a type from a package not already in `go.mod`.
-- `sdk-dep-vet-devil` is scheduled for Phase 1 design review.
+- `sdk-dep-vet-devil-go` is scheduled for Phase 1 design review.
 - A design doc proposes `go get <foo>` in prose.
 - Guardrail G31 fails (`dependencies.md` missing or empty).
 
@@ -106,7 +106,7 @@ bash scripts/guardrails/G34.sh "$RUN_DIR" "$SDK_TARGET_DIR"
 # drag in an archived transitive. Enumerate + spot-check the top 10 by size.
 go mod graph | awk '{print $2}' | sort -u > /tmp/transitive.txt
 wc -l /tmp/transitive.txt
-# If > 50 transitive for a single direct dep = CONDITIONAL per sdk-dep-vet-devil.
+# If > 50 transitive for a single direct dep = CONDITIONAL per sdk-dep-vet-devil-go.
 
 # Spot-check last-commit age on each transitive (> 2 years dormant = CONDITIONAL):
 while read -r mod; do
@@ -120,7 +120,7 @@ done < /tmp/transitive.txt | sort
 ### 5. Verdict emission — machine-readable for H6 gate
 
 ```bash
-# sdk-dep-vet-devil writes this exact JSON shape per dep to the decision log.
+# sdk-dep-vet-devil-go writes this exact JSON shape per dep to the decision log.
 # H6 aggregates; CONDITIONAL rows surface to the user.
 jq -n \
     --arg dep "github.com/redis/go-redis/v9" \
@@ -181,7 +181,7 @@ Fix: always pin to an exact semver (`@v1.2.3`) in both `go.mod` and `dependencie
 | Verdict         | ACCEPT  |   ← wrong
 ```
 
-Fix: 214 transitives = 214 audit targets + 214 CVE surfaces. Per `sdk-dep-vet-devil`, >50 transitives is CONDITIONAL and must be justified in the §Justification field.
+Fix: 214 transitives = 214 audit targets + 214 CVE surfaces. Per `sdk-dep-vet-devil-go`, >50 transitives is CONDITIONAL and must be justified in the §Justification field.
 
 ### 5. Archived repo, no fork
 
@@ -193,7 +193,7 @@ Fix: 214 transitives = 214 audit targets + 214 CVE surfaces. Per `sdk-dep-vet-de
 | Verdict     | ACCEPT                     |   ← BLOCKER
 ```
 
-Fix: archived = REJECT (rule from `sdk-dep-vet-devil`). If the functionality is required, fork to an in-house mirror and vendor the fork — at least then the supply chain belongs to us.
+Fix: archived = REJECT (rule from `sdk-dep-vet-devil-go`). If the functionality is required, fork to an in-house mirror and vendor the fork — at least then the supply chain belongs to us.
 
 ## Decision criteria
 
@@ -212,7 +212,7 @@ Fix: archived = REJECT (rule from `sdk-dep-vet-devil`). If the functionality is 
 ## Cross-references
 
 - `sdk-semver-governance` — how version-pin choices interact with the SDK's own semver commitments
-- `otel-instrumentation` — the OTel dep family has special-case grouping; treat OTel version bumps as a single vet cycle
+- `go-otel-instrumentation` — the OTel dep family has special-case grouping; treat OTel version bumps as a single vet cycle
 - `go-module-paths` — import path → module mapping (prevents accidental double-dep of vN vs vN+1)
 
 ## Guardrail hooks
@@ -222,4 +222,4 @@ Fix: archived = REJECT (rule from `sdk-dep-vet-devil`). If the functionality is 
 - **G32** — `govulncheck ./...` clean on target (BLOCKER).
 - **G33** — `osv-scanner -r` clean on go.mod (BLOCKER).
 - **G34** — license allowlist enforced against `dependencies.md` (BLOCKER).
-- `sdk-dep-vet-devil` is the READ-ONLY agent that consumes this skill's rules and writes `runs/<run-id>/design/reviews/dep-vet-devil.md`; HITL gate H6 surfaces any CONDITIONAL row.
+- `sdk-dep-vet-devil-go` is the READ-ONLY agent that consumes this skill's rules and writes `runs/<run-id>/design/reviews/dep-vet-devil.md`; HITL gate H6 surfaces any CONDITIONAL row.

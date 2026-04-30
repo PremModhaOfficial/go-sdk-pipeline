@@ -37,12 +37,15 @@ case "$PACK" in
         fi
         ;;
     python)
-        SRC="$ROOT/packs/python/symbols-backend.py"
-        if [ ! -f "$SRC" ]; then
-            echo "python symbols backend not yet implemented (P4)" >&2
-            exit 5
+        # Prefer packs/python/ when it exists; fall back to in-tree script.
+        if [ -f "$ROOT/packs/python/symbols-backend.py" ]; then
+            exec python3 "$ROOT/packs/python/symbols-backend.py" "$@"
+        elif [ -f "$ROOT/scripts/ast-hash/python-symbols.py" ]; then
+            exec python3 "$ROOT/scripts/ast-hash/python-symbols.py" "$@"
+        else
+            echo "python symbols backend missing" >&2
+            exit 4
         fi
-        python3 "$SRC" "$@"
         ;;
     *)
         echo "unknown pack: $PACK" >&2

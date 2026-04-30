@@ -1,6 +1,8 @@
 # motadata-sdk-pipeline — Agent Fleet Rules
 
-Multi-agent **NFR-driven** pipeline targeting the external Go SDK at `$SDK_TARGET_DIR` (typically `motadata-go-sdk/src/motadatagosdk/`). Purpose: take a **detailed** TPRD (with `§Skills-Manifest` + `§Guardrails-Manifest`) for adding / extending / incrementally updating a client in that SDK and produce production-quality code + tests + benchmarks against numeric NFR gates.
+Multi-agent **NFR-driven, language-pluggable** pipeline targeting an external SDK at `$SDK_TARGET_DIR`. Purpose: take a **detailed** TPRD (with `§Target-Language` + `§Skills-Manifest` + `§Guardrails-Manifest`) for adding / extending / incrementally updating a client in that SDK and produce production-quality code + tests + benchmarks against numeric NFR gates.
+
+The pipeline supports per-language adapter packs declared at `.claude/package-manifests/<lang>.json`. **Go** is the canonical pack (Go 1.26, module `motadatagosdk` at `motadata-go-sdk/src/motadatagosdk/`). **Python** scaffolding ships in v0.5.0 Phase A; Phase B authors Python-specific agents/skills/guardrails. Adding a third language = author one new manifest + per-language sibling agents/skills/guardrails per the naming convention in `docs/PACKAGE-AUTHORING-GUIDE.md`.
 
 **No runtime skill synthesis.** Skills and agents are human-authored, promoted via PR, and static at runtime. `learning-engine` may patch **existing** skill bodies (minor version bump) but never creates new skill files. New-skill proposals land in `docs/PROPOSED-SKILLS.md` for human triage.
 
@@ -8,12 +10,12 @@ Multi-agent **NFR-driven** pipeline targeting the external Go SDK at `$SDK_TARGE
 
 ## Project Context
 
-- **Target SDK**: Go 1.26, module `motadatagosdk`, dirs `config/ events/ core/ otel/ utils/ cmd/`
-- **Convention**: primary `Config struct + New(cfg)`, functional options only where target SDK already uses them
+- **Target SDK shape**: declared per-run by the active language manifest. For Go runs: Go 1.26, module `motadatagosdk`, dirs `config/ events/ core/ otel/ utils/ cmd/`. For Python runs (Phase B+): Python 3.12+, `pyproject.toml`-based packaging.
+- **Convention**: primary `Config struct + New(cfg)` for Go (per `go-sdk-config-struct-pattern` skill); functional options only where target SDK already uses them. Python equivalent (Phase B) authored via `<lang>/conventions.yaml`.
 - **No multi-tenancy** — SDK is a library, tenant context is caller-supplied (not pipeline concern)
 - **No inter-service NATS/HTTP** — SDK may EXPOSE NATS capability (events/), but pipeline itself does not enforce NATS patterns on non-events clients
-- **OTel required** — all clients wire into `motadatagosdk/otel` package
-- **Resilience toolkit** — clients reuse `core/circuitbreaker/`, `core/pool/`, existing middleware
+- **OTel required (language-native)** — Go clients wire into `motadatagosdk/otel`; Python clients (Phase B+) wire into the Python OTel SDK per `<lang>/conventions.yaml`. NEVER raw `go.opentelemetry.io/otel` for Go.
+- **Resilience toolkit** — language-pack-supplied. Go pack reuses `core/circuitbreaker/`, `core/pool/`, existing middleware. Python pack (Phase B+) supplies equivalents.
 
 ## Agent Fleet Rules (all agents follow)
 
@@ -39,15 +41,22 @@ Every agent MUST append to `runs/<run-id>/decision-log.jsonl`. Entry types: `dec
 ### 5. Review Agents Are READ-ONLY
 All devil / critic / reviewer / validator agents never modify source. Output only to `runs/<run-id>/<phase>/reviews/`.
 
-### 6. Quality Standards
-- Godoc on every exported symbol (first word = symbol name)
+### 6. Quality Standards (language-pluggable)
+
+The rules below are language-coupled — each language pack supplies its own form via `<pack>/conventions.yaml` (Step 13 onward). The list below is the **Go pack canonical** form; Python and other packs translate per-language equivalents.
+
+**Cross-language rules (apply to every pack)**:
+- Doc-comment on every exported symbol (Go: godoc with symbol name first word; Python: docstring on every public class/function)
 - Table-driven tests, table-driven benchmarks
+- No global mutable state at package/module level
+- Interface-first for testability; compile-time interface assertions where the language supports them
+- Configuration entrypoint per pack convention (Go: `Config struct + New(cfg)`; Python pack defines its own per `<pack>/conventions.yaml`)
+- OTel via the language-native pack helper (Go: `motadatagosdk/otel`; Python: package-defined wrapper) — NEVER raw `go.opentelemetry.io/otel` for Go
+
+**Go-specific (lives in go pack)**:
 - No `init()` functions
-- No global mutable state
 - `context.Context` first param on every I/O method
-- `Config struct + New(cfg)` OR functional options — match target SDK convention
-- OTel via `motadatagosdk/otel` (NOT raw OTel API)
-- Interface-first for testability; compile-time interface assertions (`var _ Interface = (*Impl)(nil)`)
+- `var _ Interface = (*Impl)(nil)` compile-time assertions
 
 ### 7. Ownership Matrix — single owner per domain
 See `AGENTS.md` for full matrix. Key: TPRD canonicalization + manifest validation = `sdk-intake-agent`; API design = `sdk-design-lead`; code = `sdk-impl-lead`; tests = `sdk-testing-lead`; existing-skill patches = `learning-engine`.
@@ -93,14 +102,14 @@ Writes ONLY to `$SDK_TARGET_DIR` and `runs/`. Guardrail G07 enforces.
 Agents MUST read target SDK tree before designing. No contradicting existing patterns (e.g., if target uses `Config struct + New()`, don't default to functional options without justification).
 
 ### 19. Dependency Justification
-Every new `go get` requires `runs/<run-id>/design/dependencies.md` entry: name, version, license, size, `govulncheck`, `osv-scanner`, last-commit-age, transitive-count. `sdk-dep-vet-devil` verdict required. License allowlist: MIT / Apache-2.0 / BSD / ISC / 0BSD / MPL-2.0.
+Every new `go get` requires `runs/<run-id>/design/dependencies.md` entry: name, version, license, size, `govulncheck`, `osv-scanner`, last-commit-age, transitive-count. `sdk-dep-vet-devil-go` verdict required. License allowlist: MIT / Apache-2.0 / BSD / ISC / 0BSD / MPL-2.0.
 
 ### 20. Benchmark Regression + Oracle + Alloc Gates
 Three independent perf gates, all enforced at Phase 3 T5:
 
-1. **Regression** — >10% on shared paths OR >5% on new-package hot path = BLOCKER, waivable with `--accept-perf-regression <pct>`. Owner: `sdk-benchmark-devil`.
-2. **Oracle margin (G108)** — measured p50 must stay within `oracle.margin_multiplier ×` the declared reference-impl number in `design/perf-budget.md`. BLOCKER if breached. NOT covered by `--accept-perf-regression`; waiver requires updating the margin in perf-budget.md with rationale at H8. Owner: `sdk-benchmark-devil`.
-3. **Alloc budget (G104)** — measured `allocs/op` must be ≤ declared `allocs_per_op` in perf-budget.md. BLOCKER. Enforced at M3.5 by `sdk-profile-auditor` (BEFORE T5; alloc issues don't reach testing).
+1. **Regression** — >10% on shared paths OR >5% on new-package hot path = BLOCKER, waivable with `--accept-perf-regression <pct>`. Owner: `sdk-benchmark-devil-go`.
+2. **Oracle margin (G108)** — measured p50 must stay within `oracle.margin_multiplier ×` the declared reference-impl number in `design/perf-budget.md`. BLOCKER if breached. NOT covered by `--accept-perf-regression`; waiver requires updating the margin in perf-budget.md with rationale at H8. Owner: `sdk-benchmark-devil-go`.
+3. **Alloc budget (G104)** — measured `allocs/op` must be ≤ declared `allocs_per_op` in perf-budget.md. BLOCKER. Enforced at M3.5 by `sdk-profile-auditor-go` (BEFORE T5; alloc issues don't reach testing).
 
 Rule 32 (Performance-Confidence Regime) lists the full gate set. Rule 33 (Verdict Taxonomy) disambiguates PASS / FAIL / INCOMPLETE.
 
@@ -150,7 +159,7 @@ Markers (`[traces-to:]`, `[constraint:]`, `[stable-since:]`, `[deprecated-in:]`,
 - `[stable-since: vX]` signature changes require major semver + TPRD §12 declaration (G101)
 - Pipeline-authored symbols MUST have `[traces-to: TPRD-<section>-<id>]` marker (G99)
 - Pipeline NEVER forges `[traces-to: MANUAL-*]` (G103)
-- `[perf-exception: <reason> bench/BenchmarkX]` exempts a symbol from `sdk-overengineering-critic` findings, but ONLY if: (a) an entry exists in `runs/<run-id>/design/perf-exceptions.md` declaring the exception at design time, (b) the named bench exists and measurably justifies the complexity, (c) `sdk-profile-auditor` has profile evidence. Guardrail G110 enforces the marker↔perf-exceptions.md pairing. Orphan `[perf-exception:]` markers (no matching entry) = BLOCKER.
+- `[perf-exception: <reason> bench/BenchmarkX]` exempts a symbol from `sdk-overengineering-critic` findings, but ONLY if: (a) an entry exists in `runs/<run-id>/design/perf-exceptions.md` declaring the exception at design time, (b) the named bench exists and measurably justifies the complexity, (c) `sdk-profile-auditor-go` has profile evidence. Guardrail G110 enforces the marker↔perf-exceptions.md pairing. Orphan `[perf-exception:]` markers (no matching entry) = BLOCKER.
 
 ### 30. Incremental Update Support
 Pipeline supports three request modes: A (new package), B (extension), C (incremental update). Mode C uses marker-aware 3-way merge via `sdk-merge-planner`. Existing tests + bench MUST continue passing post-update (G95).
@@ -163,12 +172,12 @@ Every MCP integration (`mcp__neo4j-memory__*`, `mcp__serena__*`, `mcp__code-grap
 
 **The seven falsification axes**:
 
-1. **Declaration** — `sdk-perf-architect` writes `design/perf-budget.md` (rule 20) at D1: per-§7-symbol latency p50/p95/p99, allocs/op, throughput, hot-path flag, reference oracle, theoretical floor, big-O complexity, MMD (soak symbols), drift signals. Without a declaration, downstream gates have nothing to falsify against.
-2. **Profile shape (G109)** — `sdk-profile-auditor` at M3.5 reads CPU/heap/block/mutex pprof; top-10 CPU samples must match declared hot paths (coverage ≥0.8); surprise hotspots = BLOCKER. Catches design-reality drift before testing phase.
-3. **Allocation (G104)** — `sdk-profile-auditor` enforces `allocs/op ≤ design budget` from perf-budget.md. Mandatory `b.ReportAllocs()` on every benchmark.
-4. **Complexity (G107)** — `sdk-complexity-devil` at T5 runs a scaling sweep at N ∈ {10, 100, 1k, 10k}, curve-fits, compares to declared big-O. Catches accidental quadratic paths that pass wallclock gates at microbench sizes.
-5. **Regression + Oracle (rule 20 / G108)** — `sdk-benchmark-devil` at T5: regression vs. baseline AND oracle-margin vs. declared reference impl. Oracle breach is not waivable via `--accept-perf-regression`.
-6. **Drift (G106) + MMD (G105)** — `sdk-soak-runner` + `sdk-drift-detector` at T5.5 launch soaks in background (Bash `run_in_background`), poll state files on a ladder, fast-fail on statistically significant positive trend in drift signals. MMD enforces that a soak verdict reflects a long-enough run.
+1. **Declaration** — `sdk-perf-architect-go` writes `design/perf-budget.md` (rule 20) at D1: per-§7-symbol latency p50/p95/p99, allocs/op, throughput, hot-path flag, reference oracle, theoretical floor, big-O complexity, MMD (soak symbols), drift signals. Without a declaration, downstream gates have nothing to falsify against.
+2. **Profile shape (G109)** — `sdk-profile-auditor-go` at M3.5 reads CPU/heap/block/mutex pprof; top-10 CPU samples must match declared hot paths (coverage ≥0.8); surprise hotspots = BLOCKER. Catches design-reality drift before testing phase.
+3. **Allocation (G104)** — `sdk-profile-auditor-go` enforces `allocs/op ≤ design budget` from perf-budget.md. Mandatory `b.ReportAllocs()` on every benchmark.
+4. **Complexity (G107)** — `sdk-complexity-devil-go` at T5 runs a scaling sweep at N ∈ {10, 100, 1k, 10k}, curve-fits, compares to declared big-O. Catches accidental quadratic paths that pass wallclock gates at microbench sizes.
+5. **Regression + Oracle (rule 20 / G108)** — `sdk-benchmark-devil-go` at T5: regression vs. baseline AND oracle-margin vs. declared reference impl. Oracle breach is not waivable via `--accept-perf-regression`.
+6. **Drift (G106) + MMD (G105)** — `sdk-soak-runner-go` + `sdk-drift-detector` at T5.5 launch soaks in background (Bash `run_in_background`), poll state files on a ladder, fast-fail on statistically significant positive trend in drift signals. MMD enforces that a soak verdict reflects a long-enough run.
 7. **Profile-backed exceptions (G110)** — the `[perf-exception:]` marker (rule 29) lets impl carry hand-optimized code through the `sdk-overengineering-critic` — but only when paired with a design-time entry in `perf-exceptions.md` AND a profile-auditor-measured benchmark win.
 
 **Interpretation**: the pipeline's perf confidence is exactly the union of these axes. Anything they don't catch is an unknown-unknown. Add a new axis when you identify a failure mode none of the seven catches.
@@ -184,11 +193,13 @@ Wherever a gate historically returned "passed so far" on a timeout, it MUST now 
 
 ### 34. Package Layer (v0.4.0+) — Manifest-Only
 
-The agent / skill / guardrail set a run is allowed to invoke is **scoped by package manifests**. Manifests are JSON files in `.claude/package-manifests/<name>.json` that list which artifacts belong to one logical package. Two packages exist today: `shared-core` (language-neutral orchestration) and `go` (Go SDK language adapter). All on-disk artifacts MUST belong to exactly one manifest — `scripts/validate-packages.sh` enforces.
+The agent / skill / guardrail set a run is allowed to invoke is **scoped by package manifests**. Manifests are JSON files in `.claude/package-manifests/<name>.json` that list which artifacts belong to one logical package. Three packages ship today: `shared-core` (language-neutral orchestration), `go` (Go SDK language adapter, fully populated), `python` (Phase A scaffold; Phase B authors content). All on-disk artifacts MUST belong to exactly one manifest — `scripts/validate-packages.sh` enforces.
 
 **Manifest-only**: files do NOT move into per-package subdirectories. Agents stay at `.claude/agents/<name>.md`, skills at `.claude/skills/<name>/SKILL.md`, guardrails at `scripts/guardrails/G*.sh`. Claude Code's harness auto-discovers from those canonical paths; physical packaging would break discovery. Manifests are descriptive metadata, not directory structure.
 
-**Per-run resolution**: `sdk-intake-agent` Wave I5.5 reads three optional TPRD fields (`§Target-Language` default `go`, `§Target-Tier` default `T1`, `§Required-Packages` default `[shared-core, <lang>]`), resolves the manifest set + dependencies, and writes `runs/<run-id>/context/active-packages.json`. G05 validates the file resolves cleanly. All downstream phase leads + `guardrail-validator` filter their invocations through `active-packages.json` — agents NOT in the active set are skipped (logged as `event: agent-not-in-active-packages`); guardrails NOT in the active set are not run.
+**Per-run resolution (v0.5.0+)**: `sdk-intake-agent` Wave I1.5 enforces `§Target-Language` as REQUIRED (BLOCKER if missing — no silent default). Wave I5.5 reads `§Target-Language`, `§Target-Tier` (default `T1`), `§Required-Packages` (default `[shared-core, <lang>]`), resolves the manifest set + dependencies, and writes `runs/<run-id>/context/active-packages.json`. G05 validates the file resolves cleanly. Phase leads dispatch from manifest data: `waves` (per-wave agent contributions, unioned across packs) and `tier_critical` (per-phase × tier required-set). `scripts/run-guardrails.sh` filters guardrails by active-packages union ∩ phase header. `scripts/run-toolchain.sh` resolves `toolchain.<command>` from the active language manifest. Agents NOT in the active set are skipped (logged as `event: agent-not-in-active-packages`); guardrails NOT in the active set are not run.
+
+**Aspirational guardrails**: a manifest may carry `aspirational_guardrails: { "G<NN>": "<rationale>" }` for forward-declared scripts not yet authored (today: G81/G83/G84 in shared-core; G104–G110 in go). These are tracked but never executed at runtime; promote to `guardrails` array when the script lands.
 
 **Tier semantics** (per phase lead's tier-critical table):
 - **T1** — full perf-confidence regime (rule 32): perf-architect, profile-auditor, leak-hunter, benchmark-devil, complexity-devil, soak-runner, drift-detector. Default for SDK clients.

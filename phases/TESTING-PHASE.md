@@ -27,7 +27,7 @@ Exhaustive verification beyond the TDD tests written in Phase 2. Adds integratio
 - Tenant isolation NOT applicable (SDK is a library)
 
 ### Wave T3 — Flake Hunt
-**Agent**: `sdk-integration-flake-hunter`
+**Agent**: `sdk-integration-flake-hunter-go`
 - Run integration tests `-count=3`
 - Any failure = flaky; BLOCKER until investigated + fixed
 
@@ -38,7 +38,7 @@ Exhaustive verification beyond the TDD tests written in Phase 2. Adds integratio
 - Capture output to `runs/<run-id>/testing/bench-raw.txt`
 
 ### Wave T5 — Benchmark Devil
-**Agent**: `sdk-benchmark-devil`
+**Agent**: `sdk-benchmark-devil-go`
 - Compare raw output against `baselines/go/performance-baselines.json` for shared packages
 - For new package: capture baseline (first run = baseline)
 - `benchstat` compare; verdict PASS / REGRESS / ACCEPT-WITH-WAIVER
@@ -46,7 +46,7 @@ Exhaustive verification beyond the TDD tests written in Phase 2. Adds integratio
 - FAIL = BLOCKER unless `--accept-perf-regression <n>`
 
 ### Wave T6 — Leak Hunt
-**Agent**: `sdk-leak-hunter`
+**Agent**: `sdk-leak-hunter-go`
 - Ensure `goleak.VerifyTestMain` in new package's TestMain
 - Run `go test -race -count=5 ./<pkg>/...`
 - Any leak = BLOCKER

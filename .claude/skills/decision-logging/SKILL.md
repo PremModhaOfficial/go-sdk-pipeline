@@ -1,13 +1,41 @@
 ---
 name: decision-logging
 description: Canonical JSON schemas + entry limits for `runs/<run-id>/decision-log.jsonl`.. adds `skill-evolution` and `budget` entry types .
-version: 1.1.0
+version: 1.2.0
 created-in-run: bootstrap-seed
 status: stable
 tags: [meta, logging, decision-log, schema]
 ---
 
-# decision-logging (SDK-mode, v1.1.0)
+# decision-logging (SDK-mode, v1.2.0)
+
+
+## Delta (v1.1.0 → v1.2.0)
+
+One additive envelope field across **every** entry type to support the language-agnostic pipeline (CLAUDE.md rule 34).
+
+### Required field on every entry: `language`
+
+```json
+{
+  ...,
+  "language": "go" | "python" | "unknown"
+}
+```
+
+**Source of truth**: read from `runs/<run-id>/context/active-packages.json:target_language` once package resolution (Wave I5.5) has completed.
+
+**Pre-resolution entries**: any entry written BEFORE Wave I5.5 (i.e., during sdk-intake-agent waves I1–I5.5 itself) MUST emit `"language": "unknown"`. Re-stamping is not required — pre-resolution entries are intake-internal and never participate in cross-language metrics.
+
+**Post-resolution entries**: `"language": "unknown"` is a BLOCKER signal. The G01 validator (or its successor) MUST FAIL any entry with `language: unknown` whose timestamp is after `active-packages.json:resolved_at`.
+
+**Rationale**: per-language partitioning of metrics, baselines, and learning-engine signals depends on every log line being attributable to a language. Without this stamp, cross-language quality scoring, devil-verdict-history, and skill-coverage analysis cannot disambiguate.
+
+**Applies to**: `decision`, `lifecycle`, `communication`, `event`, `failure`, `refactor`, `skill-evolution`, `budget` — all eight entry types.
+
+**Validator mapping**: G01 extended to assert presence + valid value. Backward-compat: entries written by pipeline_version <0.5.0 may legitimately omit `language` and are not retroactively invalidated.
+
+---
 
 
 ## Delta  (v1.0.0 → v1.1.0)

@@ -19,8 +19,8 @@ Human-reviewed backlog of proposed new skills. **The pipeline never creates skil
 
 | Priority | Skill | Motivation | Primary consumers | Status |
 |---|---|---|---|---|
-| MUST | `benchmark-regression-detection` | `benchstat` integration, delta thresholds, CI gating | `sdk-benchmark-devil`, `performance-test-agent` | proposed |
-| MUST | `test-stability-verification` | `-race -count=5` pattern, flaky-test detection, seed-based repro | `sdk-integration-flake-hunter`, `unit-test-agent` | proposed |
+| MUST | `benchmark-regression-detection` | `benchstat` integration, delta thresholds, CI gating | `sdk-benchmark-devil-go`, `performance-test-agent` | proposed |
+| MUST | `test-stability-verification` | `-race -count=5` pattern, flaky-test detection, seed-based repro | `sdk-integration-flake-hunter-go`, `unit-test-agent` | proposed |
 | SHOULD | `pool-reuse-policy` | When to reuse SDK's `core/pool/` vs. create own; cleanup contracts | `sdk-designer`, `concurrency-designer` | proposed |
 | SHOULD | `testcontainers-client-recipes` | Per-backend recipes: dragonfly, minio, localstack, kafka, rabbitmq | `integration-test-agent` | proposed (draft candidates under `evolution/skill-candidates/`) |
 
@@ -131,8 +131,8 @@ Status: `proposed` (awaiting human PR authorship per rule #23). These are net-ne
 | Priority | Skill | Motivation | Primary consumers | Source pattern |
 |---|---|---|---|---|
 | SHOULD | `miniredis-limitations-reference` | Documents which Redis commands miniredis v2 does/doesn't support (HEXPIRE family not supported; Lua subset; scripting edge cases). Bridges the TPRD §11.1 gap surfaced in sdk-dragonfly-s2. | `integration-test-agent`, `unit-test-agent`, `sdk-testing-lead` | P5 (retro-testing) |
-| SHOULD | `bench-constraint-calibration` | Pattern for verifying TPRD §10 numeric constraints against dep-lib measured floors before declaring them acceptable. Methodology + lookup-table approach + CALIBRATION-WARN vs FAIL taxonomy. | `sdk-intake-agent`, `sdk-benchmark-devil`, `sdk-testing-lead` | P1 (retro-intake, retro-testing) |
-| SHOULD | `mvs-forced-bump-preview` | Pattern for running Go MVS simulation against the live target `go.mod` (not a scratch module) to surface forced bumps of existing direct deps at design time, not impl time. | `sdk-dep-vet-devil`, `sdk-design-lead`, `sdk-impl-lead` | P2 (retro-design, retro-impl) |
+| SHOULD | `bench-constraint-calibration` | Pattern for verifying TPRD §10 numeric constraints against dep-lib measured floors before declaring them acceptable. Methodology + lookup-table approach + CALIBRATION-WARN vs FAIL taxonomy. | `sdk-intake-agent`, `sdk-benchmark-devil-go`, `sdk-testing-lead` | P1 (retro-intake, retro-testing) |
+| SHOULD | `mvs-forced-bump-preview` | Pattern for running Go MVS simulation against the live target `go.mod` (not a scratch module) to surface forced bumps of existing direct deps at design time, not impl time. | `sdk-dep-vet-devil-go`, `sdk-design-lead`, `sdk-impl-lead` | P2 (retro-design, retro-impl) |
 
 Note: These are proposals only. Per CLAUDE.md Rule #23 skills are human-authored; the pipeline does NOT draft SKILL.md bodies for these entries. Related guardrails are proposed in `docs/PROPOSED-GUARDRAILS.md` (G25, G36, G66) — guardrails and skills reinforce each other but are independently PR-able.
 
@@ -201,3 +201,68 @@ Note: These are proposals only. Per CLAUDE.md Rule #23 skills are human-authored
 - **MISSING** `testcontainers-dragonfly-recipe` (≥1.0.0) — source run `sdk-dragonfly-s2`
 - **MISSING** `k8s-secret-file-credential-loader` (≥1.0.0) — source run `sdk-dragonfly-s2`
 - **MISSING** `sentinel-error-model-mapping` (≥1.0.0) — source run `sdk-dragonfly-s2`
+
+---
+
+## Auto-filed from run `sdk-resourcepool-py-pilot-v1` on 2026-04-29 (F6 improvement-planner → learning-engine)
+
+Source: `improvement-planner` Wave F6, derived from Phase 4 backlog items PA-001/PA-002, PA-012, PA-013 + retrospective Skill Gaps rows 1-3 + root-cause-traces. Status: `proposed` (awaiting human PR authorship per CLAUDE.md rule 23). First Python adapter pilot run.
+
+### Proposed: python-bench-harness-shapes
+<!-- Run: sdk-resourcepool-py-pilot-v1 | Date: 2026-04-30 | Confidence: HIGH -->
+
+- **scope**: python
+- **proposed_version**: 1.0.0
+- **priority**: SHOULD
+- **target_consumers**: sdk-impl-lead (python overlay), sdk-profile-auditor-python, sdk-benchmark-devil-python
+- **provenance**: feedback-derived(PA-001, PA-002, run sdk-resourcepool-py-pilot-v1)
+- **confidence**: HIGH
+- **source_evidence**: defect-log DEF-001, DEF-002; root-cause-traces "PA-001 / PA-002"; retrospective Skill Gaps row 1
+- **rationale**: pytest-benchmark's per-call timing model assumes `setup → measure → teardown` per iteration. Two real symbol shapes break that assumption: (a) **sync-fast-path-in-async** (`try_acquire`: a sync method called inside an asyncio context that returns immediately) — pytest-benchmark cannot reliably measure sub-µs sync calls; (b) **bulk-teardown** (`aclose`: drains N resources in one call) — per-iteration timing is meaningless because the work is amortized. Both shapes need bespoke harness templates. Without the skill, every Python adapter rediscovers the gap; PA-001/PA-002 will recur in every Python pack release.
+- **proposed_body_outline**:
+  1. §When-to-apply: any benchmarking task on a Python SDK client with sync/async or bulk-amortized methods
+  2. §Three harness shapes — per-call (default; pytest-benchmark group), sync-fast-path-in-async (loop.call_soon timing harness; warmup loop sized to 10k iters; uses time.perf_counter_ns delta for sub-µs precision), bulk-teardown (parametrize over N ∈ {10, 100, 1k}; report µs/resource not µs/call; assert linear scaling)
+  3. §GOOD examples for each shape (harness fixture + bench function + result-assertion pattern)
+  4. §BAD example: pytest-benchmark @benchmark on a sync method called from async context (exhibits the PA-001 INCOMPLETE symptom)
+  5. §Cross-reference: `python-pytest-patterns`, `sdk-marker-protocol` (constraint:bench markers)
+- **suggested_path**: `.claude/skills/python-bench-harness-shapes/SKILL.md`
+
+### Proposed: python-floor-bound-perf-budget
+<!-- Run: sdk-resourcepool-py-pilot-v1 | Date: 2026-04-30 | Confidence: HIGH -->
+
+- **scope**: python
+- **proposed_version**: 1.0.0
+- **priority**: SHOULD
+- **target_consumers**: sdk-perf-architect-python, sdk-benchmark-devil-python
+- **provenance**: feedback-derived(PA-013, run sdk-resourcepool-py-pilot-v1)
+- **confidence**: HIGH
+- **source_evidence**: defect-log DEF-013; root-cause-traces "PA-013 / FLOOR-BOUND-ORACLE"; retrospective Skill Gaps row 2 + Agent Prompt Improvements row 1
+- **rationale**: PoolConfig.__init__ and AcquiredResource.__aenter__ both hit the Python language floor (frozen+slotted dataclass init ~2µs; async ctx-mgr enter ~1.5µs). The Go×10 oracle margin is mechanically unreachable for these symbols regardless of impl quality. perf-architect-python has no idiom for declaring "floor-bound" symbols; the gap costs a calibration round-trip (PA-013) on every Python adapter that wraps stdlib runtime primitives.
+- **proposed_body_outline**:
+  1. §When-to-apply: any §7 symbol that wraps a CPython runtime primitive (frozen+slotted dataclass __init__, asyncio.Lock ctx-mgr enter, asyncio.Queue.get_nowait, etc.)
+  2. §Floor-type taxonomy: `language-floor` (interpreter overhead; ≥1µs per Python frame), `hardware-floor` (memory allocator floor, syscall floor), `none` (no floor binding)
+  3. §perf-budget.md schema extension: add `floor_type: language-floor | hardware-floor | none` and `measured_floor_us: <number>` per §7-symbol entry
+  4. §Oracle calibration: when `floor_type ≠ none`, set oracle relative to measured floor × `oracle.margin_multiplier`, NOT against Go reference impl
+  5. §G108 interaction: benchmark-devil-python reads `floor_type` and `measured_floor_us`; CALIBRATION-WARN suppressed when within margin of declared floor; BLOCKER triggered only if measured p50 exceeds floor × margin
+  6. §Detection rubric: identify floor-bound candidates by signature pattern (frozen-dataclass init, async-ctx-mgr enter, single-attribute reads on slotted classes)
+- **suggested_path**: `.claude/skills/python-floor-bound-perf-budget/SKILL.md`
+
+### Proposed: soak-sampler-cooperative-yield
+<!-- Run: sdk-resourcepool-py-pilot-v1 | Date: 2026-04-30 | Confidence: MEDIUM -->
+
+- **scope**: shared-core
+- **proposed_version**: 1.0.0
+- **priority**: SHOULD
+- **target_consumers**: sdk-soak-runner-python, sdk-soak-runner-go, future <lang>-soak-runners
+- **provenance**: feedback-derived(PA-012, run sdk-resourcepool-py-pilot-v1; cross-language carry-over from existing Go-pack soak skill)
+- **confidence**: MEDIUM
+- **source_evidence**: defect-log DEF-012, DEF-019; root-cause-traces "PA-012 / SAMPLER-STARVATION" (called out as 'clearest example in the run of insufficient skill-content abstraction across languages'); retrospective Surprises bullet 2 + Skill Gaps row 3
+- **rationale**: Python pack rediscovered a sampler-starvation bug already documented in the Go pack's soak skill, because that documentation is Go-specific. Cooperative-yield starvation in any single-threaded scheduler (asyncio event loop, goroutine scheduler, future Java virtual-thread carrier) under hot worker loops causes the soak sampler to under-sample during high-throughput phases — soak verdicts then reflect sampling artifacts rather than steady-state behavior. A shared-core skill ensures every future language pack inherits the warning by reading one shared body, not by re-deriving from runtime-specific symptoms.
+- **proposed_body_outline**:
+  1. §The pattern: cooperative-yield starvation under hot worker loops; symptom = sampler reports flat / dropped metrics during high-throughput phase, recovers during cooldown
+  2. §Why language-neutral: applies to any cooperative scheduler — asyncio (Python), goroutine (Go), virtual-thread carrier (Java loom), tokio current_thread (Rust)
+  3. §Mitigations: dedicated sampler thread/process (preferred); explicit `await asyncio.sleep(0)` / `runtime.Gosched()` between sample interval batches; subprocess sampler that observes process from outside (py-spy / pprof)
+  4. §Per-language overlays: short subsection naming the language-native symptom + concrete cite into language-pack skills (`python-asyncio-patterns`, Go soak skill section X)
+  5. §Validation: how to confirm sampler health post-soak — sample-count vs. expected per-second rate, gap detection
+- **suggested_path**: `.claude/skills/soak-sampler-cooperative-yield/SKILL.md`
+- **note**: explicitly cross-link from existing Go soak skill body and from `python-asyncio-patterns` SKILL.md once authored.

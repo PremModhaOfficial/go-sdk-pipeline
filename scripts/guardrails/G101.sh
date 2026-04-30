@@ -11,8 +11,18 @@ RUN_DIR="${1:?}"; TARGET="${2:-}"
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 SYMBOLS="$REPO_ROOT/scripts/ast-hash/symbols.sh"
-PACK="${PACK:-go}"
-BASELINE="$REPO_ROOT/baselines/go/stable-signatures.json"
+
+# Resolve target language from the run's active-packages.json (set by sdk-intake-agent
+# Wave I5.5; G05 enforces presence). Falls back to "go" only if the file is absent
+# (legacy run replays); fresh runs always have it.
+APJ="$RUN_DIR/context/active-packages.json"
+if [ -f "$APJ" ]; then
+  PACK="${PACK:-$(jq -r '.target_language // "go"' "$APJ")}"
+else
+  PACK="${PACK:-go}"
+fi
+
+BASELINE="$REPO_ROOT/baselines/$PACK/stable-signatures.json"
 TPRD="$RUN_DIR/tprd.md"
 
 python3 - "$TARGET" "$RUN_DIR" "$BASELINE" "$TPRD" "$SYMBOLS" "$PACK" <<'PY'

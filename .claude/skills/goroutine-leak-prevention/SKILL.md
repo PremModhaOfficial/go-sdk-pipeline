@@ -20,7 +20,7 @@ Every long-lived SDK client spawns goroutines (pool maintenance tickers, worker 
 - Designing any type that returns an `io.Closer` or exposes a `Close(ctx)` / `Stop()` method
 - Adding background workers, tickers, or pubsub listeners to a client
 - Writing integration tests for a client that exercises the shutdown path
-- Reviewing `sdk-leak-hunter` verdict, or responding to a G63 failure
+- Reviewing `sdk-leak-hunter-go` verdict, or responding to a G63 failure
 - A devil cites `errgroup` / `sync.WaitGroup` / `context.WithCancel` without a visible `.Wait` / cancel call
 
 ## GOOD examples
@@ -45,7 +45,7 @@ func TestMain(m *testing.M) {
 }
 ```
 
-One-line discipline: every new package ships with this. G63 enforces; `sdk-leak-hunter` fails closed if absent.
+One-line discipline: every new package ships with this. G63 enforces; `sdk-leak-hunter-go` fails closed if absent.
 
 ### 2. Idempotent `Close` that cancels + waits
 
@@ -171,10 +171,10 @@ Tradeoffs:
 ## Cross-references
 
 - `go-concurrency-patterns` — broader errgroup / context / sync primitives with the canonical idioms.
-- `client-shutdown-lifecycle` — the `Close` contract this skill enforces from the goroutine side.
-- `context-deadline-patterns` — how to propagate `ctx.Deadline` through spawned workers.
-- `backpressure-flow-control` — bounded concurrency patterns that pair with leak prevention.
-- `testing-patterns` — `TestMain` placement + `goleak` option hygiene.
+- `go-client-shutdown-lifecycle` — the `Close` contract this skill enforces from the goroutine side.
+- `go-context-deadline-patterns` — how to propagate `ctx.Deadline` through spawned workers.
+- `go-backpressure-flow-control` — bounded concurrency patterns that pair with leak prevention.
+- `go-testing-patterns` — `TestMain` placement + `goleak` option hygiene.
 - `idempotent-retry-safety` — retry loops are a common leak surface; classify their cancellation path.
 
 ## Guardrail hooks
@@ -185,4 +185,4 @@ Tradeoffs:
 - **G106** drift fail-fast — soak tests expose leaks that unit tests miss; a positive drift trend in goroutine count is a leak signature.
 - **CLAUDE.md rule 14** — "tests cover real behavior; `goleak.VerifyTestMain` clean" is non-negotiable.
 
-Owner devil: `sdk-leak-hunter` — runs `go test -race` + parses `goleak` output; blocks on any reachable goroutine.
+Owner devil: `sdk-leak-hunter-go` — runs `go test -race` + parses `goleak` output; blocks on any reachable goroutine.

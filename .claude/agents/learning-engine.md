@@ -120,9 +120,10 @@ Read knowledge base files (if they exist):
 
 | Type | Auto-Apply? | Safeguard |
 |------|------------|-----------|
-| Append learned pattern to agent prompt | Yes, if confidence=high | Append-only to `## Learned Patterns` section. Never delete existing content. |
-| Create new skill | Yes, if confidence=high AND appeared in 2+ runs | New file only — never modify existing skills |
-| Create new guardrail | Yes, if confidence=high | New file, must be executable shell script |
+| Append learned pattern to agent prompt | Yes, if confidence=high AND scope-validated | Append-only to `## Learned Patterns`. Patch content scope-validated per "Patch Scope Validation" section below. |
+| Patch existing skill body (minor semver bump) | Yes, if confidence=high AND scope-validated | Append-only to `## Learned Patterns` in the SKILL.md. Patch content scope-validated. |
+| **Create new SKILL.md file** | **NEVER** (per CLAUDE.md rule 23) | File proposal to `docs/PROPOSED-SKILLS.md` for human PR. |
+| **Create new guardrail script** | **NEVER** (same constraint) | File proposal to `docs/PROPOSED-GUARDRAILS.md`. |
 | Modify existing agent prompt (non-append) | NO — proposal only | Write to `.feedback/learning/evolution/prompt-patches/` |
 | Modify thresholds | NO — proposal only | Write proposal with data |
 | Remove anything | NEVER | Only human operators can remove content |
@@ -132,10 +133,26 @@ Read knowledge base files (if they exist):
 - NEVER create a skill that includes HTTP or gRPC inter-service communication patterns. Skills must use NATS JetStream (pub/sub, request-reply, KV store, object store) for all inter-service examples.
 - When reviewing any improvement artifact, scan for keywords: `http.Client` for inter-service calls, `grpc.Dial`, `grpc.NewServer` for inter-service use, REST endpoints between services. Flag and reject any that violate the NATS-only constraint.
 
+**Patch Scope Validation Gate (MUST enforce — added in v0.5.0 for multi-language safety):**
+
+Before applying ANY prompt patch or existing-skill body patch, validate that the patch CONTENT matches the SCOPE of the target. Cross-language contamination is the bug this gate prevents.
+
+1. Read `target` (agent or skill name) from the patch.
+2. Resolve which manifest owns the target by scanning `.claude/package-manifests/*.json:agents[]` and `:skills[]`. Exactly one pack should claim the target (validate-packages.sh enforces this).
+3. **If owning pack is `shared-core`**: the patch body MUST be language-neutral. Scan the patch text for these forbidden tokens:
+   - **Go-specific**: `motadatagosdk`, `goleak`, `goroutine`, `errgroup`, `sync.Pool`, `go.opentelemetry.io`, `go vet`, `go mod`, `gofmt`, `go-` (as a skill-name prefix)
+   - **Python-specific**: `motadatapysdk`, `asyncio`, `aiohttp`, `pytest`, `mypy`, `ruff`, `pyproject.toml`, `TaskGroup`, `aclose`, `__aenter__`, `python-` (as a skill-name prefix)
+   - If any forbidden token is present in the body of a `shared-core`-owned patch: reject the patch with `verdict: SCOPE-VIOLATION; would-contaminate: <go|python>`. Log `type: failure, failure_type: scope-violation` in decision-log.jsonl. Move the patch from `evolution/prompt-patches/` to `evolution/prompt-patches/rejected/` with a `.scope-violation.json` annotation explaining why.
+4. **If owning pack is a language pack** (`go` or `python`): the patch is allowed as-is. Logging-only validation: if a Go-pack patch contains Python tokens (or vice versa), log a WARN — likely a mis-classified candidate that improvement-planner should have caught.
+5. Log the scope decision to `decision-log.jsonl` as `{type: "event", event_type: "scope-decision", agent: "learning-engine", target: "<name>", owning_pack: "<X>", accepted: <bool>, scope_violations: [<token>...]}`.
+
+This gate composes with the Event-Driven Gate above; both must pass for the patch to apply.
+
 **Safety Limits (MUST enforce):**
-- Maximum 3 new skills auto-created per run
-- Maximum 2 new guardrails auto-created per run
-- Maximum 10 prompt patches applied per run
+- Maximum 0 new skill files created per run (per CLAUDE.md rule 23 — file proposals only)
+- Maximum 0 new guardrail scripts created per run (same)
+- Maximum 10 prompt patches applied per run (after Patch Scope Validation Gate)
+- Maximum 5 existing-skill body patches applied per run
 - Require pattern to appear in 2+ runs before auto-applying (EXCEPT CRITICAL severity — apply on first occurrence)
 - Baselines reset every 5 runs to prevent normalization of declining quality
 
@@ -148,18 +165,27 @@ Read knowledge base files (if they exist):
 6. APPEND the new pattern text (never modify existing patterns)
 7. Log the change to `.feedback/learning/knowledge-base/prompt-evolution-log.jsonl`
 
-**Creating new skills:**
-1. Read the skill candidate from `.feedback/learning/evolution/skill-candidates/<skill-name>.json`
-2. Verify confidence is "high" and pattern appeared in 2+ runs
-3. Create `.claude/skills/<skill-name>/SKILL.md` following the Skill Creation Guide format
-4. Log the creation to `.feedback/learning/knowledge-base/skill-effectiveness.jsonl`
+**Filing new-skill proposals (NEVER create SKILL.md files):**
 
-**Creating new guardrails:**
-1. Read the guardrail candidate from `.feedback/learning/evolution/guardrail-candidates/<guardrail-name>.json`
-2. Verify confidence is "high"
-3. Create the guardrail script in the appropriate `scripts/guardrails/<phase>/` directory
-4. Make it executable (`chmod +x`)
-5. Log the creation
+Per CLAUDE.md rule 23, learning-engine MUST NOT create new `.claude/skills/<name>/SKILL.md` files. Skill files are human-authored only. Instead:
+
+1. Read each candidate from `.feedback/learning/evolution/skill-candidates/<skill-name>.json`.
+2. Verify confidence is "high" and pattern appeared in 2+ runs.
+3. **Append** a one-line proposal to `docs/PROPOSED-SKILLS.md` with shape:
+   `- [ ] <skill-name> — scope: <shared-core|go|python> — confidence: <high|medium> — runs: <N> — first seen: <run-id> — rationale: <one-line>`
+4. Log the proposal to `.feedback/learning/knowledge-base/skill-effectiveness.jsonl` with `"action": "proposed"` (NOT `"created"`).
+5. Do not move or delete the candidate file — leave it for the human PR-author who promotes the proposal.
+
+**Filing new-guardrail proposals (NEVER create scripts/guardrails/G*.sh files):**
+
+Same constraint as skills. Guardrail scripts are human-authored only.
+
+1. Read each candidate from `.feedback/learning/evolution/guardrail-candidates/<guardrail-name>.json`.
+2. Verify confidence is "high".
+3. **Append** a one-line proposal to `docs/PROPOSED-GUARDRAILS.md` with shape:
+   `- [ ] G<NN>(-py)? — scope: <shared-core|go|python> — phases: <design|impl|testing> — severity: <BLOCKER|HIGH|MEDIUM> — confidence: <high|medium> — runs: <N> — first seen: <run-id> — rationale: <one-line>`
+4. Log the proposal with `"action": "proposed"`.
+5. Do not create the script. The human author writes the script in a PR; once merged, learning-engine sees it materialize on disk on the next run and stops re-proposing it.
 
 ### Step 5: Update Knowledge Base
 
@@ -382,25 +408,33 @@ Read these in addition to archive's input list:
 
 **Compensating-baseline checks** (run AFTER all patches applied, BEFORE the NOTIFY message):
 
+First resolve the run's language:
+```
+TARGET_LANGUAGE = jq -r '.target_language' runs/<run-id>/context/active-packages.json
+```
+All per-language baseline file paths below resolve through `${TARGET_LANGUAGE}`. Cross-language history is never consulted (per CLAUDE.md rule 28 / decisions D1=B + D4=native — perf and shape are intrinsically per-language).
+
 Read these four baseline files and write additional WARN lines to `learning-notifications.md`:
 
-a) **Output-shape churn** (`baselines/go/output-shape-history.jsonl`)
-   - For each skill patched this run, find the most-recent prior run whose `skills_invoked` list contained that skill.
+a) **Output-shape churn** (`baselines/${TARGET_LANGUAGE}/output-shape-history.jsonl`)
+   - For each skill patched this run, find the most-recent prior run (in the SAME language partition) whose `skills_invoked` list contained that skill.
    - If prior `shape_hash` ≠ current `shape_hash` AND `target_package` overlaps: prepend `⚠ shape-churn: <skill> patched; generated package shape changed from <prior-hash[:8]> → <curr-hash[:8]> (prior run <run-id>)` to the skill's notification line.
    - No prior run with this skill = no signal (silently skip).
 
-b) **Devil-verdict regression** (`baselines/go/devil-verdict-history.jsonl`)
-   - For each skill patched this run, compute rolling-5 average `devil_fix_rate` from prior entries for that skill.
+b) **Devil-verdict regression** (`baselines/${TARGET_LANGUAGE}/devil-verdict-history.jsonl`)
+   - For each skill patched this run, compute rolling-5 average `devil_fix_rate` from prior entries (same language partition) for that skill.
    - If current `devil_fix_rate` > prior_avg + 0.20 (20pp jump): prepend `⚠ devil-regression: <skill> devil_fix_rate rose <prior_avg> → <current> after patch` to the notification line.
    - Fewer than 2 prior entries = no signal (insufficient data).
 
 c) **Quality regression ≥5%** (from `.feedback/metrics/agent-telemetry.jsonl` vs `baselines/shared/quality-baselines.json`)
    - Already flagged in Step 2 as "regression". For each regressed agent: append a standalone line `⚠ quality-regression: <agent> score <prior> → <current> (Δ <delta>)` under a `## Regressions` subsection in `learning-notifications.md`.
    - G86.sh enforces this as BLOCKER at phase exit when ≥3 prior runs exist; the notification line exists for user visibility whether or not G86 triggers.
+   - **Note**: quality-baselines.json is the only `baselines/shared/` file consulted here (per Decision D2=Lenient). Per-agent quality entries are eligible to flip to per-language partitioning under Progressive fallback if a debt-bearer's score systematically diverges by ≥3pp between languages — recorded in `quality-baselines.json:scope_note`.
 
-d) **Example-count drop** (`baselines/go/coverage-baselines.json` per-package `example_count`)
-   - If current run's `example_count` < baseline AND `runs_tracked ≥ 2`: append `⚠ example-drop: <pkg> Example_* count <baseline> → <current>` under a `## Regressions` subsection.
+d) **Example-count drop** (`baselines/${TARGET_LANGUAGE}/coverage-baselines.json` per-package `example_count`)
+   - If current run's `example_count` < baseline AND `runs_tracked ≥ 2`: append `⚠ example-drop: <pkg> example count <baseline> → <current>` under a `## Regressions` subsection.
    - Raise-only; if current > baseline, baseline-manager raises it in F8 (not learning-engine's job).
+   - The metric NAME is `example_count` across languages, but its MATERIALIZATION differs per pack (Go: `Example_*` testable functions; Python: `Examples:` blocks / `>>>` doctests). The per-language baseline already reflects the right materialization.
 
 If ANY of (a)–(d) fires, the NOTIFY Teammate message MUST include a `REGRESSION_SIGNALS` line listing the signals, so the lead agent knows H10 requires deeper review:
 `NOTIFY: learning-engine applied <N> patches; REGRESSION_SIGNALS: [shape-churn:<n>, devil-regression:<n>, quality-regression:<n>, example-drop:<n>]; see runs/<run-id>/feedback/learning-notifications.md before H10`

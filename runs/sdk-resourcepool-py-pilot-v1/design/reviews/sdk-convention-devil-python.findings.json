@@ -1,0 +1,29 @@
+{
+  "reviewer": "sdk-convention-devil-python",
+  "phase": "design",
+  "run_id": "sdk-resourcepool-py-pilot-v1",
+  "iteration": 1,
+  "timestamp": "2026-04-29T13:39:00Z",
+  "verdict": "ACCEPT",
+  "findings": [
+    {
+      "id": "CV-001",
+      "severity": "low",
+      "category": "suggestion",
+      "title": "Prefer collections.abc.Callable over typing.Callable for runtime imports",
+      "description": "PEP 585 deprecates typing.Callable for runtime use. Both work; use collections.abc at impl.",
+      "file": "design/api.py.stub",
+      "line": 22,
+      "fix_agent": "sdk-impl-lead",
+      "fix_action": "At impl, import Callable from collections.abc; keep typing imports only for type-hint-only symbols.",
+      "story_id": null
+    }
+  ],
+  "summary": {
+    "total": 1,
+    "blocker": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 1
+  }
+}

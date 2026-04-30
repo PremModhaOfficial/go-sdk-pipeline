@@ -17,7 +17,7 @@ Launches the NFR-driven SDK-addition pipeline against `$SDK_TARGET_DIR` (Go SDK 
 | `--phases <list>` | `intake,design,impl,testing,feedback` | Comma-separated subset to run |
 | `--resume <run-id>` | — | Resume a halted run from its last checkpoint in `runs/<run-id>/state/run-manifest.json` |
 | `--dry-run` | false | Don't write to target; produce `preview.md` |
-| `--accept-perf-regression <n>` | — | Override `sdk-benchmark-devil` for n% regression |
+| `--accept-perf-regression <n>` | — | Override `sdk-benchmark-devil-go` for n% regression |
 | `--auto-approve-tprd` | false | Skip H1 gate on TPRD acceptance (CI only; manifest checks still enforced) |
 | `--skip-design-gate` | false | Skip H5 (risky; logged) |
 | `--skip-impl-gate` | false | Skip H7 (CI only) |
@@ -72,7 +72,7 @@ Launches the NFR-driven SDK-addition pipeline against `$SDK_TARGET_DIR` (Go SDK 
 
 ## Delegates to
 
-`sdk-intake-agent` → (if B/C) `sdk-existing-api-analyzer` + `sdk-marker-scanner` → `sdk-design-lead` → `sdk-impl-lead` → `sdk-testing-lead` → `learning-engine`
+`sdk-intake-agent` → (if B/C) `sdk-existing-api-analyzer-go` + `sdk-marker-scanner` → `sdk-design-lead` → `sdk-impl-lead` → `sdk-testing-lead` → `learning-engine`
 
 Each lead orchestrates its phase per the phase doc in `phases/<PHASE>-PHASE.md`.
 

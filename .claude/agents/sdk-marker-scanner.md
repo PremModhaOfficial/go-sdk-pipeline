@@ -46,7 +46,7 @@ OWNER        = "pipeline" | "human" | "co"
 
 ## Responsibilities
 
-1. **Scan target files** — every .go file in TPRD §2 paths
+1. **Scan target files** — every source file in TPRD §2 paths whose extension is in `runs/<run-id>/context/active-packages.json:packages[].file_extensions` (today: `.go` for Go runs, `.py` for Python runs). The marker-comment syntax (line and block delimiters) is read from the same active-packages.json `marker_comment_syntax` field — the scanner adapts per language without hardcoding `//`.
 2. **Parse markers** — apply regex; extract per-symbol owner, constraints, bench references, deprecation deadlines
 3. **Build ownership-map** — `runs/<run-id>/ownership-map.json` with per-symbol entries:
    ```json
@@ -86,7 +86,7 @@ OWNER        = "pipeline" | "human" | "co"
 1. `ownership-map.json` written + valid JSON
 2. No out-of-band issues unresolved (if any, ESCALATION raised)
 3. Log `lifecycle: completed`
-4. Notify `sdk-existing-api-analyzer` and `sdk-design-lead`
+4. Notify `sdk-existing-api-analyzer-go` and `sdk-design-lead`
 
 ## On Failure Protocol
 

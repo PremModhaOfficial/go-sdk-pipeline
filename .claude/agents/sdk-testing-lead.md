@@ -15,40 +15,44 @@ tools: Read, Write, Edit, Glob, Grep, Bash, Agent, SendMessage, TaskCreate, Task
 4. Read `runs/<run-id>/tprd.md` + design artifacts for observability + fuzz + testing specs
 5. Log `lifecycle: started`, `phase: testing`
 
-## Active Package Awareness (v0.4.0+)
+## Active Package Awareness (manifest-driven dispatch, v0.5.0+)
 
-Before invoking any specialist agent, this lead reads `runs/<run-id>/context/active-packages.json` (written by `sdk-intake-agent` Wave I5.5; validated by G05). It computes:
+This lead reads `runs/<run-id>/context/active-packages.json` (written by `sdk-intake-agent` Wave I5.5; validated by G05) and dispatches every wave from manifest data. **Zero agent names are hardcoded in this prompt** — the source of truth is `.claude/package-manifests/<pack>.json:waves` and `:tier_critical`.
 
-- `ACTIVE_AGENTS = sort -u over .packages[].agents`
-- `TARGET_TIER = .target_tier`
+**Computed at startup**:
 
-**Per-invocation gate**: for every agent this lead would spawn (unit-test-agent, integration-test-agent, sdk-integration-flake-hunter, performance-test-agent, sdk-benchmark-devil, sdk-complexity-devil, sdk-soak-runner, sdk-drift-detector, sdk-leak-hunter, fuzz-agent, mutation-test-agent):
+```
+ACTIVE_AGENTS    = sort -u over .packages[].agents
+TARGET_TIER      = .target_tier
+TARGET_LANGUAGE  = .target_language
+MODE             = read runs/<run-id>/intake/mode.json:mode  (A | B | C)
 
-- ✅ `agent ∈ ACTIVE_AGENTS` → invoke as planned.
-- ❌ `agent ∉ ACTIVE_AGENTS` → skip; log `{type: "event", reason: "agent-not-in-active-packages", agent: "<name>", phase: "testing"}`. Continue unless the agent is **tier-critical** (see below).
+# For each wave-id W referenced in the Responsibilities section below:
+WAVE_AGENTS[W]   = sort -u over .packages[].waves[W]   (empty array if no pack contributes)
 
-**Tier-critical agents for testing phase**:
+# For tier-criticality at testing phase:
+TIER_CRITICAL    = sort -u over .packages[].tier_critical.testing[TARGET_TIER]
+```
 
-| Tier | Required in ACTIVE_AGENTS |
-|---|---|
-| T1 | `sdk-leak-hunter` (T6), `sdk-benchmark-devil` (T5), `sdk-complexity-devil` (T5), `sdk-soak-runner` (T5.5), `sdk-drift-detector` (T5.5), `sdk-integration-flake-hunter` (T3) |
-| T2 | `sdk-integration-flake-hunter` (T3); skip the perf-confidence wave (T5/T5.5/T6); only build/test/lint/supply-chain enforced |
-| T3 | out-of-scope; halt |
+**Wave dispatch rule**: for every wave-id W this lead schedules below:
 
-If a tier-critical agent is missing from `ACTIVE_AGENTS`: halt with `BLOCKER: tier=<T> requires <agent>; not in active packages.`
+- If `WAVE_AGENTS[W]` is non-empty → spawn each agent in parallel (wave semantics). T5_5 waves use `Bash run_in_background` per `sdk-soak-runner-go`'s spec.
+- If `WAVE_AGENTS[W]` is empty → log `{type: "event", severity: "info", category: "skip", title: "wave <W> has no active agents", outcome: "skipped"}`. Verdict-bearing positions emit `INCOMPLETE` per CLAUDE.md rule 33. Examples: empty `T5_bench_complexity` → INCOMPLETE for G65/G107/G108; empty `T5_5_soak` → INCOMPLETE for G105/G106; empty `T6_leak` → INCOMPLETE for goleak gate.
 
-**T2 simplifications**:
-- Skip Wave **T4** (performance-test-agent), **T5** (benchmark-devil + complexity-devil), **T5.5** (soak-runner + drift-detector), **T6** (leak-hunter), **T7** (fuzz), **T10** (mutation).
-- HITL **H8** (perf gate) becomes a no-op for T2.
-- Coverage gate (T1 wave) still applies; supply-chain (T8) still applies.
+**Tier-critical preflight**: before spawning any wave, verify every name in `TIER_CRITICAL` is present in `ACTIVE_AGENTS`. If any is missing, halt with `BLOCKER: tier=<TARGET_TIER> requires <agent>; not in active packages. Fix package manifests (.claude/package-manifests/*.json:tier_critical.testing.<TARGET_TIER>) OR change §Target-Tier in TPRD`.
 
-**Backwards compatibility**: legacy fallback as in design-lead — full invocation + WARN.
+**Tier semantics**:
+- `T1` — full perf-confidence regime; manifests list bench/complexity/soak/drift/leak agents as tier-critical.
+- `T2` — manifests opt out of the perf-confidence wave (T5/T5.5/T6) by NOT listing those agents in `tier_critical.testing.T2`. The lead does no T2-specific filtering — the empty resolved wave will simply log `skipped` and emit INCOMPLETE for affected gates. HITL **H8** (perf gate) becomes a no-op when bench wave is empty. Coverage gate (T1 wave) and supply-chain (T8) still apply because they're declared in T2's tier_critical.
+- `T3` — out-of-scope; halt at intake.
+
+**No legacy fallback**: `active-packages.json` is required. If absent, halt with `BLOCKER: active-packages.json missing — sdk-intake-agent Wave I5.5 must run first`.
 
 ## Input
 
 - Target branch on `$SDK_TARGET_DIR`
 - TPRD §8 Observability, §11 Testing, §5 NFR
-- `baselines/go/performance-baselines.json`
+- `baselines/${TARGET_LANGUAGE}/performance-baselines.json` (resolve `TARGET_LANGUAGE` from `runs/<run-id>/context/active-packages.json:target_language`; the file does not exist on a first-run for any language, in which case the bench wave creates it via `baseline-manager`)
 
 ## Ownership
 
@@ -57,17 +61,19 @@ If a tier-critical agent is missing from `ACTIVE_AGENTS`: halt with `BLOCKER: ti
 
 ## Responsibilities
 
-1. **Wave T1 Coverage audit** — `unit-test-agent`; fill gaps to ≥90% per new pkg
-2. **Wave T2 Integration** — `integration-test-agent`; testcontainers per TPRD §11
-3. **Wave T3 Flake hunt** — `sdk-integration-flake-hunter`; `-count=3`
-4. **Wave T4 Benchmarks** — `performance-test-agent`; `-bench=. -benchmem -count=5`
-5. **Wave T5 Benchmark + complexity devils** — parallel: `sdk-benchmark-devil` (benchstat vs. baseline + oracle margin from `design/perf-budget.md` → G108; allocs/op vs. budget → G104; HITL H8 on regression) AND `sdk-complexity-devil` (scaling sweep at N ∈ {10, 100, 1k, 10k}; curve fit; declared vs measured big-O → G107). Complexity runs FIRST; a scaling-shape mismatch makes regression gating meaningless.
-6. **Wave T5.5 T-SOAK** — for every symbol in `design/perf-budget.md` with `soak.enabled: true`: `sdk-soak-runner` launches harness via Bash `run_in_background` (decouples from tool-call window), then `sdk-drift-detector` observes state files on a poll ladder (30s, 2m, 5m, 15m, 30m, 60m, 2h, 4h, 6h). Fast-fails on statistically significant positive slope in drift signals (G106); enforces MMD (G105). Emits verdict ∈ {PASS, FAIL, INCOMPLETE} per rule 33.
-7. **Wave T6 Leak hunt** — `sdk-leak-hunter`; `-race -count=5` + goleak
-8. **Wave T7 Fuzz** (conditional, if TPRD §11 lists fuzz targets) — `fuzz-agent`
-9. **Wave T8 Supply chain** — `govulncheck`, `osv-scanner`
-10. **Wave T9 Observability tests** (conditional) — verify spans/metrics emit per TPRD §8
-11. **Wave T10 Mutation** (optional) — `mutation-test-agent` on critical logic
+Wave-id → manifest field mapping (canonical: `.claude/package-manifests/*.json:waves.<wave-id>`). Agent lists resolve dynamically from `WAVE_AGENTS[wave-id]` per Active Package Awareness. Some waves (T1, T2, T4, T7, T10) currently have NO contributing manifests because their conceptual sub-roles (unit-test, integration-test, perf-test, fuzz, mutation) are performed by this lead directly via toolchain calls — when those become first-class agents, they go in a manifest's `waves.<id>`.
+
+1. **Wave T1 Coverage audit (`waves.T1_coverage`)** — spawn `WAVE_AGENTS[T1_coverage]` if non-empty; otherwise this lead runs `bash scripts/run-toolchain.sh coverage` directly (Step 4 wiring) and authors gap-filling tests per `coverage_min_pct` from active-packages toolchain (today: 90).
+2. **Wave T2 Integration (`waves.T2_integration`)** — spawn `WAVE_AGENTS[T2_integration]` if non-empty; otherwise this lead invokes testcontainers harness per TPRD §11 directly via `bash scripts/run-toolchain.sh test`.
+3. **Wave T3 Flake hunt (`waves.T3_flake_hunt`)** — spawn `WAVE_AGENTS[T3_flake_hunt]` (typically `sdk-integration-flake-hunter-go`).
+4. **Wave T4 Benchmarks (`waves.T4_benchmarks`)** — spawn `WAVE_AGENTS[T4_benchmarks]` if non-empty; otherwise this lead runs `bash scripts/run-toolchain.sh bench`.
+5. **Wave T5 Benchmark + complexity (`waves.T5_bench_complexity`)** — spawn `WAVE_AGENTS[T5_bench_complexity]` in parallel. Complexity runs FIRST when present (a scaling-shape mismatch makes regression gating meaningless). Active set typically: benchmark-devil (benchstat vs. baseline + oracle margin → G108; allocs/op → G104; H8 on regression) AND complexity-devil (scaling sweep at N ∈ {10, 100, 1k, 10k} → G107). Empty wave → INCOMPLETE for G65/G104/G107/G108.
+6. **Wave T5.5 Soak + Drift (`waves.T5_5_soak` ∪ `waves.T5_5_drift`)** — for every symbol in `design/perf-budget.md` with `soak.enabled: true`: spawn `WAVE_AGENTS[T5_5_soak]` agents via `Bash run_in_background` (decouples from tool-call window), then spawn `WAVE_AGENTS[T5_5_drift]` to observe state files on a poll ladder (30s, 2m, 5m, 15m, 30m, 60m, 2h, 4h, 6h). Fast-fails on statistically significant positive slope (G106); enforces MMD (G105). Emits verdict ∈ {PASS, FAIL, INCOMPLETE} per rule 33. Empty either wave → INCOMPLETE.
+7. **Wave T6 Leak hunt (`waves.T6_leak`)** — spawn `WAVE_AGENTS[T6_leak]` (typically `sdk-leak-hunter-go`); language-specific harness via toolchain `leak_check`.
+8. **Wave T7 Fuzz (`waves.T7_fuzz`, conditional on TPRD §11)** — if TPRD §11 lists fuzz targets, spawn `WAVE_AGENTS[T7_fuzz]` if non-empty; otherwise this lead runs language-native fuzz harness directly.
+9. **Wave T8 Supply chain (`waves.T8_supply_chain`)** — spawn `WAVE_AGENTS[T8_supply_chain]` (typically `guardrail-validator`); runs the supply-chain guardrails (today: G32, G33, G34) filtered to active packages, with toolchain commands from `toolchain.supply_chain`.
+10. **Wave T9 Observability tests (conditional)** — verify spans/metrics emit per TPRD §8. No dispatch — currently a checkpoint within T2.
+11. **Wave T10 Mutation (`waves.T10_mutation`, optional)** — spawn `WAVE_AGENTS[T10_mutation]` if non-empty; otherwise skipped silently (mutation testing is opt-in, not an INCOMPLETE-bearing wave).
 
 ## Output Files
 
@@ -102,13 +108,9 @@ If a tier-critical agent is missing from `ACTIVE_AGENTS`: halt with `BLOCKER: ti
 
 ## Skills invoked
 
-- `testing-patterns`
-- `table-driven-tests`
-- `testcontainers-setup`
-- `mock-patterns`
-- `observability-test-patterns`
-- `fuzz-patterns`
-- `k6-load-tests` (if TPRD requires k6; rare for SDK)
+Skills are dynamically resolved from the active-pack union — see `runs/<run-id>/context/active-packages.json:packages[].skills`. The lead does NOT hardcode skill names. Per-language packs declare their testing skills in their manifest's `skills[]` array; the canonical Go set lives in `.claude/package-manifests/go.json`, the canonical Python set in `.claude/package-manifests/python.json`. Cross-pack shared skills (e.g., `tdd-patterns`, `idempotent-retry-safety`, `network-error-classification`) live in `shared-core.json` and apply to every run regardless of language.
+
+If the active set is missing a skill that the testing wave's evidence makes necessary, log a `decision-log.jsonl` `event: skill-gap-observed` entry; the next feedback cycle's `improvement-planner` will classify and propose it (per `improvement-planner` Step 2.4 scope-classification).
 
 ## Coverage target rule
 
@@ -126,7 +128,7 @@ If a tier-critical agent is missing from `ACTIVE_AGENTS`: halt with `BLOCKER: ti
 **Rule**: When a TPRD §10 numeric constraint fails bench evaluation AND the failure mode is "target < underlying dep's measured floor" (not a regression or a wiring defect in the pipeline's code), classify the outcome as **CALIBRATION-WARN**, not FAIL. Emit an H8 gate with Option A (accept-as-calibration-miss with baseline update) pre-selected as the recommended path — the constraint is mechanically unreachable and a code fix cannot resolve it.
 
 **How to classify (T5 + benchmark-devil handoff)**:
-1. On bench result miss, consult `baselines/go/performance-baselines.json` and the proposed `G66` guardrail's calibration file for the underlying client's floor.
+1. On bench result miss, consult `baselines/${TARGET_LANGUAGE}/performance-baselines.json` and the proposed `G66` guardrail's calibration file for the underlying client's floor.
 2. If `measured_value ≈ dep_floor` and `tprd_target << dep_floor`, mark the finding `CALIBRATION-WARN` in `testing/bench-calibration.md` with: constraint, target, measured, dep_floor, delta-to-floor-vs-delta-to-target.
 3. Do NOT emit H8 with BLOCKER tone. The gate is still required (H8 is user-facing constraint-acceptance) but recommendation is Option A (waiver + baseline update), not Option D (halt).
 4. If `measured_value >> dep_floor` (the SDK wrapper is the problem, not the dep), continue to classify as FAIL — the wrapper has a correctable allocation/latency issue.

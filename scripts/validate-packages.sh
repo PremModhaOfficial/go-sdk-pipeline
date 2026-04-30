@@ -44,6 +44,9 @@ declare -A AGENT_OWNER SKILL_OWNER GUARDRAIL_OWNER
 DUPES=""
 DANGLING=""
 
+declare -A ASPIRATIONAL_OWNER
+SHAPE_FAIL=""
+
 for m in "${MANIFESTS[@]}"; do
   pkg=$(basename "$m" .json)
 
@@ -51,6 +54,30 @@ for m in "${MANIFESTS[@]}"; do
   if ! jq -e '.name, .version, .agents, .skills, .guardrails' "$m" >/dev/null 2>&1; then
     echo "FAIL: $m missing required fields (name/version/agents/skills/guardrails)"
     exit 1
+  fi
+
+  # NEW: validate waves shape (object whose values are arrays of strings).
+  if jq -e '.waves' "$m" >/dev/null 2>&1; then
+    if ! jq -e '.waves | type == "object" and (to_entries | all(.value | type == "array" and all(. | type == "string")))' "$m" >/dev/null 2>&1; then
+      SHAPE_FAIL+="  manifest=$pkg .waves shape invalid (must be object with string-array values)"$'\n'
+    fi
+  fi
+
+  # NEW: validate tier_critical shape (3 phase keys, each with T1/T2 string-arrays).
+  if jq -e '.tier_critical' "$m" >/dev/null 2>&1; then
+    if ! jq -e '.tier_critical | type == "object" and (to_entries | all(.value | type == "object" and (to_entries | all(.value | type == "array" and all(. | type == "string")))))' "$m" >/dev/null 2>&1; then
+      SHAPE_FAIL+="  manifest=$pkg .tier_critical shape invalid (must be {phase: {tier: [strings]}})"$'\n'
+    fi
+  fi
+
+  # NEW: language-adapter packs MUST carry toolchain.{build,test} + file_extensions + marker_comment_syntax.
+  PKG_TYPE=$(jq -r '.type // empty' "$m")
+  if [ "$PKG_TYPE" = "language-adapter" ]; then
+    for required in '.toolchain.build' '.toolchain.test' '.file_extensions' '.marker_comment_syntax.line'; do
+      if ! jq -e "$required" "$m" >/dev/null 2>&1; then
+        SHAPE_FAIL+="  manifest=$pkg language-adapter missing required field: $required"$'\n'
+      fi
+    done
   fi
 
   while IFS= read -r a; do
@@ -88,6 +115,24 @@ for m in "${MANIFESTS[@]}"; do
       GUARDRAIL_OWNER[$g]=$pkg
     fi
   done < <(jq -r '.guardrails[]' "$m")
+
+  # NEW: aspirational_guardrails — forward-declared; tracked but not required on disk.
+  while IFS= read -r g; do
+    [ -z "$g" ] && continue
+    if [ -n "${ASPIRATIONAL_OWNER[$g]+x}" ]; then
+      DUPES+="  aspirational guardrail=$g in both $pkg and ${ASPIRATIONAL_OWNER[$g]}"$'\n'
+    else
+      ASPIRATIONAL_OWNER[$g]=$pkg
+    fi
+    # If the script DOES exist on disk, it should be in `guardrails`, not `aspirational_guardrails`.
+    if [ -f "$PIPELINE_ROOT/scripts/guardrails/$g.sh" ]; then
+      SHAPE_FAIL+="  manifest=$pkg aspirational_guardrail=$g has script on disk — promote to .guardrails"$'\n'
+    fi
+    # An aspirational guardrail must NOT also appear in the regular guardrails array.
+    if [ -n "${GUARDRAIL_OWNER[$g]+x}" ]; then
+      DUPES+="  guardrail=$g declared as both regular and aspirational in $pkg"$'\n'
+    fi
+  done < <(jq -r '.aspirational_guardrails // {} | keys[]?' "$m")
 done
 
 # Orphan check: is every filesystem artifact referenced by some manifest?
@@ -111,7 +156,7 @@ done
 for f in "$PIPELINE_ROOT"/scripts/guardrails/G*.sh; do
   [ -f "$f" ] || continue
   name=$(basename "$f" .sh)
-  if [ -z "${GUARDRAIL_OWNER[$name]+x}" ]; then
+  if [ -z "${GUARDRAIL_OWNER[$name]+x}" ] && [ -z "${ASPIRATIONAL_OWNER[$name]+x}" ]; then
     ORPHANS+="  guardrail=$name (on fs, in no manifest)"$'\n'
   fi
 done
@@ -137,6 +182,12 @@ if [ -n "$ORPHANS" ]; then
   FAIL=1
 fi
 
+if [ -n "$SHAPE_FAIL" ]; then
+  echo "FAIL: manifest shape errors:"
+  printf '%s' "$SHAPE_FAIL"
+  FAIL=1
+fi
+
 if [ "$FAIL" -ne 0 ]; then
   echo ""
   echo "Fix: update .claude/package-manifests/*.json so every on-disk artifact is in exactly one manifest."
@@ -151,10 +202,12 @@ FS_AGENTS=$(ls "$PIPELINE_ROOT"/.claude/agents/*.md 2>/dev/null | wc -l)
 FS_SKILLS=$(ls -d "$PIPELINE_ROOT"/.claude/skills/*/ 2>/dev/null | wc -l)
 FS_GUARDRAILS=$(ls "$PIPELINE_ROOT"/scripts/guardrails/G*.sh 2>/dev/null | wc -l)
 
+ASP_COUNT=${#ASPIRATIONAL_OWNER[@]}
+
 echo "PASS: manifests consistent with filesystem"
 echo "  agents:     $AGENT_COUNT manifested / $FS_AGENTS on fs"
 echo "  skills:     $SKILL_COUNT manifested / $FS_SKILLS on fs"
-echo "  guardrails: $GR_COUNT manifested / $FS_GUARDRAILS on fs"
+echo "  guardrails: $GR_COUNT manifested / $FS_GUARDRAILS on fs ($ASP_COUNT aspirational/forward-declared)"
 echo ""
 echo "Package breakdown:"
 for m in "${MANIFESTS[@]}"; do
@@ -162,6 +215,7 @@ for m in "${MANIFESTS[@]}"; do
   a=$(jq -r '.agents | length' "$m")
   s=$(jq -r '.skills | length' "$m")
   g=$(jq -r '.guardrails | length' "$m")
-  printf "  %-16s  %2d agents   %2d skills   %2d guardrails\n" "$pkg" "$a" "$s" "$g"
+  asp=$(jq -r '.aspirational_guardrails // {} | length' "$m")
+  printf "  %-16s  %2d agents   %2d skills   %2d guardrails  (+%d aspirational)\n" "$pkg" "$a" "$s" "$g" "$asp"
 done
 exit 0

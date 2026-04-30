@@ -5,6 +5,8 @@ status: candidate
 priority: MUST
 tags: [redis, dragonfly, lua, scripting, eval, evalsha]
 target_consumers: [sdk-impl-lead, sdk-design-lead]
+scope: go
+scope_rationale: Lua/EVAL/EVALSHA wiring is itself language-neutral, but body cites motadatagosdk client + go-redis-style EVALSHA fallback. Promote to shared-core after a Python sibling proves the rule body is language-neutral.
 provenance: synthesized-from-tprd(sdk-dragonfly-s2, §5.6, §7)
 ---
 

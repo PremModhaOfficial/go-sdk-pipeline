@@ -5,6 +5,8 @@ status: candidate
 priority: SHOULD
 tags: [errors, redis, dragonfly, sentinels, fuzz]
 target_consumers: [sdk-impl-lead, sdk-design-lead]
+scope: go
+scope_rationale: `specializes:` lists `go-error-handling-patterns`; body shows `var ErrX = errors.New(...)` sentinel idiom + `errors.Is` comparison. Python sibling would specialize a `python-exception-patterns` shared analogue and ship as `scope: python`. Tagged go indefinitely; cross-language unification deferred per D6.
 provenance: synthesized-from-tprd(sdk-dragonfly-s2, §7)
 specializes: network-error-classification, go-error-handling-patterns
 ---

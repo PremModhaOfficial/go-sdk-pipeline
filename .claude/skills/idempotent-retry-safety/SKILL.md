@@ -165,15 +165,15 @@ If TPRD requests divergence (in-client retry baked into the data path): declare 
 
 ## Cross-references
 
-- `circuit-breaker-policy` — breaker + retry are dual: breaker caps total attempts system-wide; retry caps attempts per call. The same error taxonomy (`IsRetryable` / `isCBFailure`) feeds both.
+- `go-circuit-breaker-policy` — breaker + retry are dual: breaker caps total attempts system-wide; retry caps attempts per call. The same error taxonomy (`IsRetryable` / `isCBFailure`) feeds both.
 - `network-error-classification` — sentinel taxonomy (transient vs. permanent) every predicate reads.
-- `context-deadline-patterns` — `executeWithRetry` MUST respect the caller's deadline; no retry may outlast `ctx.Deadline()`.
+- `go-context-deadline-patterns` — `executeWithRetry` MUST respect the caller's deadline; no retry may outlast `ctx.Deadline()`.
 - `go-error-handling-patterns` — `errors.Is` / `errors.As` usage, wrapping rules.
-- `otel-instrumentation` — emit a `retries_total` counter labelled by reason; the per-retry span links back to the parent.
+- `go-otel-instrumentation` — emit a `retries_total` counter labelled by reason; the per-retry span links back to the parent.
 
 ## Guardrail hooks
 
 - **G63** (goleak) — catches blocking-sleep retry loops that don't honor `ctx.Done()` (BAD 4).
 - **G65** (bench regression) — retry fast-path (first attempt success) MUST not regress; regressions here usually mean a lock was added in the wrong scope.
 - **G104** (alloc budget) — `IsRetryable` is called on every error; MUST be alloc-free (sentinel comparison only). Test this with `BenchmarkIsRetryable`.
-- **G60 / integration flake-hunter** — if `sdk-integration-flake-hunter` catches a duplicate delivery under `-count=3`, the retry lacks an idempotency envelope (BAD 1).
+- **G60 / integration flake-hunter** — if `sdk-integration-flake-hunter-go` catches a duplicate delivery under `-count=3`, the retry lacks an idempotency envelope (BAD 1).

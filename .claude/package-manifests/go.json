@@ -8,50 +8,50 @@
   "pipeline_version_compat": ">=0.4.0",
 
   "agents": [
-    "code-reviewer",
-    "documentation-agent",
-    "refactoring-agent",
-    "sdk-api-ergonomics-devil",
-    "sdk-benchmark-devil",
-    "sdk-breaking-change-devil",
-    "sdk-complexity-devil",
-    "sdk-constraint-devil",
-    "sdk-convention-devil",
-    "sdk-dep-vet-devil",
-    "sdk-existing-api-analyzer",
-    "sdk-integration-flake-hunter",
-    "sdk-leak-hunter",
-    "sdk-perf-architect",
-    "sdk-profile-auditor",
-    "sdk-soak-runner"
+    "code-reviewer-go",
+    "documentation-agent-go",
+    "refactoring-agent-go",
+    "sdk-api-ergonomics-devil-go",
+    "sdk-benchmark-devil-go",
+    "sdk-breaking-change-devil-go",
+    "sdk-complexity-devil-go",
+    "sdk-constraint-devil-go",
+    "sdk-convention-devil-go",
+    "sdk-dep-vet-devil-go",
+    "sdk-existing-api-analyzer-go",
+    "sdk-integration-flake-hunter-go",
+    "sdk-leak-hunter-go",
+    "sdk-perf-architect-go",
+    "sdk-profile-auditor-go",
+    "sdk-soak-runner-go"
   ],
 
   "skills": [
-    "backpressure-flow-control",
-    "circuit-breaker-policy",
-    "client-mock-strategy",
-    "client-rate-limiting",
-    "client-shutdown-lifecycle",
-    "client-tls-configuration",
-    "connection-pool-tuning",
-    "context-deadline-patterns",
-    "credential-provider-pattern",
-    "fuzz-patterns",
+    "go-backpressure-flow-control",
+    "go-circuit-breaker-policy",
+    "go-client-mock-strategy",
+    "go-client-rate-limiting",
+    "go-client-shutdown-lifecycle",
+    "go-client-tls-configuration",
     "go-concurrency-patterns",
+    "go-connection-pool-tuning",
+    "go-context-deadline-patterns",
+    "go-credential-provider-pattern",
     "go-dependency-vetting",
     "go-error-handling-patterns",
     "go-example-function-patterns",
+    "go-fuzz-patterns",
     "go-hexagonal-architecture",
+    "go-mock-patterns",
     "go-module-paths",
+    "go-otel-instrumentation",
+    "go-sdk-config-struct-pattern",
+    "go-sdk-otel-hook-integration",
     "go-struct-interface-design",
-    "goroutine-leak-prevention",
-    "mock-patterns",
-    "otel-instrumentation",
-    "sdk-config-struct-pattern",
-    "sdk-otel-hook-integration",
-    "table-driven-tests",
-    "testcontainers-setup",
-    "testing-patterns"
+    "go-table-driven-tests",
+    "go-testcontainers-setup",
+    "go-testing-patterns",
+    "goroutine-leak-prevention"
   ],
 
   "guardrails": [
@@ -78,15 +78,49 @@
     "G100",
     "G101",
     "G102",
-    "G103",
-    "G104",
-    "G105",
-    "G106",
-    "G107",
-    "G108",
-    "G109",
-    "G110"
+    "G103"
   ],
+
+  "aspirational_guardrails": {
+    "G104": "Alloc-budget gate (CLAUDE.md rule 32, perf-confidence axis 3). Owner: sdk-profile-auditor-go. Phase: Impl M3.5. Script not yet authored.",
+    "G105": "Soak-MMD verdict gate (rule 33). Owner: sdk-drift-detector. Phase: Testing T-SOAK. Script not yet authored.",
+    "G106": "Soak-drift detection (rule 32 axis 6). Owner: sdk-drift-detector. Phase: Testing T-SOAK. Script not yet authored.",
+    "G107": "Complexity-mismatch gate (rule 32 axis 4). Owner: sdk-complexity-devil-go. Phase: Testing T5. Script not yet authored.",
+    "G108": "Oracle-margin sanity (rule 32 axis 5). Owner: sdk-benchmark-devil-go. Phase: Testing T5. Script not yet authored.",
+    "G109": "Profile-no-surprise hot-path coverage (rule 32 axis 2). Owner: sdk-profile-auditor-go. Phase: Impl M3.5. Script not yet authored.",
+    "G110": "Perf-exception marker pairing (rule 32 axis 7, rule 29). Owner: sdk-marker-hygiene-devil. Phases: Impl M7 + M9. Script not yet authored."
+  },
+
+  "waves": {
+    "I3_existing_api":        ["sdk-existing-api-analyzer-go"],
+    "D1_design":              ["sdk-perf-architect-go"],
+    "D3_devils":              ["sdk-dep-vet-devil-go", "sdk-convention-devil-go"],
+    "D3_devils_mode_bc":      ["sdk-breaking-change-devil-go", "sdk-constraint-devil-go"],
+    "M3_5_profile_audit":     ["sdk-profile-auditor-go"],
+    "M4_constraint_proof":    ["sdk-constraint-devil-go"],
+    "M5_refactor":            ["refactoring-agent-go"],
+    "M6_docs":                ["documentation-agent-go"],
+    "M7_devils":              ["sdk-api-ergonomics-devil-go", "sdk-leak-hunter-go", "code-reviewer-go"],
+    "T3_flake_hunt":          ["sdk-integration-flake-hunter-go"],
+    "T5_bench_complexity":    ["sdk-benchmark-devil-go", "sdk-complexity-devil-go"],
+    "T5_5_soak":              ["sdk-soak-runner-go"],
+    "T6_leak":                ["sdk-leak-hunter-go"]
+  },
+
+  "tier_critical": {
+    "design": {
+      "T1": ["sdk-perf-architect-go", "sdk-dep-vet-devil-go", "sdk-convention-devil-go"],
+      "T2": ["sdk-dep-vet-devil-go"]
+    },
+    "implementation": {
+      "T1": ["sdk-profile-auditor-go", "sdk-leak-hunter-go", "code-reviewer-go", "documentation-agent-go"],
+      "T2": ["code-reviewer-go", "documentation-agent-go"]
+    },
+    "testing": {
+      "T1": ["sdk-leak-hunter-go", "sdk-benchmark-devil-go", "sdk-complexity-devil-go", "sdk-soak-runner-go", "sdk-integration-flake-hunter-go"],
+      "T2": ["sdk-integration-flake-hunter-go"]
+    }
+  },
 
   "toolchain": {
     "build": "go build ./...",
@@ -135,8 +169,9 @@
   },
 
   "notes": {
-    "pass_scope": "v0.4.0 scaffolding — structure only. No runtime consumer reads this file yet. Dispatch refactor deferred.",
-    "perf_regime_ownership": "G104-G110 (perf-confidence regime, rules 32/33) and their owner agents (sdk-perf-architect, sdk-profile-auditor, sdk-complexity-devil, sdk-soak-runner, sdk-benchmark-devil) all live here. They reference Go-specific tooling (pprof, allocs/op from go test -benchmem, goleak). When a second language adapter is authored, equivalent gates + agents go in that adapter.",
+    "pass_scope": "v0.5.0 manifest-schema lock. Adds `waves` + `tier_critical` per shared-core schema. Wave entries reflect existing phase-lead orchestration (sdk-design-lead, sdk-impl-lead, sdk-testing-lead). Phase lead consumer refactor lands in Step 3 of structure-finalization plan.",
+    "naming_convention": "Per docs/PACKAGE-AUTHORING-GUIDE.md: language-specific agents use `-go` suffix; language-specific skills use `go-` prefix. `goroutine-leak-prevention` is kept unsuffixed since `goroutine-` already encodes Go (matches the rule-3 `go-*`/`python-*` already-prefixed exemption — no double-tag).",
+    "perf_regime_ownership": "G104-G110 (perf-confidence regime, rules 32/33) and their owner agents (sdk-perf-architect-go, sdk-profile-auditor-go, sdk-complexity-devil-go, sdk-soak-runner-go, sdk-benchmark-devil-go) all live here. They reference Go-specific tooling (pprof, allocs/op from go test -benchmem, goleak). When a second language adapter is authored, equivalent gates + agents go in that adapter.",
     "marker_protocol_ownership": "G95-G103 (marker protocol) live here because byte-hash semantics depend on source-byte offsets, which are currently Go-specific. The sdk-marker-protocol skill and sdk-marker-scanner/sdk-marker-hygiene-devil agents stay in shared-core (generalize); the enforcement scripts stay in go (language-specific AST)."
   }
 }

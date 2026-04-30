@@ -1,0 +1,20 @@
+{
+  "fts": {
+    "include": [
+      "*.go"
+    ],
+    "excludeDirs": [
+      "vendor",
+      ".git",
+      "node_modules",
+      "testdata",
+      ".codeindex"
+    ],
+    "maxFileSizeKB": 50
+  },
+  "index": {
+    "include": [
+      "*.go"
+    ]
+  }
+}

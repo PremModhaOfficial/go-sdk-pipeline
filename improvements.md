@@ -48,14 +48,14 @@ What this NFR-driven pipeline adds on top of the original SaaS multi-agent fleet
 | Group | Agents | Count |
 |---|---|---:|
 | **Phase leads** | `sdk-intake-agent`, `sdk-design-lead`, `sdk-impl-lead`, `sdk-testing-lead` | 4 |
-| **Design devils** | `sdk-design-devil`, `sdk-dep-vet-devil`, `sdk-semver-devil`, `sdk-convention-devil`, `sdk-security-devil`, `sdk-api-ergonomics-devil`, `sdk-overengineering-critic` | 7 |
-| **Impl devils** | `sdk-marker-hygiene-devil`, `sdk-constraint-devil`, `sdk-leak-hunter` | 3 |
-| **Testing devils** | `sdk-benchmark-devil`, `sdk-integration-flake-hunter` | 2 |
+| **Design devils** | `sdk-design-devil`, `sdk-dep-vet-devil-go`, `sdk-semver-devil`, `sdk-convention-devil-go`, `sdk-security-devil`, `sdk-api-ergonomics-devil-go`, `sdk-overengineering-critic` | 7 |
+| **Impl devils** | `sdk-marker-hygiene-devil`, `sdk-constraint-devil-go`, `sdk-leak-hunter-go` | 3 |
+| **Testing devils** | `sdk-benchmark-devil-go`, `sdk-integration-flake-hunter-go` | 2 |
 | **Feedback monitors** | `sdk-skill-drift-detector`, `sdk-skill-coverage-reporter`, `sdk-golden-regression-runner` (retired; see DEPRECATED.md) | 2 active |
-| **Mode B/C helpers** | `sdk-existing-api-analyzer`, `sdk-marker-scanner`, `sdk-merge-planner`, `sdk-breaking-change-devil` | 4 |
-| **Perf / drift specialists (v0.3.0)** | `sdk-perf-architect`, `sdk-profile-auditor`, `sdk-complexity-devil`, `sdk-soak-runner`, `sdk-drift-detector` | 5 |
+| **Mode B/C helpers** | `sdk-existing-api-analyzer-go`, `sdk-marker-scanner`, `sdk-merge-planner`, `sdk-breaking-change-devil-go` | 4 |
+| **Perf / drift specialists (v0.3.0)** | `sdk-perf-architect-go`, `sdk-profile-auditor-go`, `sdk-complexity-devil-go`, `sdk-soak-runner-go`, `sdk-drift-detector` | 5 |
 
-(Reference-fleet ports retained: `learning-engine`, `improvement-planner`, `baseline-manager`, `metrics-collector`, `phase-retrospector`, `root-cause-tracer`, `defect-analyzer`, `refactoring-agent`, `documentation-agent`, `code-reviewer`, `guardrail-validator` — 11 ported.)
+(Reference-fleet ports retained: `learning-engine`, `improvement-planner`, `baseline-manager`, `metrics-collector`, `phase-retrospector`, `root-cause-tracer`, `defect-analyzer`, `refactoring-agent-go`, `documentation-agent-go`, `code-reviewer-go`, `guardrail-validator` — 11 ported.)
 
 ---
 
@@ -65,10 +65,10 @@ All 19 `sdk_native` entries shipped as skeleton placeholders in v0.2.0 (frontmat
 
 | Domain | Skills | Count |
 |---|---|---:|
-| **SDK conventions** | `sdk-config-struct-pattern`†, `sdk-otel-hook-integration`†, `sdk-marker-protocol`†, `sdk-semver-governance`† | 4 |
-| **Client patterns** | `network-error-classification`†, `client-shutdown-lifecycle`†, `client-tls-configuration`†, `credential-provider-pattern`†, `client-rate-limiting`†, `client-mock-strategy`† | 6 |
-| **Resilience** | `circuit-breaker-policy`†, `idempotent-retry-safety`†, `backpressure-flow-control`†, `context-deadline-patterns`† | 4 |
-| **Pool / leak / perf** | `connection-pool-tuning`†, `goroutine-leak-prevention`† | 2 |
+| **SDK conventions** | `go-sdk-config-struct-pattern`†, `go-sdk-otel-hook-integration`†, `sdk-marker-protocol`†, `sdk-semver-governance`† | 4 |
+| **Client patterns** | `network-error-classification`†, `go-client-shutdown-lifecycle`†, `go-client-tls-configuration`†, `go-credential-provider-pattern`†, `go-client-rate-limiting`†, `go-client-mock-strategy`† | 6 |
+| **Resilience** | `go-circuit-breaker-policy`†, `idempotent-retry-safety`†, `go-backpressure-flow-control`†, `go-context-deadline-patterns`† | 4 |
+| **Pool / leak / perf** | `go-connection-pool-tuning`†, `goroutine-leak-prevention`† | 2 |
 | **Supply chain / docs** | `go-dependency-vetting`†, `go-example-function-patterns`†, `api-ergonomics-audit`† | 3 |
 
 † All 19 authored in v0.3.0 straighten (2026-04-24). Prior to that, each file contained only the bootstrap-seed skeleton "will be synthesized on first Phase -1 use" — drift since Phase -1 removal in commit `b28405a`. The straighten pass replaced each skeleton with a real body backed by code read from `motadata-go-sdk/src/motadatagosdk/`.

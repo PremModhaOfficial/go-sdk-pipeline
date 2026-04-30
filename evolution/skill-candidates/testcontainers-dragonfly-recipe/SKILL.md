@@ -5,6 +5,8 @@ status: candidate
 priority: MUST
 tags: [testing, integration, dragonfly, testcontainers]
 target_consumers: [sdk-testing-lead, sdk-integration-flake-hunter]
+scope: go
+scope_rationale: Uses `testcontainers-go` module + `sdk-integration-flake-hunter` (the unsuffixed legacy name preserved for replay; new candidates target `-go` sibling). Python pack uses `testcontainers-python` via the existing `python-testcontainers-setup` skill — no shared-core rewrite needed; this candidate is intentionally Go-only.
 provenance: synthesized-from-tprd(sdk-dragonfly-s2, §11.2, §14)
 ---
 

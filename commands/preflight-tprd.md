@@ -42,7 +42,7 @@ Status: PASS | WARN | FAIL
 (FAIL only if §Guardrails-Manifest has misses; §Skills-Manifest misses are WARN-only)
 
 ## §Skills-Manifest — 12/13 WARN (non-blocking)
-- sdk-config-struct-pattern: declared ≥1.0.0, found 1.0.0   ✓
+- go-sdk-config-struct-pattern: declared ≥1.0.0, found 1.0.0   ✓
 - goroutine-leak-prevention: declared ≥1.0.0, found 1.0.0   ✓
 - redis-streams-patterns: declared ≥1.0.0  MISSING  ← WARN (filed to docs/PROPOSED-SKILLS.md)
 - ...

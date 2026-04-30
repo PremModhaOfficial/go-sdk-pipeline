@@ -82,7 +82,7 @@ Before `/run-sdk-addition` fires, **you** do this:
 
 ## §Skills-Manifest                ← REQUIRED
 | Skill | Min version | Why required |
-| sdk-config-struct-pattern | 1.0.0 | FR-CON-07 |
+| go-sdk-config-struct-pattern | 1.0.0 | FR-CON-07 |
 | ...
 
 ## §Guardrails-Manifest            ← REQUIRED

@@ -77,7 +77,7 @@ Out-of-scope here but queued:
 
 - `sdk-intake-agent` queries context7 for current docs of any dep listed in TPRD §6 before closing H1.
 - Replaces the current "we hope the agent remembers which version introduced feature X" risk.
-- Counterpart benefit: `sdk-dep-vet-devil` gets source-of-truth changelog for MVS disputes.
+- Counterpart benefit: `sdk-dep-vet-devil-go` gets source-of-truth changelog for MVS disputes.
 
 ---
 

@@ -44,9 +44,9 @@ You **NEVER** modify agent files, phase outputs, review files, or any file outsi
 
 | Category | Auto-Applicable? | Output Format |
 |----------|-----------------|---------------|
-| Agent prompt patch | Safe patches only (append to `## Learned Patterns`) | Markdown snippet in `.feedback/learning/evolution/prompt-patches/<agent-name>.md` |
-| New skill needed | Yes (new file creation) | JSON spec in `.feedback/learning/evolution/skill-candidates/<skill-name>.json` |
-| New guardrail needed | Yes (new script creation) | JSON spec in `.feedback/learning/evolution/guardrail-candidates/<guardrail-name>.json` |
+| Agent prompt patch | Safe patches only (append to `## Learned Patterns`) — `scope` MUST match agent's pack | Markdown snippet in `evolution/prompt-patches/<agent-name>.md` (`.feedback/learning/evolution/prompt-patches/...` in archive replays) |
+| New skill needed | **No — proposal only**, per CLAUDE.md rule 23 (human-only skill authorship) | SKILL.md draft at `evolution/skill-candidates/<skill-name>/SKILL.md` (frontmatter MUST carry `scope`); `learning-engine` files to `docs/PROPOSED-SKILLS.md` for human PR |
+| New guardrail needed | **No — proposal only**, per CLAUDE.md rule 23 | proposal.md at `evolution/guardrail-candidates/<guardrail-name>/proposal.md` (frontmatter MUST carry `scope`); `learning-engine` files to `docs/PROPOSED-GUARDRAILS.md` for human PR |
 | Process change | No — proposal only | Description + justification in improvement plan |
 | Threshold change | No — proposal only | Current value, proposed value, data justification in improvement plan |
 | Communication gap fix | Safe patches only (append to `## Learned Patterns`) | Prompt patch for agent communication behavior |
@@ -100,6 +100,50 @@ For each evidence item, determine if it suggests:
 
 **Event-Driven Communication Gate**: Any improvement that introduces HTTP or gRPC between services MUST be rejected. If a backpatch entry or retrospective suggests adding inter-service HTTP or gRPC, propose a NATS JetStream-based alternative instead (pub/sub for events, request-reply for queries, KV store for shared state). Log the rejection as a decision entry with rationale.
 
+### Step 2.4: Classify scope for every candidate (NEW v0.5.0 — multi-language safety)
+
+Every candidate (prompt-patch, skill-candidate, guardrail-candidate) MUST carry a `scope` field placing it in exactly one pack. Without this field, downstream learning-engine cannot apply the candidate without risking cross-language contamination (see learning-engine's "Patch Scope Validation Gate"). This step runs BEFORE Step 2.5 so the scope decision is captured alongside the evidence.
+
+**First, resolve the run's language**:
+```
+TARGET_LANGUAGE = jq -r '.target_language' runs/<run-id>/context/active-packages.json
+```
+
+**Classification rules — apply in order; first match wins**:
+
+| Rule | Pattern | Scope |
+|---|---|---|
+| 1 | Candidate body cites Go-specific tokens (`motadatagosdk`, `goleak`, `goroutine`, `errgroup`, `sync.Pool`, `go.opentelemetry.io`, `Example_*`, `gofmt`, `go-` prefix on any referenced skill name) | `go` |
+| 2 | Candidate body cites Python-specific tokens (`motadatapysdk`, `asyncio`, `aiohttp`, `pytest`, `mypy`, `ruff`, `pyproject.toml`, `TaskGroup`, `__aenter__`, `python-` prefix on any referenced skill name) | `python` |
+| 3 | Target agent or skill is in `shared-core` pack AND body is language-neutral (no tokens from rules 1 or 2) | `shared-core` |
+| 4 | Pattern observed in BOTH Go AND Python runs (filter `agent-telemetry.jsonl` by `language` field) | `shared-core` |
+| 5 | Pattern observed in only this run's language (telemetry filtered by current `${TARGET_LANGUAGE}`) AND no language-specific tokens in body | language pack matching `${TARGET_LANGUAGE}` |
+| 6 | Pattern is genuinely abstract (retry, idempotency, backoff, semver semantics, lifecycle events, conflict-resolution) with zero language-specific tokens | `shared-core` |
+| 7 | Cannot classify confidently using rules 1–6 | `NEEDS-CLASSIFICATION` (degrades the candidate to LOW-confidence regardless of evidence strength; surface to human at PR-review time) |
+
+**Forbidden combinations** (reject the candidate; log `failure_type: scope-violation`):
+- Target is `shared-core`-owned AND body cites Go-specific OR Python-specific tokens. Either revise the candidate to be language-neutral, OR re-target to the matching language pack (with name change: `<concept>` → `go-<concept>` or `python-<concept>`). NEVER let language-specific content land in shared-core.
+- Target is `go`-pack-owned AND body cites Python-specific tokens (or vice versa). The candidate is mis-classified; revise the target.
+
+**Output schema**: every candidate JSON gains a `scope` field. Every row in the improvement-plan tables (Step Output) gains a `Scope` column.
+
+```json
+{
+  "candidate_id": "SK-001",
+  "type": "skill-candidate",
+  "scope": "shared-core",   // NEW v0.5.0 — REQUIRED
+  "target": "retry-jitter-best-practices",
+  "confidence": "high",
+  "evidence": ["..."],
+  "rationale": "Pattern observed in 2 Go runs + 1 Python run; body uses generic 'exponential backoff with jitter' phrasing and cites no language primitives."
+}
+```
+
+Log the scope decision per candidate to `decision-log.jsonl`:
+```json
+{"type":"event","event_type":"scope-classification","agent":"improvement-planner","candidate_id":"<id>","scope":"<shared-core|go|python|NEEDS-CLASSIFICATION>","matched_rule":<1-7>,"language":"<TARGET_LANGUAGE>"}
+```
+
 ### Step 2.5: Mine Communication and Failure Logs
 For each phase, read all `"type":"communication"`, `"type":"failure"`, and `"type":"refactor"` entries:
 
@@ -146,40 +190,66 @@ Source: BP-003 (tenant isolation gap in UserService boundary definition)
 ```
 
 ### Step 5: Draft Skill Candidates
-For each missing knowledge area:
-- Write a file in `.feedback/learning/evolution/skill-candidates/<skill-name>.json`
+For each missing knowledge area, write a candidate **SKILL.md draft** at `evolution/skill-candidates/<skill-name>/SKILL.md` (one directory per candidate; the on-disk format mirrors a real `.claude/skills/<name>/SKILL.md` so a human reviewer can promote the file via PR with minimal massaging — `learning-engine` MUST NOT promote it).
 
-```json
-{
-  "skill_name": "<name>",
-  "description": "<what knowledge it provides>",
-  "rationale": "<why this is needed>",
-  "source_evidence": ["<BP-NNN>", "<retro-finding>"],
-  "confidence": "high|medium|low",
-  "suggested_sections": ["<section1>", "<section2>"],
-  "primary_users": ["<agent1>", "<agent2>"],
-  "run_id": "<uuid>"
-}
+The candidate frontmatter MUST carry every field below. The `scope` field is mandatory (Step 2.4 classification) — `learning-engine`'s Patch Scope Validation Gate refuses to surface a candidate without it.
+
+```yaml
+---
+name: <skill-name>
+version: 0.1.0-draft
+status: candidate
+priority: MUST | SHOULD | MAY
+tags: [<keyword>, ...]
+target_consumers: [<agent-name>, ...]
+scope: shared-core | go | python      # MANDATORY (Step 2.4)
+scope_rationale: <one-sentence justification — why this scope, not the others>
+provenance: synthesized-from-tprd(<run-id>, §<sec>, ...) | feedback-derived(<BP-NNN>)
+specializes: <existing-skill-name>, ...   # optional
+source_evidence: [<BP-NNN>, <retro-finding>, ...]
+confidence: high | medium | low
+run_id: <uuid>
+---
+
+# <skill-name>
+
+## When to apply
+<one-paragraph activation guidance>
+
+## Rule body
+<MUST / MUST NOT clauses + GOOD/BAD examples; per-language code overlays must be tagged with the language>
+
+## Cross-references
+<links to existing skills>
 ```
+
+**Scope-aware authoring rules**:
+- `scope: shared-core` — body MUST cite no language tokens (no `motadatagosdk`, no `goleak`, no `goroutine`, no `motadatapysdk`, no `asyncio`, no `pytest`, etc.); rule statements stay at the conceptual layer; per-language code overlays go in sibling Go/Python skills that `specializes:` this one.
+- `scope: go` — body MAY cite Go-only idioms; target consumers MUST be `-go` suffix or shared-core agents; MUST NOT cite Python tokens.
+- `scope: python` — body MAY cite Python-only idioms; target consumers MUST be `-python` suffix or shared-core agents; MUST NOT cite Go tokens.
 
 ### Step 6: Draft Guardrail Candidates
-For each uncaught error class:
-- Write a file in `.feedback/learning/evolution/guardrail-candidates/<guardrail-name>.json`
+For each uncaught error class, write a candidate at `evolution/guardrail-candidates/<guardrail-name>/proposal.md` (create the parent dir if missing — `evolution/guardrail-candidates/` is allowed to be empty between runs).
 
-```json
-{
-  "guardrail_name": "<name>",
-  "description": "<what it checks>",
-  "rationale": "<what it would have caught>",
-  "source_evidence": ["<BP-NNN>", "<retro-finding>"],
-  "confidence": "high|medium|low",
-  "check_logic": "<pseudocode or description of the check>",
-  "pass_criteria": "<what constitutes a pass>",
-  "fail_criteria": "<what constitutes a fail>",
-  "phase": "<which phase this guardrail belongs to>",
-  "run_id": "<uuid>"
-}
+```yaml
+---
+name: G<NN>[-<lang>]
+description: <what it checks>
+rationale: <what it would have caught>
+source_evidence: [<BP-NNN>, <retro-finding>]
+confidence: high | medium | low
+check_logic: <pseudocode or description of the check>
+pass_criteria: <what constitutes a pass>
+fail_criteria: <what constitutes a fail>
+phase: intake | design | impl | testing | feedback
+scope: shared-core | go | python      # MANDATORY (Step 2.4)
+scope_rationale: <one-sentence justification>
+suggested_path: scripts/guardrails/G<NN>[-<lang>].sh
+run_id: <uuid>
+---
 ```
+
+**Naming**: per CLAUDE.md package layer, language-specific guardrails MUST carry a `-go` or `-py` suffix (e.g., `G31-py.sh`); a `scope: shared-core` candidate's `name` is bare (`G<NN>`). `learning-engine` files all guardrail candidates to `docs/PROPOSED-GUARDRAILS.md` (never creates the `.sh` file directly per CLAUDE.md rule 23).
 
 ### Step 7: Draft Process and Threshold Changes
 Include these in the improvement plan (not separate files) since they require human review.
@@ -217,20 +287,23 @@ Zero inter-agent communications were logged across 5 consecutive phases (Archite
 - Recurring from previous runs: <N>
 
 ## High-Confidence Improvements (auto-applicable)
-| # | Category | Target | Description | Source Evidence | Expected Impact |
-|---|----------|--------|-------------|----------------|-----------------|
-| 1 | prompt-patch | <agent> | <description> | BP-003, retro#2 | Prevents <defect-class> |
+| # | Scope | Category | Target | Description | Source Evidence | Expected Impact |
+|---|-------|----------|--------|-------------|----------------|-----------------|
+| 1 | shared-core | prompt-patch | <agent> | <description> | BP-003, retro#2 | Prevents <defect-class> |
+| 2 | python | skill-candidate | python-<concept> | <description> | telemetry-go=0, telemetry-py=2 | ... |
 | ...
 
 ## Medium-Confidence Improvements (requires review)
-| # | Category | Target | Description | Source Evidence | Expected Impact |
-|---|----------|--------|-------------|----------------|-----------------|
+| # | Scope | Category | Target | Description | Source Evidence | Expected Impact |
+|---|-------|----------|--------|-------------|----------------|-----------------|
 | ...
 
 ## Low-Confidence Improvements (proposals only)
-| # | Category | Target | Description | Source Evidence | Expected Impact |
-|---|----------|--------|-------------|----------------|-----------------|
+| # | Scope | Category | Target | Description | Source Evidence | Expected Impact |
+|---|-------|----------|--------|-------------|----------------|-----------------|
 | ...
+
+(Any row whose `Scope` is `NEEDS-CLASSIFICATION` per Step 2.4 rule 7 lands here regardless of evidence strength — human reviewer must resolve scope at PR time before learning-engine can apply.)
 
 ## Process Change Proposals
 ### <Change Title>
@@ -340,7 +413,7 @@ Read these:
 - `runs/<run-id>/impl/constraint-proofs.md` (Mode B/C)
 
 ### Delta 4: Mode-aware proposals
-**Mode A runs**: propose new skills for generic gaps (e.g., `client-tls-configuration` if TPRD required it and it was missing)
+**Mode A runs**: propose new skills for generic gaps (e.g., `go-client-tls-configuration` if TPRD required it and it was missing)
 **Mode B runs**: propose extension-specific skills (e.g., `sdk-extension-patterns`)
 **Mode C runs**: propose marker-related skills if drift detected on markers
 

@@ -5,6 +5,8 @@ status: candidate
 priority: MUST
 tags: [testing, redis, dragonfly, miniredis, unit-test]
 target_consumers: [sdk-testing-lead, sdk-impl-lead]
+scope: go
+scope_rationale: miniredis is a Go-only test library (github.com/alicebob/miniredis). No language-neutral counterpart — Python pack uses fakeredis-py via a separate skill if/when authored. Stays scoped to Go forever unless rewritten as a `redis-fake-client-testing-patterns` shared rule with per-language code overlays.
 provenance: synthesized-from-tprd(sdk-dragonfly-s2, §11.1)
 ---
 

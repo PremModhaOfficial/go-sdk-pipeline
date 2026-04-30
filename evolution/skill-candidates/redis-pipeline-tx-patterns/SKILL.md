@@ -5,6 +5,8 @@ status: candidate
 priority: MUST
 tags: [redis, dragonfly, pipeline, transaction, watch, resilience]
 target_consumers: [sdk-design-lead, sdk-impl-lead, sdk-testing-lead]
+scope: go
+scope_rationale: Pipelining + WATCH/MULTI/EXEC contract is itself language-neutral, but body shows go-redis pipeline.Exec / TxPipelined signatures. Promote to shared-core only after a Python sibling rewrite proves the rule body is language-neutral.
 provenance: synthesized-from-tprd(sdk-dragonfly-s2, §5.4, §7, §11)
 ---
 

@@ -12,7 +12,7 @@ tools: Read, Write, Glob, Grep, Bash
 ## Startup Protocol
 
 1. Read manifest; confirm phase = `testing`, wave = `T-SOAK`
-2. Read `runs/<run-id>/testing/soak/manifest.json` (written by sdk-soak-runner)
+2. Read `runs/<run-id>/testing/soak/manifest.json` (written by sdk-soak-runner-go)
 3. Read `runs/<run-id>/design/perf-budget.md` for per-symbol MMD + drift_signals + soak thresholds
 4. Initialize poll ladder
 5. Log `lifecycle: started`, wave `T-SOAK`, role `observer`
@@ -164,9 +164,9 @@ After the last poll (or on early fast-fail), write a final section summarizing e
 
 ## Interaction with other devils
 
-- PEER: `sdk-leak-hunter` — they run goleak + -race on short tests; you run trend detection on long tests. Complementary.
-- PEER: `sdk-benchmark-devil` — they verdict regression vs baseline; you verdict drift over time. Different axes.
-- PEER: `sdk-profile-auditor` — they catch steady-state shape at M3.5; you catch evolution under load at T-SOAK.
+- PEER: `sdk-leak-hunter-go` — they run goleak + -race on short tests; you run trend detection on long tests. Complementary.
+- PEER: `sdk-benchmark-devil-go` — they verdict regression vs baseline; you verdict drift over time. Different axes.
+- PEER: `sdk-profile-auditor-go` — they catch steady-state shape at M3.5; you catch evolution under load at T-SOAK.
 
 ## Skills invoked
 

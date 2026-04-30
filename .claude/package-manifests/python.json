@@ -7,9 +7,93 @@
   "depends": ["shared-core@>=1.0.0"],
   "pipeline_version_compat": ">=0.5.0",
 
-  "agents": [],
-  "skills": [],
-  "guardrails": [],
+  "agents": [
+    "code-reviewer-python",
+    "documentation-agent-python",
+    "refactoring-agent-python",
+    "sdk-api-ergonomics-devil-python",
+    "sdk-asyncio-leak-hunter-python",
+    "sdk-benchmark-devil-python",
+    "sdk-breaking-change-devil-python",
+    "sdk-complexity-devil-python",
+    "sdk-constraint-devil-python",
+    "sdk-convention-devil-python",
+    "sdk-dep-vet-devil-python",
+    "sdk-existing-api-analyzer-python",
+    "sdk-integration-flake-hunter-python",
+    "sdk-packaging-devil-python",
+    "sdk-perf-architect-python",
+    "sdk-profile-auditor-python",
+    "sdk-soak-runner-python"
+  ],
+  "skills": [
+    "python-asyncio-leak-prevention",
+    "python-asyncio-patterns",
+    "python-backpressure-flow-control",
+    "python-circuit-breaker-policy",
+    "python-client-rate-limiting",
+    "python-client-shutdown-lifecycle",
+    "python-client-tls-configuration",
+    "python-connection-pool-tuning",
+    "python-credential-provider-pattern",
+    "python-dependency-vetting",
+    "python-doctest-patterns",
+    "python-exception-patterns",
+    "python-hexagonal-architecture",
+    "python-hypothesis-patterns",
+    "python-mock-strategy",
+    "python-mypy-strict-typing",
+    "python-otel-instrumentation",
+    "python-pytest-patterns",
+    "python-sdk-config-pattern",
+    "python-testcontainers-setup"
+  ],
+  "guardrails": [
+    "G31-py",
+    "G32-py",
+    "G34-py",
+    "G40-py",
+    "G41-py",
+    "G42-py",
+    "G43-py",
+    "G60-py",
+    "G61-py",
+    "G63-py",
+    "G200-py"
+  ],
+
+  "waves": {
+    "I3_existing_api":    ["sdk-existing-api-analyzer-python"],
+    "D1_design":          ["sdk-perf-architect-python"],
+    "D3_devils":          ["sdk-convention-devil-python", "sdk-dep-vet-devil-python"],
+    "D3_devils_mode_a":   ["sdk-packaging-devil-python"],
+    "D3_devils_mode_bc":  ["sdk-breaking-change-devil-python", "sdk-constraint-devil-python"],
+    "M3_5_profile_audit": ["sdk-profile-auditor-python"],
+    "M4_constraint_proof":["sdk-constraint-devil-python"],
+    "M9_packaging":       ["sdk-packaging-devil-python"],
+    "M5_refactor":        ["refactoring-agent-python"],
+    "M6_docs":            ["documentation-agent-python"],
+    "M7_devils":          ["sdk-api-ergonomics-devil-python", "sdk-asyncio-leak-hunter-python", "code-reviewer-python"],
+    "T3_flake_hunt":      ["sdk-integration-flake-hunter-python"],
+    "T5_bench_complexity":["sdk-complexity-devil-python", "sdk-benchmark-devil-python"],
+    "T5_5_soak":          ["sdk-soak-runner-python"],
+    "T6_leak":            ["sdk-asyncio-leak-hunter-python"]
+  },
+
+  "tier_critical": {
+    "design":         {
+      "T1": ["sdk-perf-architect-python", "sdk-convention-devil-python", "sdk-dep-vet-devil-python"],
+      "T2": ["sdk-convention-devil-python", "sdk-dep-vet-devil-python"]
+    },
+    "implementation": {
+      "T1": ["code-reviewer-python", "documentation-agent-python", "sdk-asyncio-leak-hunter-python", "sdk-profile-auditor-python"],
+      "T2": ["code-reviewer-python", "documentation-agent-python"]
+    },
+    "testing":        {
+      "T1": ["sdk-asyncio-leak-hunter-python", "sdk-benchmark-devil-python", "sdk-complexity-devil-python", "sdk-soak-runner-python", "sdk-integration-flake-hunter-python"],
+      "T2": ["sdk-integration-flake-hunter-python"]
+    }
+  },
 
   "toolchain": {
     "build": "python -m build",
@@ -68,6 +152,9 @@
     "shared_inheritance": "All shared-core agents (sdk-intake-agent, sdk-design-lead, sdk-impl-lead, sdk-testing-lead, sdk-design-devil, sdk-security-devil, sdk-overengineering-critic, sdk-marker-scanner, sdk-marker-hygiene-devil, baseline-manager, learning-engine, metrics-collector, etc.) and all shared skills (tdd-patterns, idempotent-retry-safety, network-error-classification, etc.) apply to Python runs via depends: shared-core. Per D6=Split, debt-bearer agent bodies stay in shared-core; per-language overrides go in <pack>/conventions.yaml when authored in Phase B.",
     "tier_default": "T1 (full perf-confidence regime). Python perf-budget MMD authoring + py-spy/scalene profile parser + asyncio leak harness all materialize lazily during Phase B.",
     "marker_protocol_note": "G95-G103 (marker protocol) currently live in go because byte-hash semantics use Go-specific source-byte offsets. When the first Python TPRD lands a [traces-to:] marker, the marker-scanner needs to learn Python's # comment syntax (already declared above in marker_comment_syntax). G95-G103 may need to migrate from go to shared-core, OR get python-specific siblings — decided in Phase B based on observed implementation cost.",
-    "pipeline_version_compat_rationale": "Python adapter requires v0.5.0+ because that's when this manifest was authored and when the per-language baseline partitioning at baselines/python/ ships."
+    "pipeline_version_compat_rationale": "Python adapter requires v0.5.0+ because that's when this manifest was authored and when the per-language baseline partitioning at baselines/python/ ships.",
+    "guardrails_phase_b_batch1": "First Python guardrail batch shipped in Phase 2C: 11 scripts under scripts/guardrails/ with -py.sh suffix. Reuse-shaped (G31/G34/G41/G42/G43/G60/G61/G63 use run-toolchain.sh dispatch internally), fresh Python-specific (G200-py validates pyproject.toml PEP 517/518/621/639 + py.typed marker). Shared with go pack via filename-suffix convention rather than mutating shared scripts; zero cross-language references in any -py.sh file.",
+    "guardrails_intentionally_skipped": "Skipped from initial Python pack: (a) G33 osv-scanner — pip-audit covers most of OSV's database; defer if pilot exposes need; (b) G48 init() functions — Go-specific; Python equivalent (no module-level side effects) is a smell, not a bug; defer; (c) G95-G103 marker protocol — byte-hash semantics need Python-aware AST work; defer to Phase 2D when first Python TPRD exposes a [traces-to:] marker; (d) G65 bench regression — pytest-benchmark JSON compare implementation deferred; backed by sdk-benchmark-devil-python agent which renders the verdict, so the gate fires through the agent path even without a dedicated guardrail script. Promote any of these from this skip list to the guardrails array when Phase 2D pilot run shows the gap.",
+    "guardrails_followup_candidates": "Phase B-3 second-batch candidates (HIGH value, defer until Phase 2D pilot identifies need): G-py-MUTABLE-DEFAULT (AST scan for mutable default arguments — Python-only footgun), G-py-BARE-EXCEPT (AST scan for bare `except:` per python-exception-patterns Rule 4), G-py-PRINT (no print() in src/ library code — only logger.X), G-py-WILDCARD-IMPORT (no `from X import *` in implementation modules), G-py-ASYNC-DISCARDED-TASK (AST scan for asyncio.create_task whose return value is discarded — per python-asyncio-patterns Rule 2)."
   }
 }

@@ -105,11 +105,12 @@ quality_score = (completeness × 0.20)
 
 ## Telemetry Schema
 
-Append one entry per agent to `.feedback/metrics/agent-telemetry.jsonl`:
+Append one entry per agent to `.feedback/metrics/agent-telemetry.jsonl`. Every entry MUST carry the run's `language` field (sourced from `active-packages.json:target_language`) so downstream consumers (improvement-planner, learning-engine) can partition history per-language without re-resolving from the run-manifest:
 
 ```json
 {
   "run_id": "<uuid>",
+  "language": "<go|python>",
   "phase": "<architecture|detailed-design|implementation|testing|frontend>",
   "agent": "<agent-name>",
   "wave": 1,
@@ -198,14 +199,17 @@ Identify the newly-authored or modified package under `$SDK_TARGET_DIR` (from ru
 scripts/compute-shape-hash.sh "$SDK_TARGET_DIR/<pkg>"
 # emits: <sha256>  <export_count>
 ```
-Count `Example_*` functions in the same package:
-```bash
-EXAMPLE_COUNT=$(grep -cE '^func Example' "$SDK_TARGET_DIR/<pkg>"/*_test.go 2>/dev/null | awk -F: '{s+=$2} END{print s+0}')
-```
-Append one line to `baselines/go/output-shape-history.jsonl`:
+Count language-native examples in the same package. The METRIC name is `example_count`; its MATERIALIZATION is per-language (the per-pack example-discovery harness is owned by the language adapter — `documentation-agent-go` produces `Example_*` testable functions; `documentation-agent-python` produces `Examples:` blocks / `>>>` doctests). Use the count produced by the appropriate documentation agent's report, or fall back to a per-language grep:
+
+- For `target_language="go"`: `EXAMPLE_COUNT=$(grep -cE '^func Example' "$SDK_TARGET_DIR/<pkg>"/*_test.go 2>/dev/null | awk -F: '{s+=$2} END{print s+0}')`
+- For `target_language="python"`: count `Examples:` blocks in docstrings of public symbols under `src/<pkg>/` (or read the count from `documentation-agent-python`'s coverage report if it has run).
+
+Resolve `TARGET_LANGUAGE = jq -r '.target_language' runs/<run-id>/context/active-packages.json` and append one line to `baselines/${TARGET_LANGUAGE}/output-shape-history.jsonl`:
 ```json
-{"run_id":"<uuid>","timestamp":"<ISO>","target_package":"<pkg>","skills_invoked":["<skill>","..."],"shape_hash":"<sha256>","export_count":<N>,"example_count":<M>,"pipeline_version":"<ver>"}
+{"run_id":"<uuid>","timestamp":"<ISO>","language":"<TARGET_LANGUAGE>","target_package":"<pkg>","skills_invoked":["<skill>","..."],"shape_hash":"<sha256>","export_count":<N>,"example_count":<M>,"pipeline_version":"<ver>"}
 ```
+The `language` field MUST match `${TARGET_LANGUAGE}`. Cross-language entries are NEVER unioned into a single history file (per Decision D3=native: each language hashes its own AST).
+
 `skills_invoked` comes from the cross-reference the `sdk-skill-coverage-reporter` produces (read `feedback/skill-coverage.md` if ready; otherwise grep decision-log.jsonl for `type: skill-evolution` + skill invocation entries). If the coverage-reporter hasn't run yet (ordering varies by phase lead), leave `skills_invoked: []` and let the coverage-reporter append a follow-up entry.
 
 ### Step 9: Write Wave Summary

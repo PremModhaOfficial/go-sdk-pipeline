@@ -49,7 +49,7 @@ Source: `improvement-planner` Wave F6, derived from retro patterns P1/P2/P4/P5 a
   ```
 - **Pass criteria**: All constraints either pass floor check or have explicit `accept-aspirational: true` annotation in TPRD §10.
 - **Fail criteria**: BLOCKER only if TPRD has an `accept-aspirational` annotation that was falsified by baselines data. Otherwise WARN (non-blocking, filed to intake report).
-- **Consumer**: `sdk-intake-agent` (runs the check), `sdk-benchmark-devil` (honors the calibration at T5 per G66).
+- **Consumer**: `sdk-intake-agent` (runs the check), `sdk-benchmark-devil-go` (honors the calibration at T5 per G66).
 
 ### G35 — Tool preflight (MEDIUM confidence)
 
@@ -82,7 +82,7 @@ Source: `improvement-planner` Wave F6, derived from retro patterns P1/P2/P4/P5 a
   ```
 - **Pass criteria**: Forced-bump list is empty OR all bumps are explicitly approved at H6.
 - **Fail criteria**: BLOCKER when bumped dep is on untouchable list; WARN otherwise.
-- **Consumer**: `sdk-dep-vet-devil` (D2), `sdk-design-lead` (H6 prep).
+- **Consumer**: `sdk-dep-vet-devil-go` (D2), `sdk-design-lead` (H6 prep).
 
 ### G44 — OTel static conformance (MEDIUM confidence)
 
@@ -118,7 +118,7 @@ Source: `improvement-planner` Wave F6, derived from retro patterns P1/P2/P4/P5 a
   ```
 - **Pass criteria**: N/A — this guardrail reclassifies, it does not add a new BLOCKER.
 - **Fail criteria**: N/A.
-- **Consumer**: `sdk-benchmark-devil`, `sdk-testing-lead`.
+- **Consumer**: `sdk-benchmark-devil-go`, `sdk-testing-lead`.
 
 ### G67 — Integration matrix completeness (LOW-MEDIUM confidence)
 
@@ -164,15 +164,78 @@ Source: `sdk-intake-agent` Wave I3. G24 BLOCKER-failed on 10 declared guardrails
 | G81 | Baselines updated or rationale | Feedback | BLOCKER | Rule 28 compensating baselines (1, 2, 4) require per-run updates to `baselines/go/output-shape-history.jsonl`, `baselines/go/devil-verdict-history.jsonl`, `baselines/go/coverage-baselines.json`. Guardrail asserts either the baseline file advanced or the feedback report carries a rationale for the skip. | sdk-dragonfly-p1-v1 | proposed |
 | G83 | Every patch logged in skill evolution-log.md | Feedback | BLOCKER | Per Rule 23, any body-patch `learning-engine` applies to an existing skill must append a line to that skill's adjacent `evolution-log.md` with minor-bump semantics. Guardrail diffs the skill's git-HEAD version frontmatter against its log and fails if patches landed without a matching log entry. | sdk-dragonfly-p1-v1 | proposed |
 | G84 | Per-run safety caps respected | Feedback | BLOCKER | Mechanical check against `settings.json § safety_caps` — counts of `prompt_patches`, `existing_skill_patches`, `new_skills`, `new_guardrails`, `new_agents` applied in the current run must not exceed the declared cap. Catches a runaway learning-engine before F-phase exit. | sdk-dragonfly-p1-v1 | proposed |
-| G104 | Alloc-budget per declared `allocs_per_op` | Impl (M3.5) | BLOCKER | Rule 32 axis 3 (allocation). `sdk-profile-auditor` runs declared benches with `b.ReportAllocs()`, reads `design/perf-budget.md` per-symbol `allocs_per_op`, fails the gate on any symbol whose measured allocs exceeds budget. Runs BEFORE T5 so alloc overruns never reach testing phase. | sdk-dragonfly-p1-v1 | proposed |
+| G104 | Alloc-budget per declared `allocs_per_op` | Impl (M3.5) | BLOCKER | Rule 32 axis 3 (allocation). `sdk-profile-auditor-go` runs declared benches with `b.ReportAllocs()`, reads `design/perf-budget.md` per-symbol `allocs_per_op`, fails the gate on any symbol whose measured allocs exceeds budget. Runs BEFORE T5 so alloc overruns never reach testing phase. | sdk-dragonfly-p1-v1 | proposed |
 | G105 | Soak-MMD (minimum-measurable-duration) enforcement | Testing (T-SOAK) | BLOCKER | Rule 32 axis 6 + rule 33 verdict taxonomy. Any soak verdict marked PASS must satisfy `actual_duration_s ≥ mmd_seconds` from `design/perf-budget.md`. Shorter runs return INCOMPLETE, not PASS. Prevents silent timeout-to-PASS promotion. P1 no-ops this gate (no soak-enabled symbol declared in TPRD). | sdk-dragonfly-p1-v1 | proposed |
 | G106 | Soak-drift detector | Testing (T-SOAK) | BLOCKER | Rule 32 axis 6. `sdk-drift-detector` curve-fits declared soak signals (e.g. RSS, goroutine count, pool-checkout latency p99) over the soak window and fails on a statistically significant positive trend. P1 no-ops (no soak enabled). | sdk-dragonfly-p1-v1 | proposed |
-| G107 | Complexity scaling sweep | Testing (T5) | BLOCKER | Rule 32 axis 4. `sdk-complexity-devil` runs each declared hot-path symbol at `N ∈ {10, 100, 1k, 10k}`, curve-fits measured latency vs N, and compares to the declared big-O in `perf-budget.md`. Catches accidental quadratic paths that pass wall-clock gates at microbench sizes. This TPRD declares `ZRangeWithScores` O(log N + M) and the `Scan` iterator O(N) amortized. | sdk-dragonfly-p1-v1 | proposed |
+| G107 | Complexity scaling sweep | Testing (T5) | BLOCKER | Rule 32 axis 4. `sdk-complexity-devil-go` runs each declared hot-path symbol at `N ∈ {10, 100, 1k, 10k}`, curve-fits measured latency vs N, and compares to the declared big-O in `perf-budget.md`. Catches accidental quadratic paths that pass wall-clock gates at microbench sizes. This TPRD declares `ZRangeWithScores` O(log N + M) and the `Scan` iterator O(N) amortized. | sdk-dragonfly-p1-v1 | proposed |
 | G108 | Oracle-margin vs reference impl | Testing (T5) | BLOCKER | Rule 32 axis 5. Measured p50 must stay within `oracle.margin_multiplier × reference_impl_ns_per_op` declared in `perf-budget.md`. NOT waivable via `--accept-perf-regression`; oracle-waiver requires an H8 decision + written margin update. TPRD declares GetJSON≤1.5× raw Get, SetJSON≤1.5× raw Set. | sdk-dragonfly-p1-v1 | proposed |
-| G109 | Profile-no-surprise hotspot check | Impl (M3.5) | BLOCKER | Rule 32 axis 2. `sdk-profile-auditor` reads CPU/heap/block/mutex pprof output; top-10 CPU samples must cover ≥0.8 of the declared hot paths in `perf-budget.md`; any hot function not in the declared set is a surprise hotspot and a BLOCKER. Catches design-reality drift before testing. TPRD declares hot paths: `instrumentedCall`, `mapErr`, keyprefix concat. | sdk-dragonfly-p1-v1 | proposed |
+| G109 | Profile-no-surprise hotspot check | Impl (M3.5) | BLOCKER | Rule 32 axis 2. `sdk-profile-auditor-go` reads CPU/heap/block/mutex pprof output; top-10 CPU samples must cover ≥0.8 of the declared hot paths in `perf-budget.md`; any hot function not in the declared set is a surprise hotspot and a BLOCKER. Catches design-reality drift before testing. TPRD declares hot paths: `instrumentedCall`, `mapErr`, keyprefix concat. | sdk-dragonfly-p1-v1 | proposed |
 | G110 | `[perf-exception:]` marker ↔ `perf-exceptions.md` pairing | Impl (M7+M9) | BLOCKER | Rule 32 axis 7 + rule 29 marker protocol. Any source-line bearing `[perf-exception: <reason> bench/BenchmarkX]` must have a matching entry in `runs/<run-id>/design/perf-exceptions.md` declaring the exception at design time AND a profile-auditor-measured bench win. Orphan markers (no matching entry) fail the gate. P1 expects zero `[perf-exception:]` markers (no hand-optimized paths). | sdk-dragonfly-p1-v1 | proposed |
 
 ### Halt contract
 
 Per command spec §Exit codes and `commands/run-sdk-addition.md`, this is an **exit 6** halt. The run-summary marks intake BLOCKED and H1 is not asked. The remaining waves (I4 clarifications, I5 mode detection, I6 completeness, I7 H1 gate) are skipped; Phase 0.5 extension-analyze does not run. Re-run requires either (a) human-authored scripts at `scripts/guardrails/G{81,83,84,104,105,106,107,108,109,110}.sh` + `chmod +x`, or (b) a TPRD revision that drops the unresolved IDs from §Guardrails-Manifest (not recommended — rule 32 axes 2-7 are load-bearing for the TPRD's declared perf targets in §10).
 
+---
+
+## Auto-filed from audit `multi-lang-correctness-2026-04-29` (Python sibling guardrails for marker protocol)
+
+Source: end-to-end multi-language correctness audit (Phase R2 finding F9). The provenance-marker guardrails G95–G103 currently exist as Go-only scripts that scan `*.go` files via `rglob("*.go")` (verified at `scripts/guardrails/G{97,98,100,102}.sh`). The marker concept (`[traces-to:]`, `[constraint:]`, `[stable-since:]`, `[deprecated-in:]`, `[do-not-regenerate]`, `[owned-by:]`, `[perf-exception:]`) is **language-neutral** — markers live in source-code comments, and the syntax (`# [traces-to: ...]` in Python, `// [traces-to: ...]` in Go) is identical post-comment-prefix-strip. But the scanner needs per-language file-extension wiring + per-language test-file exclusion logic. Without Python siblings, a Phase B Python pilot run cannot enforce rule 29 (Code Provenance Markers) on any Python file.
+
+Promotion to a real `scripts/guardrails/G<NN>-py.sh` is human PR action per CLAUDE.md rule 23.
+
+| ID | Guardrail | Phase | Severity | Motivation | Source | Status |
+|---|---|---|---|---|---|---|
+| G95-py | MANUAL ownership preserved (Python AST-hash) | Impl (M-late) | BLOCKER | Python sibling of G95. Compute AST hash on Python `MANUAL`-owned symbols at Mode B/C entry; assert byte parity at exit. The AST hasher pack ships in v0.5.0; needs Python-specific tokenize-driven hasher (handles f-strings + decorators). | multi-lang-audit | proposed |
+| G96-py | MANUAL byte-hash belt-and-suspenders (Python) | Impl (M-late) | BLOCKER | Python sibling of G96. SHA256 of normalized source bytes (whitespace-collapsed, trailing-newline-normalized) on every `[owned-by: MANUAL]` symbol. Complements G95-py's AST hash. | multi-lang-audit | proposed |
+| G97-py | `[constraint:]` matching pytest-benchmark target (Python) | Testing (T5) | BLOCKER | Python sibling of G97. Greps `*.py` (via `pathlib.rglob("*.py")` — mirror of existing G97 Go logic) for `[constraint: <metric>:bench/<target>]` markers, asserts `<target>` appears in `testing/bench-raw.txt` (pytest-benchmark JSON-to-text dump). The marker payload format is identical across packs. | multi-lang-audit | proposed |
+| G98-py | No marker deletions without HITL ack (Python) | Impl | BLOCKER | Python sibling of G98. Diff `*.py` files between Mode B/C entry-snapshot and exit; assert no marker line was removed without an explicit HITL acknowledgement entry in `runs/<run-id>/impl/marker-deletions.md`. | multi-lang-audit | proposed |
+| G99-py | Pipeline-authored `*.py` carries `[traces-to:]` (Python) | Impl (M-mid) | BLOCKER | Python sibling of G99. Every pipeline-authored Python file MUST carry ≥1 `# [traces-to: TPRD-...]` marker in its first ~30 lines (module docstring or top-level comment). Test files (`tests/test_*.py` and `tests/conftest.py`) excluded — sibling rule. | multi-lang-audit | proposed |
+| G100-py | `[do-not-regenerate]` whole-file lock (Python) | Impl | BLOCKER | Python sibling of G100. Scan first 1024 bytes of each `*.py` for `# [do-not-regenerate]`; if present, hash the whole file and compare to `baselines/python/do-not-regenerate-hashes.json`. Any byte change is BLOCKER until baseline refreshed via human PR. | multi-lang-audit | proposed |
+| G101 (already language-aware) | `[stable-since:]` signature change requires TPRD §12 MAJOR | Impl | BLOCKER | **Already done** in R1.4 — G101.sh resolves `target_language` from `active-packages.json` and reads `baselines/<lang>/stable-signatures.json`. The Python signature-extraction body (replacing the Go AST-via-go-parser path) still needs to be authored — currently G101 only renders a useful diff for Go. **Sub-proposal: G101-python-body** to wire Python AST signature extraction. | multi-lang-audit | partial-promoted |
+| G102-py | Marker syntax validity (Python) | Impl | BLOCKER | Python sibling of G102. Grep every `*.py` for `# [<key>: <value>]` markers; validate each `<key>` against the 7-key taxonomy (rule 29) AND the per-key value grammar (TPRD-id regex, vX.Y.Z regex, `bench/X` regex). Identical regex to G102 Go — only the file-extension scope changes. | multi-lang-audit | proposed |
+| G103-py | No forged MANUAL markers on pipeline `*.py` symbols | Impl | BLOCKER | Python sibling of G103. Pipeline-authored Python files MAY NOT contain `# [traces-to: MANUAL-*]` or `# [owned-by: MANUAL]` on a symbol the pipeline just emitted. Mirrors G103 Go's logic against the per-run authorship manifest. | multi-lang-audit | proposed |
+
+### Implementation note for the Python sibling drafts
+
+When a human author drafts `G<NN>-py.sh`, the recommended pattern is:
+
+1. Copy `G<NN>.sh` (Go version).
+2. Replace `pathlib.Path(target).rglob("*.go")` with `pathlib.Path(target).rglob("*.py")`.
+3. Replace test-file exclusion `endswith("_test.go")` with `name.startswith("test_") or name == "conftest.py" or "/tests/" in str(p)`.
+4. Replace marker-comment prefix `// ` with `# ` (comment-prefix is the only per-language byte difference in the marker line).
+5. For G95-py / G96-py: swap Go AST hasher for Python AST hasher (the v0.5.0 ast-hash toolkit ships both — the language-pluggable hasher dispatches on file extension).
+6. For G101 Python body: parse signatures via the `ast` module's `FunctionDef` / `AsyncFunctionDef` / `ClassDef` walk, normalize through type-hint canonicalization (e.g., `list[int]` ≡ `List[int]` post-PEP 585), serialize, hash, diff against `baselines/python/stable-signatures.json`.
+7. Register the new script in `.claude/package-manifests/python.json` `guardrails` array (move out of `aspirational_guardrails` if applicable).
+8. Run `bash scripts/validate-packages.sh` to confirm manifest consistency.
+
+### Cap respected
+
+Per `settings.json § safety_caps.new_guardrails_per_run = 0`, none of the above are created at runtime. All entries are filed here for human PR promotion only.
+
+
+---
+
+## Auto-filed from run `sdk-resourcepool-py-pilot-v1` on 2026-04-29 (F6 improvement-planner → learning-engine)
+
+Source: `improvement-planner` Wave F6, derived from root-cause-traces "TOOLCHAIN-ABSENCE" (highest-leverage trace in the run) + retrospective Process Changes row 1 + Guardrail Additions row 1.
+
+### Proposed: G-toolchain-probe — language-agnostic toolchain preflight at H0
+<!-- Run: sdk-resourcepool-py-pilot-v1 | Date: 2026-04-30 | Confidence: HIGH -->
+
+- **scope**: shared-core
+- **phase header**: intake
+- **rationale**: TOOLCHAIN-ABSENCE was the single-largest cost driver in the Python pilot run — 3 impl sub-runs, 2 user re-engagements, full M3.5/M5/M7/M9 INCOMPLETE cascade. H0 currently checks only that the target dir is a git repo; no per-language toolchain assertion runs. Reading `toolchain.<command>` from the active language manifest and probing each declared command with `--version` would have surfaced the gap before any Phase 1 design work.
+- **source_evidence**: root-cause-traces "TOOLCHAIN-ABSENCE" (highest-leverage trace in the run); retrospective Process Changes row 1; retrospective Guardrail Additions row 1
+- **confidence**: HIGH
+- **check_logic**:
+  1. Read `runs/<run-id>/context/active-packages.json` to resolve active language manifest
+  2. For each manifest with a `toolchain.<command>` block, iterate declared commands
+  3. For each command, exec `<command> --version` (or manifest-declared probe form, e.g. `python -c 'import sys; print(sys.version)'`)
+  4. Pass: every probe returns exit 0; capture and log version strings
+  5. Fail (BLOCKER): any probe fails; emit list of missing commands + suggested install hint per manifest
+- **pass_criteria**: all toolchain commands probe successfully
+- **fail_criteria**: any toolchain command absent or unversioned
+- **why_shared_core**: every language pack inherits the check by manifest declaration alone — no need for `G-py-toolchain-probe.sh`, `G-go-toolchain-probe.sh`, etc. The retrospective initially proposed `G-py-toolchain-probe`; root-cause-tracer confirmed the shared-core form is correct.
+- **suggested_path**: `scripts/guardrails/G-toolchain-probe.sh`
+- **manifest_action**: add to `shared-core.json` `aspirational_guardrails` until script lands; promote to `guardrails` array on PR-merge.

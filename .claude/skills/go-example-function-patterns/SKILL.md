@@ -253,9 +253,9 @@ Fix: every example that has a meaningful observable effect should end with `// O
 ## Cross-references
 
 - `sdk-marker-protocol` — `[traces-to: TPRD-§11.1 G16-examples]` file-header marker
-- `testing-patterns` — unit-test conventions (don't confuse TestXxx with ExampleXxx)
-- `sdk-config-struct-pattern` — examples illustrating `Config{} + New(cfg)` are the canonical doc surface
-- `mock-patterns` / `testcontainers-setup` — hermetic fake choice for runnable examples
+- `go-testing-patterns` — unit-test conventions (don't confuse TestXxx with ExampleXxx)
+- `go-sdk-config-struct-pattern` — examples illustrating `Config{} + New(cfg)` are the canonical doc surface
+- `go-mock-patterns` / `go-testcontainers-setup` — hermetic fake choice for runnable examples
 
 ## Guardrail hooks
 

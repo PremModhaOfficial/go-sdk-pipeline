@@ -39,7 +39,7 @@ of sentinels in TPRD §7 — adding/removing is a semver-major break.
 - New client returns errors from a remote server
 - TPRD §Skills-Manifest lists `network-error-classification`
 - Design review flags "string-match on err" or "no retry hint"
-- `sdk-convention-devil` requires sentinel taxonomy
+- `sdk-convention-devil-go` requires sentinel taxonomy
 - Reviewer asks "how does the caller know to retry?"
 
 ## GOOD examples
@@ -206,13 +206,13 @@ Precedence rules:
 
 - `go-error-handling-patterns` — `fmt.Errorf %w` chain, sentinel definition
 - `idempotent-retry-safety` — which ops are safe to retry on a retriable sentinel
-- `client-rate-limiting` — 429 / `Retry-After` plumbs into retry decision
-- `client-tls-configuration` — `ErrTLS` sentinel pairing
-- `credential-provider-pattern` — `ErrAuth` triggers provider refresh
+- `go-client-rate-limiting` — 429 / `Retry-After` plumbs into retry decision
+- `go-client-tls-configuration` — `ErrTLS` sentinel pairing
+- `go-credential-provider-pattern` — `ErrAuth` triggers provider refresh
 
 ## Guardrail hooks
 
 - **G38.sh** family — sentinel error presence + precedence order in `mapErr`
 - **G48.sh** — no `init()`; sentinels are package-level `var`, not registered in init
 - **G98/G99** — every sentinel + `mapErr` symbol carries `[traces-to:]` marker
-- Devil: `sdk-convention-devil` — rejects custom error struct when sentinel would suffice; `sdk-security-devil` — rejects PII in wrapped error messages
+- Devil: `sdk-convention-devil-go` — rejects custom error struct when sentinel would suffice; `sdk-security-devil` — rejects PII in wrapped error messages

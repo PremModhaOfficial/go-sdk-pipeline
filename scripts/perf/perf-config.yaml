@@ -11,7 +11,7 @@
 #   alloc_metric.bench_output_field — label the bench tool emits
 #   bench_tool                     — command pattern for running benches
 #   bench_name_pattern             — glob/regex for discovering bench fns
-#   profile_tool                   — what sdk-profile-auditor invokes
+#   profile_tool                   — what sdk-profile-auditor-go invokes
 #   profile_output_format          — how top-N is extracted
 #   throughput_unit                — units in perf-budget.md throughput column
 

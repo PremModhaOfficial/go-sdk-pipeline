@@ -53,12 +53,16 @@ case "$PACK" in
         fi
         ;;
     python)
-        SRC="$ROOT/packs/python/ast-hash-backend.py"
-        if [ ! -f "$SRC" ]; then
-            echo "python AST-hash backend not yet implemented (P4 deliverable)" >&2
-            exit 5
+        # Prefer the future packs/python/ location; fall back to the in-tree
+        # scripts/ast-hash/python-backend.py shipped with v0.5.0 Phase B.
+        if [ -f "$ROOT/packs/python/ast-hash-backend.py" ]; then
+            exec python3 "$ROOT/packs/python/ast-hash-backend.py" "$FILE" "$SYMBOL"
+        elif [ -f "$ROOT/scripts/ast-hash/python-backend.py" ]; then
+            exec python3 "$ROOT/scripts/ast-hash/python-backend.py" "$FILE" "$SYMBOL"
+        else
+            echo "python AST-hash backend missing" >&2
+            exit 4
         fi
-        python3 "$SRC" "$FILE" "$SYMBOL"
         ;;
     *)
         echo "unknown pack: $PACK (expected: go | python)" >&2

@@ -132,7 +132,7 @@ Effects materialize in subsequent runs. A pattern observed in Dragonfly + S3 (2-
 | Phase | Lead | Output |
 |---|---|---|
 | 0 Intake | `sdk-intake-agent` | Canonical TPRD + manifest validation reports |
-| 0.5 Analyze | `sdk-existing-api-analyzer` | API snapshot + ownership-map (Mode B/C only) |
+| 0.5 Analyze | `sdk-existing-api-analyzer-go` | API snapshot + ownership-map (Mode B/C only) |
 | 1 Design | `sdk-design-lead` | `api.go.stub`, interfaces, dependency vetting, devil verdicts |
 | 2 Impl | `sdk-impl-lead` | Code + tests on `sdk-pipeline/<run-id>` branch |
 | 3 Testing | `sdk-testing-lead` | Coverage, benchmarks, leak/vuln/flake reports |
@@ -143,27 +143,27 @@ Effects materialize in subsequent runs. A pattern observed in Dragonfly + S3 (2-
 | Agent | Catches |
 |---|---|
 | `sdk-design-devil` | Bad API shape |
-| `sdk-dep-vet-devil` | Risky / unfree / vulnerable deps |
+| `sdk-dep-vet-devil-go` | Risky / unfree / vulnerable deps |
 | `sdk-semver-devil` | Hidden breaking changes |
-| `sdk-convention-devil` | Inconsistency with target SDK |
+| `sdk-convention-devil-go` | Inconsistency with target SDK |
 | `sdk-security-devil` | Auth, TLS, credential leaks |
 | `sdk-overengineering-critic` | Unused fields, premature abstraction |
-| `sdk-leak-hunter` | Goroutine leaks |
-| `sdk-api-ergonomics-devil` | Consumer-side ugliness |
-| `sdk-benchmark-devil` | Perf regressions |
-| `sdk-integration-flake-hunter` | Test flakes |
+| `sdk-leak-hunter-go` | Goroutine leaks |
+| `sdk-api-ergonomics-devil-go` | Consumer-side ugliness |
+| `sdk-benchmark-devil-go` | Perf regressions |
+| `sdk-integration-flake-hunter-go` | Test flakes |
 | `sdk-marker-hygiene-devil` | Missing or forged provenance markers |
-| `sdk-constraint-devil` | Unproven `[constraint:]` claims |
-| `sdk-breaking-change-devil` | Mode B/C signature changes (no semver bump) |
+| `sdk-constraint-devil-go` | Unproven `[constraint:]` claims |
+| `sdk-breaking-change-devil-go` | Mode B/C signature changes (no semver bump) |
 
 ### Perf / drift specialists (rules 32 + 33)
 
 | Agent | Role |
 |---|---|
-| `sdk-perf-architect` | Authors `design/perf-budget.md` at D1 — per-symbol p50/p95/p99, allocs/op, big-O, oracle, MMD, drift signals |
-| `sdk-profile-auditor` | At M3.5: reads CPU/heap/block/mutex pprof; enforces G104 alloc budget + G109 profile-shape coverage (≥0.8 match to declared hot paths) |
-| `sdk-complexity-devil` | At T5: scaling sweep at N ∈ {10, 100, 1k, 10k}; curve-fits and enforces G107 big-O match |
-| `sdk-soak-runner` | At T5.5: launches soaks in background, polls state files on a ladder; enforces G105 MMD (minimum-measurable-duration) |
+| `sdk-perf-architect-go` | Authors `design/perf-budget.md` at D1 — per-symbol p50/p95/p99, allocs/op, big-O, oracle, MMD, drift signals |
+| `sdk-profile-auditor-go` | At M3.5: reads CPU/heap/block/mutex pprof; enforces G104 alloc budget + G109 profile-shape coverage (≥0.8 match to declared hot paths) |
+| `sdk-complexity-devil-go` | At T5: scaling sweep at N ∈ {10, 100, 1k, 10k}; curve-fits and enforces G107 big-O match |
+| `sdk-soak-runner-go` | At T5.5: launches soaks in background, polls state files on a ladder; enforces G105 MMD (minimum-measurable-duration) |
 | `sdk-drift-detector` | At T5.5: fast-fail on statistically significant positive trend in drift signals (G106) |
 
 ---
@@ -306,12 +306,12 @@ See `docs/MCP-INTEGRATION-PROPOSAL.md` for the full proposal.
 
 | # | Axis | When | Agent | Gate |
 |---|---|---|---|---|
-| 1 | **Declaration** | D1 | `sdk-perf-architect` | `design/perf-budget.md` exists; per-§7 symbol p50/p95/p99, allocs/op, big-O, oracle, MMD, drift signals |
-| 2 | **Profile shape** | M3.5 | `sdk-profile-auditor` | G109 — top-10 CPU samples match declared hot paths (coverage ≥ 0.8) |
-| 3 | **Allocation** | M3.5 | `sdk-profile-auditor` | G104 — measured `allocs/op` ≤ declared budget |
-| 4 | **Complexity** | T5 | `sdk-complexity-devil` | G107 — scaling sweep at N ∈ {10, 100, 1k, 10k}; curve-fit ≤ declared big-O |
-| 5 | **Regression + Oracle** | T5 | `sdk-benchmark-devil` | G65 regression + G108 oracle margin (oracle not waivable via `--accept-perf-regression`) |
-| 6 | **Drift + MMD** | T5.5 | `sdk-soak-runner` + `sdk-drift-detector` | G106 drift fail-fast + G105 MMD satisfied or verdict = INCOMPLETE |
+| 1 | **Declaration** | D1 | `sdk-perf-architect-go` | `design/perf-budget.md` exists; per-§7 symbol p50/p95/p99, allocs/op, big-O, oracle, MMD, drift signals |
+| 2 | **Profile shape** | M3.5 | `sdk-profile-auditor-go` | G109 — top-10 CPU samples match declared hot paths (coverage ≥ 0.8) |
+| 3 | **Allocation** | M3.5 | `sdk-profile-auditor-go` | G104 — measured `allocs/op` ≤ declared budget |
+| 4 | **Complexity** | T5 | `sdk-complexity-devil-go` | G107 — scaling sweep at N ∈ {10, 100, 1k, 10k}; curve-fit ≤ declared big-O |
+| 5 | **Regression + Oracle** | T5 | `sdk-benchmark-devil-go` | G65 regression + G108 oracle margin (oracle not waivable via `--accept-perf-regression`) |
+| 6 | **Drift + MMD** | T5.5 | `sdk-soak-runner-go` + `sdk-drift-detector` | G106 drift fail-fast + G105 MMD satisfied or verdict = INCOMPLETE |
 | 7 | **Profile-backed exceptions** | design + impl | `sdk-overengineering-critic` | G110 — `[perf-exception: ... bench/X]` marker requires design-time entry in `perf-exceptions.md` AND profile-auditor-measured win |
 
 ### Verdict taxonomy (rule 33)

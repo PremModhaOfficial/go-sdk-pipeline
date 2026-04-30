@@ -159,7 +159,7 @@ FUNCTION ResolutionLoop(phase, review_findings_dir, fix_agents_map):
 
     // 3f-gate: DETERMINISTIC-FIRST GATE (v1.1.0)
     // Cheap deterministic guardrails run on every iteration. The expensive
-    // reviewer fleet (devil agents, simulated-human reviewers, code-reviewer)
+    // reviewer fleet (devil agents, simulated-human reviewers, code-reviewer-go)
     // only spawns when guardrails are green. If any BLOCKER guardrail fails,
     // synthesize the failures as findings and loop back to fix agents without
     // paying the reviewer-fleet token cost for an iteration we already know
@@ -326,7 +326,7 @@ RULES:
 | Migration issues | migration-generator |
 | Build/config issues | build-config-generator |
 | Deployment issues | deployment-generator |
-| Documentation issues | documentation-agent |
+| Documentation issues | documentation-agent-go |
 
 ### Testing Phase
 | Category | Fix Agent |

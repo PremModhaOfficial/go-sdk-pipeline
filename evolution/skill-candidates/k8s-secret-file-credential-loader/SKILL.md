@@ -5,6 +5,8 @@ status: candidate
 priority: SHOULD
 tags: [sdk, credentials, k8s, secrets, security]
 target_consumers: [sdk-design-lead, sdk-impl-lead]
+scope: go
+scope_rationale: Concept (file-mounted secret with fsnotify rotation) is conceptually language-neutral, but body was authored from Go pilot and `specializes:` a Go-flavored shared rule that has not yet been split per D6. Tagged go until rewritten as a true shared-core rule with per-language code overlays.
 provenance: synthesized-from-tprd(sdk-dragonfly-s2, §6, §9)
 specializes: credential-provider-pattern
 ---

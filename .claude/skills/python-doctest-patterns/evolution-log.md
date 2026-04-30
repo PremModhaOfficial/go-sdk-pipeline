@@ -1,0 +1,6 @@
+# Evolution Log — python-doctest-patterns
+
+## 1.0.0 — v0.5.0-phase-b — 2026-04-28
+Initial authorship. Google-style Examples block (plural); # doctest: +SKIP for I/O; +ELLIPSIS / +NORMALIZE_WHITESPACE / +IGNORE_EXCEPTION_DETAIL flags; pytest --doctest-modules + --doctest-glob=*.md wiring; common patterns A-E (pure / construction / async / exception / async-generator). Python pack analog of go-example-function-patterns. Cited from sdk-convention-devil-python C-11 and documentation-agent-python M6.
+
+- v1.1.0 (run sdk-resourcepool-py-pilot-v1, defect SKD-003): add new mandatory §CI Wiring section at head of body. Skill now opens with: "Examples blocks are only worth writing if the build runs them." Prescribes pyproject.toml [tool.pytest.ini_options].addopts MUST include `--doctest-modules` (or a fallback tests/test_doctests.py running doctest.testmod via pkgutil.walk_packages on each public module). GOOD pyproject snippet (addopts + testpaths + doctest_optionflags) + BAD example (addopts without --doctest-modules — exactly the SKD-003 defect: 9/9 public symbols had Examples blocks but build did not run them). Adds asyncio-flavored examples interaction note: # doctest: +SKIP becomes non-decorative once --doctest-modules is wired. Applied by learning-engine; user-notified at H10.
