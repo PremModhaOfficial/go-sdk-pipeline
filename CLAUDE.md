@@ -104,11 +104,11 @@ Agents MUST read target SDK tree before designing. No contradicting existing pat
 ### 19. Dependency Justification
 Every new dependency add (per the active language pack) requires `runs/<run-id>/design/dependencies.md` entry: name, version, license, size, the pack's vulnerability scanner, the pack's lockfile vulnerability scanner, last-commit-age, transitive-count. Dep-Vet Devil (per-pack) verdict required. License allowlist: MIT / Apache-2.0 / BSD / ISC / 0BSD / MPL-2.0.
 
-### 20. Benchmark Regression + Oracle + Alloc Gates
+### 20. Benchmark Regression + Target + Alloc Gates
 Three independent perf gates, all enforced at Phase 3 T5:
 
 1. **Regression** — >10% on shared paths OR >5% on new-package hot path = BLOCKER, waivable with `--accept-perf-regression <pct>`. Owner: Benchmark Devil (per-pack).
-2. **Oracle margin (G108)** — measured p50 must stay within `oracle.margin_multiplier ×` the declared reference-impl number in `design/perf-budget.md`. BLOCKER if breached. NOT covered by `--accept-perf-regression`; waiver requires updating the margin in perf-budget.md with rationale at H8. Owner: Benchmark Devil (per-pack).
+2. **Absolute target** — measured p50/p95/p99 must stay within the TPRD-declared latency targets in `design/perf-budget.md` (`latency.*`). BLOCKER if breached. Waiver requires updating the targets in perf-budget.md with rationale at H8 (or fixing the implementation). Owner: Benchmark Devil (per-pack).
 3. **Alloc budget (G104)** — measured `allocs/op` must be ≤ declared `allocs_per_op` in perf-budget.md. BLOCKER. Enforced at M3.5 by Profile Auditor (per-pack) (BEFORE T5; alloc issues don't reach testing).
 
 Rule 32 (Performance-Confidence Regime) lists the full gate set. Rule 33 (Verdict Taxonomy) disambiguates PASS / FAIL / INCOMPLETE.
@@ -170,13 +170,13 @@ Every MCP integration (`mcp__neo4j-memory__*`, `mcp__serena__*`, `mcp__code-grap
 ### 32. Performance-Confidence Regime
 "Best performance" is uncomputable — the space of equivalent programs is infinite. What the pipeline CAN do is build a falsification regime: if a meaningful perf improvement is available, these gates surface it. Confidence = ∪ of failure modes we actively falsify.
 
-**The seven falsification axes**:
+**The six falsification axes**:
 
-1. **Declaration** — Perf Architect (per-pack) writes `design/perf-budget.md` (rule 20) at D1: per-§7-symbol latency p50/p95/p99, allocs/op, throughput, hot-path flag, reference oracle, theoretical floor, big-O complexity, MMD (soak symbols), drift signals. Without a declaration, downstream gates have nothing to falsify against.
+1. **Declaration** — Perf Architect (per-pack) writes `design/perf-budget.md` (rule 20) at D1: per-§7-symbol latency p50/p95/p99, allocs/op, throughput, hot-path flag, theoretical floor, big-O complexity, MMD (soak symbols), drift signals. Without a declaration, downstream gates have nothing to falsify against.
 2. **Profile shape (G109)** — Profile Auditor (per-pack) at M3.5 reads CPU/heap/block/mutex profiler output; top-10 CPU samples must match declared hot paths (coverage ≥0.8); surprise hotspots = BLOCKER. Catches design-reality drift before testing phase.
-3. **Allocation (G104)** — Profile Auditor (per-pack) enforces `allocs/op ≤ design budget` from perf-budget.md. Mandatory allocation reporting on every benchmark on every benchmark.
+3. **Allocation (G104)** — Profile Auditor (per-pack) enforces `allocs/op ≤ design budget` from perf-budget.md. Mandatory allocation reporting on every benchmark.
 4. **Complexity (G107)** — Complexity Devil (per-pack) at T5 runs a scaling sweep at N ∈ {10, 100, 1k, 10k}, curve-fits, compares to declared big-O. Catches accidental quadratic paths that pass wallclock gates at microbench sizes.
-5. **Regression + Oracle (rule 20 / G108)** — Benchmark Devil (per-pack) at T5: regression vs. baseline AND oracle-margin vs. declared reference impl. Oracle breach is not waivable via `--accept-perf-regression`.
+5. **Regression + Target (rule 20)** — Benchmark Devil (per-pack) at T5: run-to-run regression vs. baseline AND absolute-target check vs. TPRD-declared `latency.*` numbers in perf-budget.md. Target miss requires either fixing the implementation or updating the declared target at H8 with rationale.
 6. **Drift (G106) + MMD (G105)** — Soak Runner (per-pack) + `sdk-drift-detector` at T5.5 launch soaks in background (Bash `run_in_background`), poll state files on a ladder, fast-fail on statistically significant positive trend in drift signals. MMD enforces that a soak verdict reflects a long-enough run.
 7. **Profile-backed exceptions (G110)** — the `[perf-exception:]` marker (rule 29) lets impl carry hand-optimized code through the `sdk-overengineering-critic` — but only when paired with a design-time entry in `perf-exceptions.md` AND a profile-auditor-measured benchmark win.
 
@@ -186,7 +186,7 @@ Every MCP integration (`mcp__neo4j-memory__*`, `mcp__serena__*`, `mcp__code-grap
 Three verdicts, not two. An INCOMPLETE verdict is NEVER silently promoted to PASS.
 
 - **PASS** — the gate ran to completion and found no violation. For soak tests, this requires `actual_duration_s ≥ mmd_seconds` from perf-budget.md (G105).
-- **FAIL** — the gate ran and detected a violation (drift, regression, oracle-breach, complexity-mismatch, alloc-over-budget, surprise hotspot). BLOCKER; no auto-merge.
+- **FAIL** — the gate ran and detected a violation (drift, regression, target-miss, complexity-mismatch, alloc-over-budget, surprise hotspot). BLOCKER; no auto-merge.
 - **INCOMPLETE** — the gate could not render a verdict: MMD not reached within wallclock cap, too few samples for regression fit, profiler unavailable, harness crashed without writing state. H9 MUST surface INCOMPLETE verdicts explicitly. User chooses: extend window, accept risk with written waiver, or reject. INCOMPLETE never auto-merges.
 
 Wherever a gate historically returned "passed so far" on a timeout, it MUST now return INCOMPLETE. A synchronous Bash tool call hitting the 10-minute ceiling with a running soak = INCOMPLETE, not PASS.

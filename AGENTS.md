@@ -20,7 +20,7 @@ This file is the single source of truth for every agent in this pipeline. Canoni
 | Interface signatures | Shared | `interface-designer` | `sdk-designer` | — |
 | Retry/backoff/CB algorithms | Shared | `algorithm-designer` | `sdk-designer` | — |
 | Concurrency patterns | Shared | `concurrency-designer` | — | — |
-| Performance-budget declaration (oracle, floor, MMD, big-O, allocs, drift signals) | Go | `sdk-perf-architect-go` | `algorithm-designer`, `concurrency-designer` | `context7`, `exa` |
+| Performance-budget declaration (latency targets, floor, MMD, big-O, allocs, drift signals) | Go | `sdk-perf-architect-go` | `algorithm-designer`, `concurrency-designer` | `context7`, `exa` |
 | Performance-budget declaration | Python | `sdk-perf-architect-python` | `algorithm-designer`, `concurrency-designer` | `context7`, `exa` |
 | Dependency vetting | Go | `sdk-dep-vet-devil-go` | — | — |
 | Dependency vetting | Python | `sdk-dep-vet-devil-python` | — | — |
@@ -49,8 +49,8 @@ This file is the single source of truth for every agent in this pipeline. Canoni
 | Code review | Go | `code-reviewer-go` | — | — |
 | Code review | Python | `code-reviewer-python` | — | — |
 | Testing lead | Shared | `sdk-testing-lead` | per-language test/leak/bench/soak agents | — |
-| Benchmark regression + oracle-margin verdict | Go | `sdk-benchmark-devil-go` (benchstat) | `baseline-manager`, `sdk-perf-architect-go` | — |
-| Benchmark regression + oracle-margin verdict | Python | `sdk-benchmark-devil-python` (pytest-benchmark JSON + Mann-Whitney) | `baseline-manager`, `sdk-perf-architect-python` | — |
+| Benchmark regression + target-latency verdict | Go | `sdk-benchmark-devil-go` (benchstat) | `baseline-manager`, `sdk-perf-architect-go` | — |
+| Benchmark regression + target-latency verdict | Python | `sdk-benchmark-devil-python` (pytest-benchmark JSON + Mann-Whitney) | `baseline-manager`, `sdk-perf-architect-python` | — |
 | Complexity scaling verdict (declared-vs-measured big-O; G107) | Go | `sdk-complexity-devil-go` | `sdk-perf-architect-go` | — |
 | Complexity scaling verdict | Python | `sdk-complexity-devil-python` (curve fit on `@pytest.mark.parametrize` sweep) | `sdk-perf-architect-python` | — |
 | Soak test launch (background harness + state file) | Go | `sdk-soak-runner-go` | `sdk-perf-architect-go` | — |

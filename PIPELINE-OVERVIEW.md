@@ -160,7 +160,7 @@ Effects materialize in subsequent runs. A pattern observed in Dragonfly + S3 (2-
 
 | Agent | Role |
 |---|---|
-| Perf Architect (per-pack) | Authors `design/perf-budget.md` at D1 — per-symbol p50/p95/p99, allocs/op, big-O, oracle, MMD, drift signals |
+| Perf Architect (per-pack) | Authors `design/perf-budget.md` at D1 — per-symbol p50/p95/p99, allocs/op, big-O, theoretical floor, MMD, drift signals |
 | Profile Auditor (per-pack) | At M3.5: reads CPU/heap/block/mutex profiler output; enforces G104 alloc budget + G109 profile-shape coverage (≥0.8 match to declared hot paths) |
 | Complexity Devil (per-pack) | At T5: scaling sweep at N ∈ {10, 100, 1k, 10k}; curve-fits and enforces G107 big-O match |
 | Soak Runner (per-pack) | At T5.5: launches soaks in background, polls state files on a ladder; enforces G105 MMD (minimum-measurable-duration) |
@@ -180,7 +180,7 @@ The TPRD declares numeric gates. The pipeline enforces them.
 | Bench regression — shared path | > **10%** = BLOCKER | G65 |
 | Alloc budget (per symbol) | measured ≤ declared | G104 |
 | Big-O complexity match | curve-fit ≤ declared | G107 |
-| Oracle margin | p50 ≤ `margin × reference impl` | G108 (not waivable via `--accept-perf-regression`) |
+| Absolute target latency | measured p50/p95/p99 ≤ TPRD-declared `latency.*` in `perf-budget.md` | Benchmark Devil (per-pack) — H8 surfaces target-miss for user resolution |
 | Profile-shape coverage | top-10 CPU samples ≥ 0.8 match to declared hot paths | G109 |
 | Soak MMD | `actual_duration_s ≥ mmd_seconds` or verdict = INCOMPLETE | G105 |
 | Drift trend | no statistically significant positive trend on declared drift signals | G106 |
@@ -302,15 +302,15 @@ See `docs/MCP-INTEGRATION-PROPOSAL.md` for the full proposal.
 
 "Best performance" is uncomputable — the space of equivalent programs is infinite. What the pipeline can do is build a **falsification regime**: if a meaningful perf improvement is available, these gates surface it. Confidence = ∪ of failure modes actively falsified.
 
-### Seven falsification axes
+### Six falsification axes
 
 | # | Axis | When | Agent | Gate |
 |---|---|---|---|---|
-| 1 | **Declaration** | D1 | Perf Architect (per-pack) | `design/perf-budget.md` exists; per-§7 symbol p50/p95/p99, allocs/op, big-O, oracle, MMD, drift signals |
+| 1 | **Declaration** | D1 | Perf Architect (per-pack) | `design/perf-budget.md` exists; per-§7 symbol p50/p95/p99, allocs/op, big-O, theoretical floor, MMD, drift signals |
 | 2 | **Profile shape** | M3.5 | Profile Auditor (per-pack) | G109 — top-10 CPU samples match declared hot paths (coverage ≥ 0.8) |
 | 3 | **Allocation** | M3.5 | Profile Auditor (per-pack) | G104 — measured `allocs/op` ≤ declared budget |
 | 4 | **Complexity** | T5 | Complexity Devil (per-pack) | G107 — scaling sweep at N ∈ {10, 100, 1k, 10k}; curve-fit ≤ declared big-O |
-| 5 | **Regression + Oracle** | T5 | Benchmark Devil (per-pack) | G65 regression + G108 oracle margin (oracle not waivable via `--accept-perf-regression`) |
+| 5 | **Regression + Target** | T5 | Benchmark Devil (per-pack) | G65 run-to-run regression + absolute-target check vs TPRD-declared `latency.*` (target-miss requires fix or explicit H8 budget update) |
 | 6 | **Drift + MMD** | T5.5 | Soak Runner (per-pack) + `sdk-drift-detector` | G106 drift fail-fast + G105 MMD satisfied or verdict = INCOMPLETE |
 | 7 | **Profile-backed exceptions** | design + impl | `sdk-overengineering-critic` | G110 — `[perf-exception: ... bench/X]` marker requires design-time entry in `perf-exceptions.md` AND profile-auditor-measured win |
 
@@ -319,7 +319,7 @@ See `docs/MCP-INTEGRATION-PROPOSAL.md` for the full proposal.
 Three verdicts, not two. `INCOMPLETE` is never silently promoted to `PASS`.
 
 - **PASS** — gate ran to completion; no violation. For soaks requires `actual_duration_s ≥ mmd_seconds`.
-- **FAIL** — gate detected a violation (drift, regression, oracle breach, complexity mismatch, alloc over budget, surprise hotspot). BLOCKER.
+- **FAIL** — gate detected a violation (drift, regression, target miss, complexity mismatch, alloc over budget, surprise hotspot). BLOCKER.
 - **INCOMPLETE** — gate could not render a verdict (MMD not reached, too few samples, profiler unavailable, harness crashed). Surfaced explicitly at H9. User chooses: extend window, accept risk with written waiver, or reject. Never auto-merges.
 
 Any gate that historically returned "passed so far" on timeout now returns INCOMPLETE.
@@ -488,7 +488,7 @@ quality_score = completeness         × 0.20
 | **Marker protocol** | Code annotations (`[traces-to:]`, `[owned-by:]`, `[constraint:]`, `[perf-exception:]`) that drive provenance + safety checks |
 | **Compensating baselines** | Four cross-run baselines that replaced golden-corpus (rule 28): output-shape hash, devil-verdict stability, tightened quality threshold, example-count |
 | **Deterministic-first gate** | Rule 13: reviewer fleet only re-runs on iterations where build, vet, fmt, static-check, race-detection (if supported), leak-detection, vulnerability-scan, lockfile-scan, marker-hash, constraint-bench, license are green |
-| **Oracle margin** | Declared `margin × reference impl p50` tolerance in `perf-budget.md` (G108) — not waivable via `--accept-perf-regression` |
+| **Absolute target latency** | TPRD-declared `latency.*` in `perf-budget.md` — Benchmark Devil enforces measured p50/p95/p99 ≤ declared, surfaces target-miss at H8 |
 | **MMD** | Minimum-measurable-duration for soak verdicts (G105) |
 | **Verdict taxonomy** | PASS / FAIL / INCOMPLETE (rule 33) — timeouts yield INCOMPLETE, never silently promoted |
 | **Skill-candidate** | Draft skill awaiting human PR review (cannot be auto-promoted) |
