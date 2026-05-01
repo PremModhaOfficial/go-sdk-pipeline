@@ -65,7 +65,6 @@
     "G105-py": "Soak-MMD verdict gate. Owner: sdk-drift-detector. Phase: Testing T-SOAK. Script not yet authored.",
     "G106-py": "Soak-drift detection. Owner: sdk-drift-detector. Phase: Testing T-SOAK. Script not yet authored.",
     "G107-py": "Complexity-mismatch gate. Owner: sdk-complexity-devil-python. Phase: Testing T5. Script not yet authored.",
-    "G108-py": "Oracle-margin sanity. Owner: sdk-benchmark-devil-python. Phase: Testing T5. Script not yet authored.",
     "G109-py": "Profile-no-surprise hot-path coverage (py-spy / scalene). Owner: sdk-profile-auditor-python. Phase: Impl M3.5. Script not yet authored.",
     "G110-py": "Perf-exception marker pairing. Owner: sdk-marker-hygiene-devil. Phases: Impl M7 + M9. Script not yet authored."
   },

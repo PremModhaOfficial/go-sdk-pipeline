@@ -70,7 +70,6 @@
     "G105": "Soak-MMD verdict gate (rule 33). Owner: sdk-drift-detector. Phase: Testing T-SOAK. Script not yet authored.",
     "G106": "Soak-drift detection (rule 32 axis 6). Owner: sdk-drift-detector. Phase: Testing T-SOAK. Script not yet authored.",
     "G107": "Complexity-mismatch gate (rule 32 axis 4). Owner: sdk-complexity-devil-go. Phase: Testing T5. Script not yet authored.",
-    "G108": "Oracle-margin sanity (rule 32 axis 5). Owner: sdk-benchmark-devil-go. Phase: Testing T5. Script not yet authored.",
     "G109": "Profile-no-surprise hot-path coverage (rule 32 axis 2). Owner: sdk-profile-auditor-go. Phase: Impl M3.5. Script not yet authored.",
     "G110": "Perf-exception marker pairing (rule 32 axis 7, rule 29). Owner: sdk-marker-hygiene-devil. Phases: Impl M7 + M9. Script not yet authored."
   },

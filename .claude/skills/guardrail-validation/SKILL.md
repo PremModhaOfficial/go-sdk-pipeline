@@ -5,11 +5,11 @@ description: >
   exit, when guardrail-validator emits a verdict, or when authoring/diagnosing
   a G-numbered gate. Covers G01-G110: supply-chain (G32-G34),
   benchmark-regression (G65), marker-ownership (G95-G103), dependency-vetting,
-  language-adapter convention gates, and the seven perf-confidence gates
-  G104-G110 (alloc-budget, soak-MMD, soak-drift, complexity, oracle-margin,
-  profile-no-surprise, perf-exception pairing). Multi-tenancy checks inverted
-  to check ABSENCE.
-  Triggers: guardrail, validator, PASS, FAIL, G01, G110, supply-chain, marker-ownership, perf-confidence, alloc-budget, oracle-margin, soak, complexity, phase-exit.
+  language-adapter convention gates, and the six perf-confidence gates
+  G104, G105, G106, G107, G109, G110 (alloc-budget, soak-MMD, soak-drift,
+  complexity, profile-no-surprise, perf-exception pairing). Multi-tenancy
+  checks inverted to check ABSENCE.
+  Triggers: guardrail, validator, PASS, FAIL, G01, G110, supply-chain, marker-ownership, perf-confidence, alloc-budget, soak, complexity, phase-exit.
 version: 1.3.1
 last-evolved-in-run: v0.6.0-rc.0-sanitization-restore
 status: stable
@@ -49,14 +49,14 @@ Catalogs the G-numbered guardrail gates the pipeline runs at phase exits, organi
 | Meta | G90, G93 | shared | Skill-index ↔ filesystem strict equality (G90), CLAUDE.md rule contiguity (G93). |
 | Markers (Go) | G95–G103 | go | MANUAL byte-preservation, constraint-bench-proof, marker-delete consent, do-not-regenerate hash, stable-since semver, deprecated-in horizon, no-forged-traces-to. Backed by Go AST-hash backend (`scripts/ast-hash/go-backend.go`). |
 | Markers (Python) | G95-py–G103-py | python | Same marker-protocol contracts realized over Python AST (`scripts/ast-hash/python-backend.py`). |
-| Perf-Confidence (aspirational, Go) | G104–G110 | go (aspirational) | Alloc-budget (G104), soak-MMD (G105), soak-drift (G106), complexity-mismatch (G107), oracle-margin (G108), profile-no-surprise (G109), perf-exception pairing (G110). All forward-declared per CLAUDE.md rule 32. |
-| Perf-Confidence (aspirational, Python) | G104-py–G110-py | python (aspirational) | Same perf-confidence regime realized via Python tooling (py-spy / scalene / pytest-benchmark). All forward-declared. |
+| Perf-Confidence (aspirational, Go) | G104–G107, G109, G110 | go (aspirational) | Alloc-budget (G104), soak-MMD (G105), soak-drift (G106), complexity-mismatch (G107), profile-no-surprise (G109), perf-exception pairing (G110). All forward-declared per CLAUDE.md rule 32. |
+| Perf-Confidence (aspirational, Python) | G104-py–G107-py, G109-py, G110-py | python (aspirational) | Same perf-confidence regime realized via Python tooling (py-spy / scalene / pytest-benchmark). All forward-declared. |
 
 **Catalog–manifest drift rule**: when adding a new G* script, update both this catalog AND the owning package manifest (`.claude/package-manifests/<pack>.json:guardrails` for live, `:aspirational_guardrails` for forward-declared). `scripts/validate-packages.sh` enforces filesystem ↔ manifest consistency.
 
-## Perf-Confidence band detail (G104–G110, applies to both Go and Python pack realizations)
+## Perf-Confidence band detail (G104–G107, G109, G110, applies to both Go and Python pack realizations)
 
-These seven gates collectively enforce CLAUDE.md rule 32 (Performance-Confidence Regime) and rule 33 (Verdict Taxonomy PASS / FAIL / INCOMPLETE).
+These six gates collectively enforce CLAUDE.md rule 32 (Performance-Confidence Regime) and rule 33 (Verdict Taxonomy PASS / FAIL / INCOMPLETE).
 
 | ID | Severity | Phase | Owner | Check |
 |----|---|---|---|---|
@@ -64,7 +64,6 @@ These seven gates collectively enforce CLAUDE.md rule 32 (Performance-Confidence
 | G105 | BLOCKER (INCOMPLETE-gated) | Testing (T-SOAK) | drift-detector | For every soak-enabled symbol, final `t_elapsed_s` in `state.jsonl` ≥ `mmd_seconds`. Verdict < MMD = INCOMPLETE (rule 33) — never auto-passes to PASS. |
 | G106 | BLOCKER | Testing (T-SOAK) | drift-detector | For every declared drift signal, linear regression over the soak timeline has slope ≤ 0 OR p-value ≥ 0.05 OR R² ≤ 0.5. Warmup-excluded first 2 minutes. |
 | G107 | BLOCKER | Testing (T5) | complexity-devil | For every symbol with declared `complexity.time` in perf-budget.md, scaling benchmark at N ∈ {10, 100, 1k, 10k} curve-fits to declared or better. |
-| G108 | BLOCKER | Testing (T5) | benchmark-devil | For every symbol with a non-`none` oracle in perf-budget.md, measured p50 ≤ `oracle.measured_p50_us × margin_multiplier`. NOT waivable via `--accept-perf-regression`. |
 | G109 | BLOCKER | Impl (M3.5) | profile-auditor | Top-10 CPU samples from profiler ≥ 0.80 coverage over declared hot-path functions. Also flags allocator overhead, GC overhead, unexpected lock contention on single-threaded paths, unexpected syscalls on non-I/O benches. |
 | G110 | BLOCKER | Impl (M7 + M9) | marker-hygiene-devil | Every `[perf-exception: ... bench/X]` marker in source has a matching entry in `design/perf-exceptions.md` with the same bench name. Orphan markers or orphan entries = FAIL. |
 
