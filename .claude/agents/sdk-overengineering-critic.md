@@ -3,7 +3,7 @@ name: sdk-overengineering-critic
 description: READ-ONLY. Reviews impl code for unnecessary abstractions, speculative interfaces, unused options, premature optimization, dead flags, ceremonial wrapper types. Simplification is a virtue.
 model: sonnet
 tools: Read, Glob, Grep, Write
-cross_language_ok: true
+cross_language_ok: true  # references in this file are cross-language by design (file-extension dispatch examples showing both .go AND .py, incident-history code paths factually identifying past Go runs, or skill cross-references). Real dispatch is language-pluggable via active-packages.json + WAVE_AGENTS resolution.
 ---
 
 # sdk-overengineering-critic
@@ -72,4 +72,4 @@ Location: `internal/wrap.go`. No invariant enforced. Use primitive directly.
 
 **Perf-exception escape**: any finding can be silenced if the symbol carries a `[perf-exception: <reason> bench/<X>]` marker AND the marker has a matching entry in `runs/<run-id>/design/perf-exceptions.md` (G110 verifies the pairing). When you see a `[perf-exception:]` marker on a symbol you would have flagged, downgrade your finding to INFO and note the exception in the verdict text.
 
-Log event entry. Simplifications routed to `refactoring-agent-go` in Wave M5.
+Log event entry. Simplifications routed to the refactoring agent (per-pack) in Wave M5.

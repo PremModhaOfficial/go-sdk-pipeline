@@ -3,7 +3,7 @@ name: guardrail-validator
 description: Runs mechanical automated checks. Extended check catalog from archive's 28 to SDK pipeline's G01-G103 (includes marker guardrails, regression gates, determinism, supply chain).
 model: sonnet
 tools: Read, Glob, Grep, Bash, Write
-cross_language_ok: true
+cross_language_ok: true  # references in this file are cross-language by design (file-extension dispatch examples showing both .go AND .py, incident-history code paths factually identifying past Go runs, or skill cross-references). Real dispatch is language-pluggable via active-packages.json + WAVE_AGENTS resolution.
 ---
 
 
@@ -28,16 +28,16 @@ Scan all source files matching `active-packages.json:packages[].file_extensions`
 - **Go**: package names (lowercase, single word); exported types (PascalCase); no stuttering; correct acronyms (`ID` not `Id`, `HTTP` not `Http`, `URL` not `Url`).
 - **Python**: module names (lowercase + underscores); class names (PascalCase); function/variable names (snake_case); no PEP-8 violations on identifier shape.
 
-The naming-convention rule set per language lives in `<pack>/conventions.yaml` (authored in Step 13 of the structure-finalization plan, post-D6=Split rewrite). Until that file exists, this check defers to the active language's per-pack convention agent (`sdk-convention-devil-go` for Go) for full evaluation.
+The naming-convention rule set per language lives in `<pack>/conventions.yaml` (authored in Step 13 of the structure-finalization plan, post-D6=Split rewrite). Until that file exists, this check defers to the active language's per-pack convention agent (the convention devil (per-pack) for Go) for full evaluation.
 
 ### CHECK 2: Error Handling Consistency
-Every I/O function surfaces errors per the active language's idiom (Go: `(T, error)` return + `fmt.Errorf %w` wrap + sentinel matching via `errors.Is`/`As`; Python: typed exceptions with `raise ... from err` chains; both: no swallowed errors). Detailed conventions in per-language skill (e.g. `go-error-handling-patterns`).
+Every I/O function surfaces errors per the active language's idiom (Go: `(T, error)` return + the pack's error-chain wrapping (Go: `fmt.Errorf %w`; Python: `raise from`) wrap + sentinel matching via typed-error sentinel match (per-pack)/`As`; Python: typed exceptions with `raise ... from err` chains; both: no swallowed errors). Detailed conventions in per-language skill (e.g. `go-error-handling-patterns`).
 
 ### CHECK 3: Dependency Cycle Detection
 Build dependency graph from package imports inside `$SDK_TARGET_DIR/<new-pkg>/`. Detect cycles. SDK-pipeline target is one module; cycles are intra-package.
 
 ### CHECK 4: I/O Cancellation Plumbing
-Every I/O method respects the language's cancellation primitive. Go: `context.Context` as first parameter on every I/O method. Python: async I/O methods accept `asyncio.CancelledError` cleanly OR receive a cancellation token. Per-language enforcement in `<pack>/conventions.yaml`.
+Every I/O method respects the language's cancellation primitive. Go: the cancellation primitive (per-pack) as first parameter on every I/O method. Python: async I/O methods accept `asyncio.CancelledError` cleanly OR receive a cancellation token. Per-language enforcement in `<pack>/conventions.yaml`.
 
 ### CHECK 5: Multi-tenancy ABSENCE (inverted from archive)
 Per CLAUDE.md Project Context: SDK is a library, no multi-tenancy. **Flag presence** of `TenantID`, `tenant_id`, `schema-per-tenant` artifacts, or tenant-segmented NATS subjects unless TPRD explicitly opts in. This check is now an absence-check (G38 owns the BLOCKER-level enforcement).
@@ -131,7 +131,7 @@ Before finalizing your outputs, you MUST:
 3. If you discover a conflict between your output and a co-wave agent's output, immediately log an ESCALATION to the phase lead
 4. Log at least 1 communication entry per run documenting your key dependencies or assumptions about other agents' work
 
-Zero inter-agent communications were logged across 5 consecutive phases (Architecture, Detailed Design, Implementation, Testing, Frontend). This led to undetected conflicts (outbox schema inconsistency), uncoordinated shared resources (go.mod concurrent modification), and unresolved assumptions (infra-architect NATS naming pending). Agents working in isolation is the most systemic issue in the pipeline.
+Zero inter-agent communications were logged across 5 consecutive phases (Architecture, Detailed Design, Implementation, Testing, Frontend). This led to undetected conflicts (outbox schema inconsistency), uncoordinated shared resources (<module-manifest> concurrent modification), and unresolved assumptions (infra-architect NATS naming pending). Agents working in isolation is the most systemic issue in the pipeline.
 
 ---
 
@@ -159,7 +159,7 @@ G10-G15 (bootstrap-specific) REMOVED with Phase -1.
 Some guardrails (G96, G97, G99-G103) require reading `ownership-map.json`. Skip these gracefully on Mode A (no pre-existing markers); run fully on Mode B/C.
 
 ### Delta 3: Supply chain checks
-G32 (govulncheck) and G33 (osv-scanner) — delegates to `sdk-dep-vet-devil-go` for interpretation; guardrail-validator runs the scanners and stores raw output.
+G32 (vulnerability scanner) and G33 (lockfile vulnerability scanner) — delegates to the dep-vet devil (per-pack) for interpretation; guardrail-validator runs the scanners and stores raw output.
 
 ### Delta 4: Determinism check (G94)
 Only runs on `--seed <int>` mode. Compares two consecutive runs; flags byte-diff on pipeline-owned regions.

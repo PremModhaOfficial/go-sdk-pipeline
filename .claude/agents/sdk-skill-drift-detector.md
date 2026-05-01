@@ -3,7 +3,7 @@ name: sdk-skill-drift-detector
 description: Phase 4. Compares what each invoked skill PRESCRIBED against what the generated code ACTUALLY does. Writes drift findings to feedback for improvement-planner.
 model: opus
 tools: Read, Glob, Grep, Write
-cross_language_ok: true
+cross_language_ok: true  # references in this file are cross-language by design (file-extension dispatch examples showing both .go AND .py, incident-history code paths factually identifying past Go runs, or skill cross-references). Real dispatch is language-pluggable via active-packages.json + WAVE_AGENTS resolution.
 ---
 
 # sdk-skill-drift-detector

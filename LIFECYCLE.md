@@ -1,5 +1,3 @@
-<!-- cross_language_ok: true — top-level pipeline doc references per-pack tooling and the multi-tenant SaaS platform context (per F-008 in migration-findings.md). Authoritative project description: SDK is built FOR multi-tenant SaaS consumers; multi-tenant guardrails (TenantID, JetStream, MsgPack, schema-per-tenant) are in-scope. -->
-
 # Pipeline Lifecycle & Usage
 
 Operational guide for the NFR-driven `motadata-sdk-pipeline`. Covers the two nested loops, HITL gates, per-request workflow, artifacts, exit codes, resume behavior, and a concrete walkthrough.
@@ -38,16 +36,16 @@ The pipeline has two nested feedback loops:
 
 ```bash
 # 1. Target SDK must be a git repo
-cd ~/projects/nextgen/motadata-go-sdk && git status
+cd $SDK_TARGET_DIR/.. && git status
 
 # 2. Export the target dir
-export SDK_TARGET_DIR=~/projects/nextgen/motadata-go-sdk/src/motadatagosdk
+export SDK_TARGET_DIR=~/projects/nextgen/<sdk-target>/<src-root>
 
 # 3. Verify toolchain (matches environment-prerequisites-check skill)
 go version                  # 1.26+
-govulncheck -version
-osv-scanner --version
-benchstat -version
+<vuln-scanner> --version
+<lockfile-scanner> --version
+<bench-comparator> --version
 docker --version            # for testcontainers
 jq --version
 
@@ -193,8 +191,8 @@ If anything is missing, **author it via PR first**. The pipeline will not synthe
 │      ▼                                                                    │
 │  Phase 3   Testing   Unit coverage (≥90%)                                 │
 │                      Integration (testcontainers, real backends)          │
-│                      Benchmarks + benchstat vs. baseline                  │
-│                      goleak + govulncheck + osv-scanner                   │
+│                      Benchmarks + comparator vs. baseline (per pack)                  │
+│                      leak-detection + vulnerability scan + lockfile scan                   │
 │                      Fuzz targets                                         │
 │                      Flake hunt (-count=3)                                │
 │                      ═══ HITL H9 ═══  approve test results               │
@@ -458,8 +456,8 @@ Terminal timeline (typical Mode A, mature pipeline, ~45 min wall-clock):
         Unit coverage 92.4%    ✓ (≥90%)
         Integration: 8/8 PASS on MinIO + LocalStack testcontainers
         Benchmarks: 4 regressions within tolerance (<5%)
-        goleak: clean
-        govulncheck + osv-scanner: clean
+        leak-detection: clean
+        vulnerability + lockfile scans: clean
         Flake hunt -count=3: 0 failures
         ═══ H9 ═══ [user approves]
 [39:00] Phase 4 Feedback (~6 min)

@@ -1,5 +1,3 @@
-<!-- cross_language_ok: true — top-level pipeline doc references per-pack tooling and the multi-tenant SaaS platform context (per F-008 in migration-findings.md). Authoritative project description: SDK is built FOR multi-tenant SaaS consumers; multi-tenant guardrails (TenantID, JetStream, MsgPack, schema-per-tenant) are in-scope. -->
-
 # motadata-sdk-pipeline — Executive Overview
 
 > **Audience**: CXO + Tech Leads
@@ -13,7 +11,7 @@
 
 **What it is.** A multi-agent pipeline that takes a Technical PRD (TPRD) for a new or extended Go SDK client and produces production-grade code, tests, benchmarks, and observability — on a dedicated git branch, against numeric quality gates declared in the spec.
 
-**What it solves.** Today, every team that adds a backend client to `motadata-go-sdk` (Redis, NATS, Kafka, S3, Dragonfly, …) hand-rolls retry logic, observability, pool tuning, TLS, credential loading, and tests. The result: inconsistent quality, drift between clients, and 1–4 weeks of senior-engineer time per addition.
+**What it solves.** Today, every team that adds a backend client to the SDK target (Redis, NATS, Kafka, S3, Dragonfly, …) hand-rolls retry logic, observability, pool tuning, TLS, credential loading, and tests. The result: inconsistent quality, drift between clients, and 1–4 weeks of senior-engineer time per addition.
 
 **What changes.** The pipeline turns "add client X to the SDK" into a single command against a detailed TPRD. A complete first-class SDK client (≥90 % coverage, OTel-instrumented, leak-clean, supply-chain-vetted, on its own branch, behind explicit human approval gates) lands in ~1–2 hours of pipeline runtime + ~3 hours of human review.
 
@@ -42,7 +40,7 @@ The result: every SDK client looks like every other, hits the same quality bar, 
 
 ## 3. What It Does (in one paragraph)
 
-Given a detailed TPRD describing a new client (Mode A), an extension to an existing client (Mode B), or an incremental tightening (Mode C), the pipeline runs five phases in sequence — Intake, Design, Implementation, Testing, Feedback — gated by seven Human-in-the-Loop (HITL) approval points. Inside each phase, a team of specialized agents (designers, implementors, testers) does the work; a parallel team of "devil" agents adversarially reviews it (security, semver, dependencies, conventions, over-engineering, leaks, ergonomics, benchmarks). Anything that fails a devil review loops back for fixes (capped at 10 iterations). The output: a feature branch on `motadata-go-sdk` with new code + tests + benchmarks, a full audit trail under `runs/<run-id>/`, and updated quality baselines. The user reviews the final diff and decides whether to merge.
+Given a detailed TPRD describing a new client (Mode A), an extension to an existing client (Mode B), or an incremental tightening (Mode C), the pipeline runs five phases in sequence — Intake, Design, Implementation, Testing, Feedback — gated by seven Human-in-the-Loop (HITL) approval points. Inside each phase, a team of specialized agents (designers, implementors, testers) does the work; a parallel team of "devil" agents adversarially reviews it (security, semver, dependencies, conventions, over-engineering, leaks, ergonomics, benchmarks). Anything that fails a devil review loops back for fixes (capped at 10 iterations). The output: a feature branch on the SDK target with new code + tests + benchmarks, a full audit trail under `runs/<run-id>/`, and updated quality baselines. The user reviews the final diff and decides whether to merge.
 
 ---
 
@@ -70,7 +68,7 @@ Given a detailed TPRD describing a new client (Mode A), an extension to an exist
 │  └────────────────────────────────────────────────────────────┘    │
 │                              │                                       │
 │                              ▼                                       │
-│  Branch sdk-pipeline/<run-id> on motadata-go-sdk                    │
+│  Branch sdk-pipeline/<run-id> on the SDK target                    │
 │  HUMAN: reviews diff at H10, decides merge / iterate / discard      │
 │                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
@@ -134,7 +132,7 @@ Effects materialize in subsequent runs. A pattern observed in Dragonfly + S3 (2-
 | Phase | Lead | Output |
 |---|---|---|
 | 0 Intake | `sdk-intake-agent` | Canonical TPRD + manifest validation reports |
-| 0.5 Analyze | `sdk-existing-api-analyzer-go` | API snapshot + ownership-map (Mode B/C only) |
+| 0.5 Analyze | Existing-API Analyzer (per-pack) | API snapshot + ownership-map (Mode B/C only) |
 | 1 Design | `sdk-design-lead` | `api.go.stub`, interfaces, dependency vetting, devil verdicts |
 | 2 Impl | `sdk-impl-lead` | Code + tests on `sdk-pipeline/<run-id>` branch |
 | 3 Testing | `sdk-testing-lead` | Coverage, benchmarks, leak/vuln/flake reports |
@@ -145,27 +143,27 @@ Effects materialize in subsequent runs. A pattern observed in Dragonfly + S3 (2-
 | Agent | Catches |
 |---|---|
 | `sdk-design-devil` | Bad API shape |
-| `sdk-dep-vet-devil-go` | Risky / unfree / vulnerable deps |
+| Dep-Vet Devil (per-pack) | Risky / unfree / vulnerable deps |
 | `sdk-semver-devil` | Hidden breaking changes |
-| `sdk-convention-devil-go` | Inconsistency with target SDK |
+| Convention Devil (per-pack) | Inconsistency with target SDK |
 | `sdk-security-devil` | Auth, TLS, credential leaks |
 | `sdk-overengineering-critic` | Unused fields, premature abstraction |
-| `sdk-leak-hunter-go` | Goroutine leaks |
-| `sdk-api-ergonomics-devil-go` | Consumer-side ugliness |
-| `sdk-benchmark-devil-go` | Perf regressions |
-| `sdk-integration-flake-hunter-go` | Test flakes |
+| leak hunter (per-pack) | Goroutine leaks |
+| API Ergonomics Devil (per-pack) | Consumer-side ugliness |
+| Benchmark Devil (per-pack) | Perf regressions |
+| Integration Flake Hunter (per-pack) | Test flakes |
 | `sdk-marker-hygiene-devil` | Missing or forged provenance markers |
-| `sdk-constraint-devil-go` | Unproven `[constraint:]` claims |
-| `sdk-breaking-change-devil-go` | Mode B/C signature changes (no semver bump) |
+| Constraint Devil (per-pack) | Unproven `[constraint:]` claims |
+| Breaking-Change Devil (per-pack) | Mode B/C signature changes (no semver bump) |
 
 ### Perf / drift specialists (rules 32 + 33)
 
 | Agent | Role |
 |---|---|
-| `sdk-perf-architect-go` | Authors `design/perf-budget.md` at D1 — per-symbol p50/p95/p99, allocs/op, big-O, oracle, MMD, drift signals |
-| `sdk-profile-auditor-go` | At M3.5: reads CPU/heap/block/mutex pprof; enforces G104 alloc budget + G109 profile-shape coverage (≥0.8 match to declared hot paths) |
-| `sdk-complexity-devil-go` | At T5: scaling sweep at N ∈ {10, 100, 1k, 10k}; curve-fits and enforces G107 big-O match |
-| `sdk-soak-runner-go` | At T5.5: launches soaks in background, polls state files on a ladder; enforces G105 MMD (minimum-measurable-duration) |
+| Perf Architect (per-pack) | Authors `design/perf-budget.md` at D1 — per-symbol p50/p95/p99, allocs/op, big-O, oracle, MMD, drift signals |
+| Profile Auditor (per-pack) | At M3.5: reads CPU/heap/block/mutex profiler output; enforces G104 alloc budget + G109 profile-shape coverage (≥0.8 match to declared hot paths) |
+| Complexity Devil (per-pack) | At T5: scaling sweep at N ∈ {10, 100, 1k, 10k}; curve-fits and enforces G107 big-O match |
+| Soak Runner (per-pack) | At T5.5: launches soaks in background, polls state files on a ladder; enforces G105 MMD (minimum-measurable-duration) |
 | `sdk-drift-detector` | At T5.5: fast-fail on statistically significant positive trend in drift signals (G106) |
 
 ---
@@ -186,9 +184,9 @@ The TPRD declares numeric gates. The pipeline enforces them.
 | Profile-shape coverage | top-10 CPU samples ≥ 0.8 match to declared hot paths | G109 |
 | Soak MMD | `actual_duration_s ≥ mmd_seconds` or verdict = INCOMPLETE | G105 |
 | Drift trend | no statistically significant positive trend on declared drift signals | G106 |
-| `goleak.VerifyTestMain` | clean | G63 |
-| `govulncheck` HIGH/CRITICAL | **0** | G32 |
-| `osv-scanner` HIGH/CRITICAL | **0** | G33 |
+| the pack's leak-detection harness | clean | G63 |
+| the pack's vulnerability scanner HIGH/CRITICAL | **0** | G32 |
+| the pack's lockfile vulnerability scanner HIGH/CRITICAL | **0** | G33 |
 | Dep license | Allowlist (MIT, Apache-2.0, BSD, ISC, 0BSD, MPL-2.0) | G34 |
 | Determinism (same TPRD + seed) | Byte-equivalent | CLAUDE.md rule 25 |
 | Quality regression (cross-run) | ≤ **5%** per-agent `quality_score` once ≥3 prior runs | G86 |
@@ -205,9 +203,9 @@ The TPRD declares numeric gates. The pipeline enforces them.
 | Target-dir discipline (G07) | Writes only to `$SDK_TARGET_DIR` + `runs/` |
 | `--dry-run` mode | Halts before any target-dir write; emits `preview.md` |
 | Marker protocol (G95–G103) | `[owned-by: MANUAL]` symbols byte-hash-checked; pipeline cannot modify them |
-| Compensating baselines × 4 (rule 28) | Output-shape hash + devil-verdict stability + tightened 5% quality threshold (G86) + `Example_*` count per package — replaces retired golden-corpus gate |
+| Compensating baselines × 4 (rule 28) | Output-shape hash + devil-verdict stability + tightened 5% quality threshold (G86) + runnable examples (per-pack: `Example_*` in Go, doctest blocks in Python) count per package — replaces retired golden-corpus gate |
 | Learning-notifications loop (G85) | Every learning-engine patch emits a line to `learning-notifications.md`; user reviews at H10 and may revert per-patch |
-| Deterministic-first reviewer gate (rule 13) | Reviewer fleet only re-runs on iterations where build/vet/fmt/staticcheck/`-race`/goleak/vuln/osv/marker-hash/constraint-bench/license are green |
+| Deterministic-first reviewer gate (rule 13) | Reviewer fleet only re-runs on iterations where build, vet, fmt, static-check, race-detection (if supported), leak-detection, vulnerability-scan, lockfile-scan, marker-hash, constraint-bench, license are green |
 | MCP health check (G04) | WARN-only; writes `runs/<id>/<phase>/mcp-health.md`; pipeline never halts on MCP failure (rule 31) |
 | Doc-drift gate (G06 + G90 + G116 + check-doc-drift.sh) | Intake refuses to run on a drifted repo: `pipeline_version` consistency, skill-index ↔ filesystem equality, retired-term registry enforcement |
 | Per-phase token + wall-clock budget | Soft cap → WARN; hard cap → user confirms |
@@ -308,12 +306,12 @@ See `docs/MCP-INTEGRATION-PROPOSAL.md` for the full proposal.
 
 | # | Axis | When | Agent | Gate |
 |---|---|---|---|---|
-| 1 | **Declaration** | D1 | `sdk-perf-architect-go` | `design/perf-budget.md` exists; per-§7 symbol p50/p95/p99, allocs/op, big-O, oracle, MMD, drift signals |
-| 2 | **Profile shape** | M3.5 | `sdk-profile-auditor-go` | G109 — top-10 CPU samples match declared hot paths (coverage ≥ 0.8) |
-| 3 | **Allocation** | M3.5 | `sdk-profile-auditor-go` | G104 — measured `allocs/op` ≤ declared budget |
-| 4 | **Complexity** | T5 | `sdk-complexity-devil-go` | G107 — scaling sweep at N ∈ {10, 100, 1k, 10k}; curve-fit ≤ declared big-O |
-| 5 | **Regression + Oracle** | T5 | `sdk-benchmark-devil-go` | G65 regression + G108 oracle margin (oracle not waivable via `--accept-perf-regression`) |
-| 6 | **Drift + MMD** | T5.5 | `sdk-soak-runner-go` + `sdk-drift-detector` | G106 drift fail-fast + G105 MMD satisfied or verdict = INCOMPLETE |
+| 1 | **Declaration** | D1 | Perf Architect (per-pack) | `design/perf-budget.md` exists; per-§7 symbol p50/p95/p99, allocs/op, big-O, oracle, MMD, drift signals |
+| 2 | **Profile shape** | M3.5 | Profile Auditor (per-pack) | G109 — top-10 CPU samples match declared hot paths (coverage ≥ 0.8) |
+| 3 | **Allocation** | M3.5 | Profile Auditor (per-pack) | G104 — measured `allocs/op` ≤ declared budget |
+| 4 | **Complexity** | T5 | Complexity Devil (per-pack) | G107 — scaling sweep at N ∈ {10, 100, 1k, 10k}; curve-fit ≤ declared big-O |
+| 5 | **Regression + Oracle** | T5 | Benchmark Devil (per-pack) | G65 regression + G108 oracle margin (oracle not waivable via `--accept-perf-regression`) |
+| 6 | **Drift + MMD** | T5.5 | Soak Runner (per-pack) + `sdk-drift-detector` | G106 drift fail-fast + G105 MMD satisfied or verdict = INCOMPLETE |
 | 7 | **Profile-backed exceptions** | design + impl | `sdk-overengineering-critic` | G110 — `[perf-exception: ... bench/X]` marker requires design-time entry in `perf-exceptions.md` AND profile-auditor-measured win |
 
 ### Verdict taxonomy (rule 33)
@@ -322,7 +320,7 @@ Three verdicts, not two. `INCOMPLETE` is never silently promoted to `PASS`.
 
 - **PASS** — gate ran to completion; no violation. For soaks requires `actual_duration_s ≥ mmd_seconds`.
 - **FAIL** — gate detected a violation (drift, regression, oracle breach, complexity mismatch, alloc over budget, surprise hotspot). BLOCKER.
-- **INCOMPLETE** — gate could not render a verdict (MMD not reached, too few samples, pprof unavailable, harness crashed). Surfaced explicitly at H9. User chooses: extend window, accept risk with written waiver, or reject. Never auto-merges.
+- **INCOMPLETE** — gate could not render a verdict (MMD not reached, too few samples, profiler unavailable, harness crashed). Surfaced explicitly at H9. User chooses: extend window, accept risk with written waiver, or reject. Never auto-merges.
 
 Any gate that historically returned "passed so far" on timeout now returns INCOMPLETE.
 
@@ -388,7 +386,7 @@ quality_score = completeness         × 0.20
 
 ## 13. Worked Example: Dragonfly L2 Cache
 
-**TPRD**: `motadata-go-sdk/src/motadatagosdk/core/l2cache/dragonfly/TPRD.md` — 470 lines, Mode B (extension to existing package, Slice 1 already shipped). Adds Slices 2–6: string ops, hash + HEXPIRE, pipeline + transactions, pubsub, scripting.
+**TPRD**: `<sdk-target>/<src-root>/core/l2cache/dragonfly/TPRD.md` — 470 lines, Mode B (extension to existing package, Slice 1 already shipped). Adds Slices 2–6: string ops, hash + HEXPIRE, pipeline + transactions, pubsub, scripting.
 
 **Preflight verdict** (run today against the live pipeline):
 
@@ -431,7 +429,7 @@ quality_score = completeness         × 0.20
 | **Pipeline (35 agents, autonomous)** | Run all 5 phases; produce code, tests, benches; flag violations | Per run |
 | **CXO** | Approve roadmap; review quarterly pipeline-maturity report (skill_stability, mean_time_to_green, user_intervention_rate) | Quarterly |
 
-**No new headcount required.** The pipeline operates within the existing motadata-go-sdk team.
+**No new headcount required.** The pipeline operates within the existing SDK team.
 
 ---
 
@@ -489,7 +487,7 @@ quality_score = completeness         × 0.20
 | **Devil agent** | Read-only adversarial reviewer (security, semver, dep-vet, etc.) |
 | **Marker protocol** | Code annotations (`[traces-to:]`, `[owned-by:]`, `[constraint:]`, `[perf-exception:]`) that drive provenance + safety checks |
 | **Compensating baselines** | Four cross-run baselines that replaced golden-corpus (rule 28): output-shape hash, devil-verdict stability, tightened quality threshold, example-count |
-| **Deterministic-first gate** | Rule 13: reviewer fleet only re-runs on iterations where build/vet/fmt/staticcheck/-race/goleak/vuln/osv/marker-hash/constraint-bench/license are green |
+| **Deterministic-first gate** | Rule 13: reviewer fleet only re-runs on iterations where build, vet, fmt, static-check, race-detection (if supported), leak-detection, vulnerability-scan, lockfile-scan, marker-hash, constraint-bench, license are green |
 | **Oracle margin** | Declared `margin × reference impl p50` tolerance in `perf-budget.md` (G108) — not waivable via `--accept-perf-regression` |
 | **MMD** | Minimum-measurable-duration for soak verdicts (G105) |
 | **Verdict taxonomy** | PASS / FAIL / INCOMPLETE (rule 33) — timeouts yield INCOMPLETE, never silently promoted |

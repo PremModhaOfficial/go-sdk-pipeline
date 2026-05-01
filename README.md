@@ -1,8 +1,8 @@
-<!-- cross_language_ok: true — top-level pipeline doc references per-pack tooling and the multi-tenant SaaS platform context (per F-008 in migration-findings.md). Authoritative project description: SDK is built FOR multi-tenant SaaS consumers; multi-tenant guardrails (TenantID, JetStream, MsgPack, schema-per-tenant) are in-scope. -->
+<!-- cross_language_ok: true — README lists BOTH motadata-go-sdk and motadata-py-sdk as dual-language SDK targets; the URL is a legitimate factual reference, not Go-coupling. -->
 
 # motadata-sdk-pipeline
 
-Multi-agent pipeline for adding/extending/updating clients in the [motadata-go-sdk](https://github.com/motadata/motadata-go-sdk) Go SDK.
+Multi-agent pipeline for adding/extending/updating SDK clients. Targets the active language SDK (Go: [`motadata-go-sdk`](https://github.com/motadata/motadata-go-sdk); Python: `motadata-py-sdk`) per the TPRD `§Target-Language` field.
 
 ## Purpose
 
@@ -11,7 +11,7 @@ Given a **detailed** Technical PRD (TPRD) — including `§Skills-Manifest` and 
 1. **Intakes** the TPRD — validates manifests, canonicalizes, asks clarifying questions only for residual ambiguities
 2. **Designs** the API with adversarial review (design-devil, dep-vet-devil, semver-devil, convention-devil, security-devil, overengineering-critic)
 3. **Implements** via TDD with marker-aware merging (respects `[traces-to: MANUAL-*]` and `[constraint: ...]` blocks)
-4. **Tests** exhaustively (unit ≥90%, integration with testcontainers, bench + goleak + govulncheck)
+4. **Tests** exhaustively (unit ≥90%, integration with testcontainers, benchmarks + leak-detection + vulnerability scans)
 5. **Evolves** existing skills via learning-engine + drift-detector; every applied patch is recorded in a per-run `learning-notifications.md` file that the user reviews at H10 (new skills are human-authored via PR only — see `docs/PROPOSED-SKILLS.md`)
 
 This is an **NFR-driven pipeline**: §NFR and §Benchmarks in the TPRD are first-class numeric gates, not afterthoughts.
@@ -19,8 +19,8 @@ This is an **NFR-driven pipeline**: §NFR and §Benchmarks in the TPRD are first
 ## Quick Start
 
 ```bash
-# Prerequisites: SDK_TARGET_DIR env var pointing at your motadata-go-sdk working tree
-export SDK_TARGET_DIR=/path/to/motadata-go-sdk/src/motadatagosdk
+# Prerequisites: SDK_TARGET_DIR env var pointing at your SDK target working tree
+export SDK_TARGET_DIR=/path/to/<sdk-target>/<src-root>
 
 # From Claude Code:
 /run-sdk-addition --target $SDK_TARGET_DIR "add Redis streams consumer client"

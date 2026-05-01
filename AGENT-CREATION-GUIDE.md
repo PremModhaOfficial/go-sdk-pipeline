@@ -9,10 +9,10 @@ Authoring rules for new agents in `.claude/agents/<name>.md`. Every agent must m
 SDK pipeline has no system-decomposer, api-designer, database-architect, infrastructure-architect, or simulated-cto waves. Agent wave assignment maps to SDK phases:
 
 - Phase 0 Intake: `sdk-intake-agent`
-- Phase 0.5 Analyze: `sdk-existing-api-analyzer-go`, `sdk-marker-scanner`
+- Phase 0.5 Analyze: Existing-API Analyzer (per-pack), `sdk-marker-scanner`
 - Phase 1 Design: `sdk-design-lead`, `sdk-designer`, `interface-designer`, `algorithm-designer`, `concurrency-designer`, `pattern-advisor`, `sdk-*-devil`
-- Phase 2 Impl: `sdk-impl-lead`, `sdk-implementor`, `code-generator`, `test-spec-generator`, `sdk-merge-planner`, `sdk-marker-hygiene-devil`, `refactoring-agent-go`, `documentation-agent-go`
-- Phase 3 Testing: `sdk-testing-lead`, `unit-test-agent`, `integration-test-agent`, `performance-test-agent`, `sdk-leak-hunter-go`, `sdk-integration-flake-hunter-go`, `sdk-benchmark-devil-go`
+- Phase 2 Impl: `sdk-impl-lead`, `sdk-implementor`, `code-generator`, `test-spec-generator`, `sdk-merge-planner`, `sdk-marker-hygiene-devil`, refactoring agent (per-pack), documentation agent (per-pack)
+- Phase 3 Testing: `sdk-testing-lead`, `unit-test-agent`, `integration-test-agent`, `performance-test-agent`, leak hunter (per-pack), Integration Flake Hunter (per-pack), Benchmark Devil (per-pack)
 - Phase 4 Feedback: `learning-engine`, `metrics-collector`, `phase-retrospector`, `root-cause-tracer`, `defect-analyzer`, `improvement-planner`, `baseline-manager`, `sdk-skill-drift-detector`, `sdk-skill-coverage-reporter`
 
 ### 2. Devil agent requirements
@@ -52,7 +52,7 @@ Apply patches from `evolution/prompt-patches/learning-engine.md` (append-only li
 
 ### 4. Markers-aware agents
 
-`sdk-marker-scanner`, `sdk-constraint-devil-go`, `sdk-merge-planner`, `sdk-marker-hygiene-devil` MUST:
+`sdk-marker-scanner`, Constraint Devil (per-pack), `sdk-merge-planner`, `sdk-marker-hygiene-devil` MUST:
 
 - Read `state/ownership-cache.json` on startup
 - Update it on completion (if applicable)

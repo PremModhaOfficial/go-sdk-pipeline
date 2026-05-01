@@ -3,7 +3,6 @@ name: root-cause-tracer
 description: Traces HIGH/CRITICAL defects backward through phases to identify introduction point + which phase should have caught them.
 model: opus
 tools: Read, Write, Glob, Grep
-cross_language_ok: true
 ---
 
 
@@ -293,7 +292,7 @@ Before finalizing your outputs, you MUST:
 3. If you discover a conflict between your output and a co-wave agent's output, immediately log an ESCALATION to the phase lead
 4. Log at least 1 communication entry per run documenting your key dependencies or assumptions about other agents' work
 
-Zero inter-agent communications were logged across 5 consecutive phases (Architecture, Detailed Design, Implementation, Testing, Frontend). This led to undetected conflicts (outbox schema inconsistency), uncoordinated shared resources (go.mod concurrent modification), and unresolved assumptions (infra-architect NATS naming pending). Agents working in isolation is the most systemic issue in the pipeline.
+Zero inter-agent communications were logged across 5 consecutive phases (Architecture, Detailed Design, Implementation, Testing, Frontend). This led to undetected conflicts (outbox schema inconsistency), uncoordinated shared resources (<module-manifest> concurrent modification), and unresolved assumptions (infra-architect NATS naming pending). Agents working in isolation is the most systemic issue in the pipeline.
 
 ---
 

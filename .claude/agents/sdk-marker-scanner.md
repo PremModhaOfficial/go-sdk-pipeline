@@ -3,7 +3,7 @@ name: sdk-marker-scanner
 description: Scans target SDK files for code provenance markers ([traces-to:], [constraint:], [stable-since:], [deprecated-in:], [do-not-regenerate], [owned-by:]). Produces ownership-map.json at run start for Mode B/C. Updates target-wide state/ownership-cache.json. Detects out-of-band modifications on pipeline-owned symbols.
 model: sonnet
 tools: Read, Write, Glob, Grep, Bash
-cross_language_ok: true
+cross_language_ok: true  # references in this file are cross-language by design (file-extension dispatch examples showing both .go AND .py, incident-history code paths factually identifying past Go runs, or skill cross-references). Real dispatch is language-pluggable via active-packages.json + WAVE_AGENTS resolution.
 ---
 
 # sdk-marker-scanner
@@ -87,7 +87,7 @@ OWNER        = "pipeline" | "human" | "co"
 1. `ownership-map.json` written + valid JSON
 2. No out-of-band issues unresolved (if any, ESCALATION raised)
 3. Log `lifecycle: completed`
-4. Notify `sdk-existing-api-analyzer-go` and `sdk-design-lead`
+4. Notify the existing-API analyzer (per-pack) and `sdk-design-lead`
 
 ## On Failure Protocol
 
