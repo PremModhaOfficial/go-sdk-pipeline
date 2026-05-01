@@ -341,7 +341,7 @@ For each new Python pack agent:
 4. Add to `python.json`: `agents`, the relevant `waves.<id>`, `tier_critical.<phase>.<tier>`.
 5. Run `bash scripts/validate-packages.sh` — must pass.
 
-### Wave B-3: Python-native skills + guardrails + oracles *(pending)*
+### Wave B-3: Python-native skills + guardrails *(pending)*
 
 **Skills (~20)**, all `python-` prefixed, at `.claude/skills/python-<name>/SKILL.md`:
 
@@ -377,12 +377,11 @@ Mapping for the Python-side gates:
 | `G63-py` | `pytest --count=3` (pytest-repeat) | flake hunt |
 | `G65-py` | `pytest-benchmark` JSON delta | benchmark regression |
 | `G95–G103-py` | wraps `python-symbols.py` + `python-backend.py` | marker protocol |
-| `G104–G110-py` | py-spy / scalene; pytest-benchmark allocs/MB | perf-confidence regime |
+| `G104–G107, G109, G110-py` | py-spy / scalene; pytest-benchmark allocs/MB | perf-confidence regime |
 
-**Oracles + perf-budget format:**
+**Perf-budget format:**
 
-- `.claude/package-manifests/python/oracle-catalog.yaml` — reference Python implementations + their measured numbers (analog of the Go pack's perf-budget oracle column).
-- `docs/perf-budget-python-schema.md` — document Python-native units (seconds, MB, asyncio-tasks-leaked-per-1k-ops).
+- `docs/perf-budget-python-schema.md` — document Python-native units (seconds, MB, asyncio-tasks-leaked-per-1k-ops). Targets are TPRD-declared, not third-party-comparison.
 
 ### Wave B-4: First Python pilot run *(pending — calibration milestone)*
 
@@ -391,7 +390,7 @@ After B-1 / B-2 / B-3 land:
 1. Author a small Python TPRD (e.g., "add a Redis client to motadatapysdk").
 2. Run intake → expect Wave I1.5 to accept `§Target-Language: python` cleanly.
 3. Run through full pipeline → expect every wave to dispatch only Python pack content (verified via `runs/<run-id>/context/active-packages.json`).
-4. Calibrate Python perf-oracle numbers from this first real run. Update `oracle-catalog.yaml` accordingly. Lock the calibration with a baseline file at `baselines/python/performance-baselines.json`.
+4. Establish first-run baselines from this real run. Lock the calibration in `baselines/python/performance-baselines.json` so future runs can regress against it.
 
 ### Verification at each wave
 
@@ -491,7 +490,7 @@ Every baseline file (under `baselines/`) declares a `scope` field. Every languag
 
 **v0.5.0 scope** (Python pilot): adds `baselines/python/` partition with per-language baselines. Mechanical because the manifest schema is already in shape and the consumer code already path-joins on `<lang>`.
 
-**Cross-language comparison is explicitly NOT a goal.** Each language adapter compares its perf / coverage / shape baselines against its own language's history. There is no "the Python p99 is X% slower than the Go p99" metric in v0.5.0 — that's deferred to a future research branch (R1 in `docs/LANGUAGE-AGNOSTIC-DECISIONS.md`). Per-language adapters do their own oracle calibration; cross-language oracle equivalence is a separate, harder problem.
+**Cross-language comparison is explicitly NOT a goal.** Each language adapter compares its perf / coverage / shape baselines against its own language's history. There is no "the Python p99 is X% slower than the Go p99" metric in v0.5.0 — that's deferred to a future research branch.
 
 **Decisions deferred to v0.5.0+**:
 - **D2** — should shared-core agents/skills with `generalization_debt` partition into `languages.<lang>` until rewritten? Defer.
@@ -543,7 +542,6 @@ This is the right shape while there's only one adapter. Once a second adapter ex
 │   ├── parsers/
 │   │   ├── pprof-to-normalized.py  # pprof → neutral profile schema
 │   │   └── coverage-to-normalized.py
-│   └── oracle-catalog.yaml         # reference-impl throughput per workload
 └── python/
     └── ...
 ```

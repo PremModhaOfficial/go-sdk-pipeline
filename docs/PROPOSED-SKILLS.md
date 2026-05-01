@@ -229,25 +229,16 @@ Source: `improvement-planner` Wave F6, derived from Phase 4 backlog items PA-001
   5. §Cross-reference: `python-pytest-patterns`, `sdk-marker-protocol` (constraint:bench markers)
 - **suggested_path**: `.claude/skills/python-bench-harness-shapes/SKILL.md`
 
-### Proposed: python-floor-bound-perf-budget
-<!-- Run: sdk-resourcepool-py-pilot-v1 | Date: 2026-04-30 | Confidence: HIGH -->
+### ~~Proposed: python-floor-bound-perf-budget~~ — **WITHDRAWN v0.6.x**
 
-- **scope**: python
-- **proposed_version**: 1.0.0
-- **priority**: SHOULD
-- **target_consumers**: sdk-perf-architect-python, sdk-benchmark-devil-python
-- **provenance**: feedback-derived(PA-013, run sdk-resourcepool-py-pilot-v1)
-- **confidence**: HIGH
-- **source_evidence**: defect-log DEF-013; root-cause-traces "PA-013 / FLOOR-BOUND-ORACLE"; retrospective Skill Gaps row 2 + Agent Prompt Improvements row 1
-- **rationale**: PoolConfig.__init__ and AcquiredResource.__aenter__ both hit the Python language floor (frozen+slotted dataclass init ~2µs; async ctx-mgr enter ~1.5µs). The Go×10 oracle margin is mechanically unreachable for these symbols regardless of impl quality. perf-architect-python has no idiom for declaring "floor-bound" symbols; the gap costs a calibration round-trip (PA-013) on every Python adapter that wraps stdlib runtime primitives.
-- **proposed_body_outline**:
-  1. §When-to-apply: any §7 symbol that wraps a CPython runtime primitive (frozen+slotted dataclass __init__, asyncio.Lock ctx-mgr enter, asyncio.Queue.get_nowait, etc.)
-  2. §Floor-type taxonomy: `language-floor` (interpreter overhead; ≥1µs per Python frame), `hardware-floor` (memory allocator floor, syscall floor), `none` (no floor binding)
-  3. §perf-budget.md schema extension: add `floor_type: language-floor | hardware-floor | none` and `measured_floor_us: <number>` per §7-symbol entry
-  4. §Oracle calibration: when `floor_type ≠ none`, set oracle relative to measured floor × `oracle.margin_multiplier`, NOT against Go reference impl
-  5. §G108 interaction: benchmark-devil-python reads `floor_type` and `measured_floor_us`; CALIBRATION-WARN suppressed when within margin of declared floor; BLOCKER triggered only if measured p50 exceeds floor × margin
-  6. §Detection rubric: identify floor-bound candidates by signature pattern (frozen-dataclass init, async-ctx-mgr enter, single-attribute reads on slotted classes)
-- **suggested_path**: `.claude/skills/python-floor-bound-perf-budget/SKILL.md`
+The entire rationale for this skill was suppressing G108 (oracle-margin) false-positives on
+Python symbols whose latency is bounded by CPython runtime overhead (frozen-dataclass init,
+async ctx-mgr enter, etc.) where a Go reference impl is mechanically faster. With G108 / the
+oracle concept removed in v0.6.x (only TPRD-declared targets are checked, no third-party
+comparison), there is nothing for this skill to suppress. The underlying observation is still
+valid — perf-architect-python should sanity-check declared targets against the Python
+language floor — but that's already covered by `theoretical_floor.derivation` in
+`design/perf-budget.md`. No separate skill needed.
 
 ### Proposed: soak-sampler-cooperative-yield
 <!-- Run: sdk-resourcepool-py-pilot-v1 | Date: 2026-04-30 | Confidence: MEDIUM -->

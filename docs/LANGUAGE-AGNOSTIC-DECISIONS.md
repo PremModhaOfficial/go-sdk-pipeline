@@ -22,7 +22,7 @@ This document is the **decision register** — every architectural call that nee
 |---|---|---|---|
 | **D1** | Baseline shape: flat-with-scope-field (A) vs per-language subdirectory (B) vs hybrid (C) | **B — per-language subdirectory** (shipped in v0.4.0) | Path encodes meaning; cleaner separation; matches "one file per concept per partition." Cross-language comparison was explicitly ruled out as a v0.5.0 goal, so the partition isolation is fine. v0.4.0 ships with files moved to `baselines/{go,shared}/` AND consumer path-refactor done (~70 substitutions across 21 files). |
 | **D3** | Output-shape hash strategy: per-language native (1) vs neutral-IDL hash (2) vs drop comparison (3) | **1 — per-language native** | Each language hashes its own AST. No cross-language hash equivalence. Neutral-IDL was over-engineering for the actual purpose (intra-language churn detection). |
-| **D4** | Perf units: native per language (1) vs single neutral unit (2) vs both (3) | **1 — native units per language** | `allocs/op` (Go), CPython-cycles (Python), B/op (Rust) stay native. No cross-language perf comparison; oracle margins are per-language. Bucketed neutral was nice-to-have but not load-bearing. |
+| **D4** | Perf units: native per language (1) vs single neutral unit (2) vs both (3) | **1 — native units per language** | `allocs/op` (Go), CPython-cycles (Python), B/op (Rust) stay native. No cross-language perf comparison; latency targets are per-language and TPRD-declared. Bucketed neutral was nice-to-have but not load-bearing. |
 | **D5** | Which language pilot first: Python vs Rust vs TypeScript vs Java | **Python** | Maximum stress on the abstraction (most different from Go: async runtime, no compile-time types, different allocator). An abstraction that survives Python adapts trivially to Rust/Java. |
 | **D6** | Generalization-debt resolution timing: Eager vs Lazy vs Split | **Split — rule shared, examples + per-lang rules in `<pack>/conventions.yaml`** | R2 spike (2026-04-27, `docs/R2-DEBT-REWRITE-FEASIBILITY.md`) sampled three debt-bearers. ~85–95% of rule body neutralizes cleanly; the rest are genuine per-language variants. Eager-rewrite produces vacuous prose; Lazy-rewrite delays the structural decision. Split keeps rule logic DRY while letting examples pattern-match per language. |
 | **D2** | Cross-language fairness for shared-core agents with `generalization_debt`: Strict vs Lenient vs Progressive | **Lenient default + Progressive fallback** | Once D6=Split lands, the rule layer is genuinely shared, so quality_score divergence shouldn't be expected. Cheap default: keep one shared `quality-baselines.json`. Escape hatch: if first Python pilot run shows ≥3pp systematic divergence on any debt-bearer, flip that specific agent to Progressive (per-language partition) until its Split rewrite ships. |
@@ -60,7 +60,7 @@ This is the load-bearing artifact. For each Go-specific concept in the pipeline,
 | **Baselines: quality, skill-health, baseline-history** | `baselines/shared/<file>` with `scope: shared` stamp. Manifest declares `owns_shared` + `owns_shared_paths`. | If D2 lands as Strict in v0.5.0, debt-bearer subset moves to `languages.<lang>` partition until rewritten. | D1=B | Done in v0.4.0. |
 | **Cross-language baseline comparison** (e.g. is `sdk-design-devil`'s quality systematically lower in Python runs?) | n/a | **NOT a v0.5.0 goal.** Each adapter compares against its own history. | D1=B + D2 deferred | Don't build cross-language reporting. If pressure builds, do R1 study first. |
 | **Output-shape AST hash** | Go AST → SHA256 of sorted exported-symbol signatures | Per-language native: `baselines/go/output-shape-history.jsonl` uses Go AST; `baselines/python/output-shape-history.jsonl` uses Python `ast` module. No cross-language hash equivalence. | D3=native | Each adapter ships its own hasher. Coarse cross-lang sanity (symbol-count delta) is a possible add-on but not required. |
-| **Perf units** (allocs/op, ns/op, B/op) | Go-native in `baselines/go/performance-baselines.json` + `runs/<id>/design/perf-budget.md` | Per-language native. `language: go` adapter declares `units: {latency: "ns/op", alloc: "allocs/op", memory: "B/op"}`. Python adapter declares its own units. | D4=native | No bucketed neutral mapping. Oracle margins (G108) per-language. |
+| **Perf units** (allocs/op, ns/op, B/op) | Go-native in `baselines/go/performance-baselines.json` + `runs/<id>/design/perf-budget.md` | Per-language native. `language: go` adapter declares `units: {latency: "ns/op", alloc: "allocs/op", memory: "B/op"}`. Python adapter declares its own units. | D4=native | No bucketed neutral mapping. Latency targets (TPRD-declared) are per-language. |
 | **`Example_*` count** (Go-only concept) | Counted per-package in `coverage-baselines.json` | Adapter materializes the metric per-language: Go = `Example_*` testable functions, Python = `>>>` doctests, Rust = `#[example]`. Coverage baseline becomes per-language. | D1=B + adapter responsibility | The METRIC name stays "examples_per_pkg" but the materialization differs. |
 | **Marker comment syntax** (`//`, `/* */`) | `marker_comment_syntax` field on language manifest | Same — already neutralized via per-lang declaration | (already in shape) | No work. |
 | **Marker payloads** (`[constraint: bench/BenchmarkX]`) | Go-shaped (literal Go bench path) | Two options being considered: (a) keep Go-style per-language, adapter-resolved, (b) introduce neutral form `[constraint: <metric> <op> <value> on workload <W>]` and let adapters resolve to local bench id. | T2-4 (decide during Python pilot) | First Python `[constraint:]` marker forces this. |
@@ -94,8 +94,8 @@ These will *surface* during pilot work; pre-deciding risks getting them wrong.
 
 | # | Decision | Forcing function |
 |---|---|---|
-| **T2-1** | Workload encoding for cross-lang oracle: native bench harness vs neutral workload DSL vs Cucumber-style spec | First time a Python perf-budget needs an oracle |
-| **T2-2** | Reference oracle catalog location: per-`<lang>.json` vs cross-language with per-lang impls | Same surfaces with T2-1 |
+| ~~**T2-1**~~ | ~~Workload encoding for cross-lang oracle~~ | **WITHDRAWN v0.6.x** — oracle / cross-language third-party comparison concept removed; only TPRD-declared targets used per-language. |
+| ~~**T2-2**~~ | ~~Reference oracle catalog location~~ | **WITHDRAWN v0.6.x** — see T2-1. |
 | **T2-3** | Drift signals taxonomy (rename `goroutines` → `concurrency_units`?) | First Python soak run |
 | **T2-4** | Marker payload neutrality (`bench/BenchmarkX` vs neutral `[constraint: throughput >= X on workload W]`) | First Python `[constraint:]` marker |
 | **T2-5** | Convention layer authoring: keep Go conventions in `go.json` only vs extract to `conventions.yaml` per pack | First Python `sdk-convention-devil-go` invocation |
@@ -127,15 +127,11 @@ Real questions but premature with only Go + Python.
 
 Small spikes whose output *informs* decisions. Both can run in parallel.
 
-### R1. Cross-language oracle calibration study (~2 days)
+### ~~R1. Cross-language oracle calibration study~~ — **WITHDRAWN v0.6.x**
 
-**Question**: For one canonical workload (e.g. "100k 10KB messages through a bounded queue, measure p99 latency"), what's the spread between Go's reference oracle (`channel`), Python's (`asyncio.Queue`), Rust's (`tokio::sync::mpsc`)? Are the numbers within an order of magnitude, or fundamentally producing different metrics per language?
-
-**Why it matters**: governs T2-1 (workload encoding) and the credibility of cross-language perf comparison entirely. If spread is 100×, cross-lang oracle margin (G108) is meaningless.
-
-**Deliverable**: `docs/CROSS-LANG-ORACLE-STUDY.md` with measured numbers + recommendation: "yes, neutralize" / "no, keep per-language only."
-
-**Trigger**: before authoring `python.json`'s `oracle-catalog`.
+The oracle / third-party-comparison concept that this spike was meant to inform was removed
+in v0.6.x. The pipeline now compares only against TPRD-declared targets, per-language.
+Cross-language perf comparison is explicitly out of scope; no spike needed.
 
 ### R2. Generalization-debt rewriting feasibility study (~1 day) — **DONE 2026-04-27**
 
@@ -154,7 +150,7 @@ The actual work to onboard Python, in execution order.
 ### Pre-flight (before authoring `python.json`)
 
 1. ~~**Run R2 spike** (1 day) → judgment call on D2 + D6.~~ ✅ **DONE 2026-04-27** — see `docs/R2-DEBT-REWRITE-FEASIBILITY.md`. Outcome: D6=Split, D2=Lenient+Progressive.
-2. **Run R1 spike** (2 days) → judgment call on T2-1, oracle catalog shape. *Optional* — R1 informs T2-1 only; Phase A scaffold is unblocked without it. Run R1 before authoring Python `oracle-catalog` entries (Phase B).
+2. ~~**Run R1 spike** (2 days)~~ — **WITHDRAWN v0.6.x** (oracle concept removed; see R1).
 3. Confirm Python target SDK exists (`motadata-py-sdk` or equivalent) and has at least one client to model the §7 surface against. *Defer to Phase B start.*
 
 ### Phase A — adapter scaffold (days 1-2)
@@ -222,7 +218,7 @@ So a future reader can mechanically check what's already done:
 **Did NOT ship in v0.4.0** (deferred):
 - ~~D2~~ → resolved 2026-04-27 (Lenient + Progressive)
 - ~~D6~~ → resolved 2026-04-27 (Split)
-- R1 — cross-language oracle calibration study (proposed, not run; optional pre-Phase B)
+- ~~R1 — cross-language oracle calibration study~~ → withdrawn v0.6.x (oracle concept removed)
 - ~~R2~~ → done 2026-04-27 (`docs/R2-DEBT-REWRITE-FEASIBILITY.md`)
 - Python adapter scaffold (= v0.5.0 Phase A — next up)
 
