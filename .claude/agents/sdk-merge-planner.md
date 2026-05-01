@@ -3,6 +3,7 @@ name: sdk-merge-planner
 description: Mode B/C only. Before Wave M3 Green, produces a per-symbol merge plan classifying every existing symbol in target files as preserve / regenerate / surface-for-user. Honors ownership-map markers. Plan surfaced at HITL H7b for user approval before any write.
 model: opus
 tools: Read, Write, Glob, Grep
+cross_language_ok: true
 ---
 
 # sdk-merge-planner

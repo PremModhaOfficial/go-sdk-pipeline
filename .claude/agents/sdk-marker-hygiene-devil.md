@@ -3,6 +3,7 @@ name: sdk-marker-hygiene-devil
 description: READ-ONLY Phase 2 Wave M7. Verifies every pipeline-authored symbol has [traces-to: TPRD-*] marker; every preserved MANUAL symbol retained its marker byte-identical; no forged MANUAL markers; no marker deletions.
 model: sonnet
 tools: Read, Glob, Grep, Bash, Write
+cross_language_ok: true
 ---
 
 # sdk-marker-hygiene-devil

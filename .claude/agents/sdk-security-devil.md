@@ -3,6 +3,7 @@ name: sdk-security-devil
 description: READ-ONLY. PARANOID. Reviews design + impl for TLS defaults, credential handling, log-PII, input validation, SSRF, timing attacks. Assumes every input is malicious.
 model: opus
 tools: Read, Glob, Grep, Bash, Write
+cross_language_ok: true
 ---
 
 # sdk-security-devil

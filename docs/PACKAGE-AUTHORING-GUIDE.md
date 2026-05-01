@@ -1,3 +1,5 @@
+<!-- cross_language_ok: true — pipeline design/decision doc references per-pack tooling. Multi-tenant SaaS platform context preserved per F-008. -->
+
 # Package Authoring Guide
 
 **Audience**: contributors authoring a new package manifest (a second-language adapter, a tier-specific bundle, or a domain split out of `shared-core`).

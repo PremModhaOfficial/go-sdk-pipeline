@@ -13,6 +13,7 @@ description: >
   Generic[T] vs PEP 695 type-parameter syntax, @overload, Literal, Final, and
   avoiding Any in favor of object + narrowing.
   Triggers: mypy, --strict, type:, typing, Protocol, ABC, TypeVar, Optional, Union, Self, py.typed, TypedDict, cast, type: ignore, overload.
+cross_language_ok: true
 ---
 
 # python-mypy-strict-typing (v1.0.0)

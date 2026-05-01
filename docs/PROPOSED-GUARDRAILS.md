@@ -1,3 +1,5 @@
+<!-- cross_language_ok: true — pipeline design/decision doc references per-pack tooling. Multi-tenant SaaS platform context preserved per F-008. -->
+
 # Proposed Guardrails (Human-Review Backlog)
 
 Entries from pipeline runs are auto-filed here by `improvement-planner` (Wave F6). They never block a run and are never promoted at runtime. Promotion to `scripts/guardrails/G<NN>.sh` is a human PR action.

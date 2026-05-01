@@ -1,3 +1,5 @@
+<!-- cross_language_ok: true — pipeline design/decision doc references per-pack tooling. Multi-tenant SaaS platform context preserved per F-008. -->
+
 # Proposed Skills (Human-Review Backlog)
 
 Entries from pipeline runs are auto-filed here as WARNINGs by `scripts/guardrails/G23.sh`. They never block a run.

@@ -1,3 +1,5 @@
+<!-- cross_language_ok: true — pipeline design/decision doc references per-pack tooling. Multi-tenant SaaS platform context preserved per F-008. -->
+
 # Language-Agnostic Decision Board
 
 **Status**: living document. Last update: 2026-04-27 (v0.5.0 Phase A scaffold + R2 spike).

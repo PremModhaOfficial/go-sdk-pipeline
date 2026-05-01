@@ -3,6 +3,7 @@ name: sdk-marker-scanner
 description: Scans target SDK files for code provenance markers ([traces-to:], [constraint:], [stable-since:], [deprecated-in:], [do-not-regenerate], [owned-by:]). Produces ownership-map.json at run start for Mode B/C. Updates target-wide state/ownership-cache.json. Detects out-of-band modifications on pipeline-owned symbols.
 model: sonnet
 tools: Read, Write, Glob, Grep, Bash
+cross_language_ok: true
 ---
 
 # sdk-marker-scanner

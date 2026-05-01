@@ -3,6 +3,7 @@ name: sdk-skill-coverage-reporter
 description: Phase 4. Reports which skills were actually invoked by agents this run, vs. which were expected (based on TPRD tech signals). Unused-but-relevant = triggers gap.
 model: sonnet
 tools: Read, Glob, Grep, Write
+cross_language_ok: true
 ---
 
 # sdk-skill-coverage-reporter

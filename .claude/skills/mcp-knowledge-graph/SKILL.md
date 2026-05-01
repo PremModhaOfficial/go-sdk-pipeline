@@ -72,11 +72,11 @@ create_entities([
 
 ```
 create_entities([{
-  name: "pattern-missing-goleak",
+  name: "pattern-missing-leak-detection",
   entityType: "Pattern",
   observations: [
     "first_seen: run-a1b2",
-    "signal: testing-lead did not register goleak.VerifyTestMain",
+    "signal: testing-lead did not register the active language adapter's leak-detection harness",
     "recurrence_count: 2",
     "proposed_remediation: add to tdd-patterns skill"
   ]
@@ -109,7 +109,7 @@ create_relations([
   {from: "defect-f47ac10b-001", to: "run-f47ac10b:design", relationType: "INTRODUCED_IN"},
   {from: "defect-f47ac10b-001", to: "run-f47ac10b:testing", relationType: "DETECTED_IN"},
   {from: "patch-f47ac10b-001", to: "tdd-patterns@1.3.0", relationType: "APPLIED_TO"},
-  {from: "patch-f47ac10b-001", to: "pattern-missing-goleak", relationType: "MOTIVATED_BY"}
+  {from: "patch-f47ac10b-001", to: "pattern-missing-leak-detection", relationType: "MOTIVATED_BY"}
 ])
 ```
 
@@ -126,7 +126,7 @@ add_observations([{
     "patched_in: run-f47ac10b",
     "patch_id: patch-f47ac10b-001",
     "confidence: high",
-    "trigger: pattern-missing-goleak recurrence=2",
+    "trigger: pattern-missing-leak-detection recurrence=2",
     "devil_verdict: ACCEPT",
     "user_notified: true"
   ]

@@ -1,3 +1,5 @@
+<!-- cross_language_ok: true — top-level pipeline doc references per-pack tooling and the multi-tenant SaaS platform context (per F-008 in migration-findings.md). Authoritative project description: SDK is built FOR multi-tenant SaaS consumers; multi-tenant guardrails (TenantID, JetStream, MsgPack, schema-per-tenant) are in-scope. -->
+
 # Agent Roster
 
 This file is the single source of truth for every agent in this pipeline. Canonical per-agent prompt files live in `.claude/agents/<name>.md`.

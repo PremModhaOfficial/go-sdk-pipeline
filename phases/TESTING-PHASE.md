@@ -1,3 +1,5 @@
+<!-- cross_language_ok: true — phase contract orchestrates language-specific waves; references per-pack toolchain (Go: go test/build/vet/govulncheck/goleak; Python: pytest/mypy/ruff/pip-audit) in narrative wave descriptions. The phase invariants themselves are language-neutral and resolve through active-packages.json + toolchain. Multi-tenant SaaS context preserved per F-008. -->
+
 # Phase 3: Testing
 
 ## Purpose

@@ -1,3 +1,5 @@
+<!-- cross_language_ok: true — top-level pipeline doc references per-pack tooling and the multi-tenant SaaS platform context (per F-008 in migration-findings.md). Authoritative project description: SDK is built FOR multi-tenant SaaS consumers; multi-tenant guardrails (TenantID, JetStream, MsgPack, schema-per-tenant) are in-scope. -->
+
 # motadata-sdk-pipeline
 
 Multi-agent pipeline for adding/extending/updating clients in the [motadata-go-sdk](https://github.com/motadata/motadata-go-sdk) Go SDK.

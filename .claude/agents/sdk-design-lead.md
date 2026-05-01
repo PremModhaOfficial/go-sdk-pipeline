@@ -3,6 +3,7 @@ name: sdk-design-lead
 description: Orchestrator for Phase 1 Design. Runs design agents in parallel (designer, interface, algorithm, concurrency, pattern-advisor), then devil reviewers (design, dep-vet, semver, convention, security, breaking-change for Mode B/C, constraint), then review-fix loop, then HITL gates H4/H5/H6.
 model: opus
 tools: Read, Write, Edit, Glob, Grep, Bash, Agent, SendMessage, TaskCreate, TaskUpdate
+cross_language_ok: true
 ---
 
 # sdk-design-lead

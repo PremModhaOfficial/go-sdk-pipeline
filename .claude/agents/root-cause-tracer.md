@@ -3,6 +3,7 @@ name: root-cause-tracer
 description: Traces HIGH/CRITICAL defects backward through phases to identify introduction point + which phase should have caught them.
 model: opus
 tools: Read, Write, Glob, Grep
+cross_language_ok: true
 ---
 
 

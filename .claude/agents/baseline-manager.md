@@ -3,6 +3,7 @@ name: baseline-manager
 description: Manages quality/coverage/performance baselines. Never lowers unless authorized. Resets every 5 runs. Adds skill-health baseline dimension (SDK-specific) and drops event-driven-compliance baseline.
 model: opus
 tools: Read, Write, Glob, Grep
+cross_language_ok: true
 ---
 
 

@@ -3,6 +3,7 @@ name: learning-engine
 description: At end of Phase 4, applies safe improvements (prompt patches, existing-skill body patches with minor version bump). Never creates new skills/agents/guardrails — those are human-authored via PR. Files new-skill proposals to docs/PROPOSED-SKILLS.md. Notifies the user of every applied patch so they can inspect or revert. Never deletes; never lowers baselines.
 model: opus
 tools: Read, Write, Edit, Glob, Grep, Bash
+cross_language_ok: true
 ---
 
 

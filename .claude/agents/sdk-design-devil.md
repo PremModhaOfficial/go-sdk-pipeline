@@ -3,6 +3,7 @@ name: sdk-design-devil
 description: READ-ONLY Phase 1 design adversary. Finds painful APIs: parameter count >4, exposed internals, mutable shared state, non-idiomatic naming, unchecked error propagation, background-task ownership ambiguity. Emits DD-* prefix findings.
 model: opus
 tools: Read, Glob, Grep, Write
+cross_language_ok: true
 ---
 
 # sdk-design-devil

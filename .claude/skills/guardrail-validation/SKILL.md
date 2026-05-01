@@ -5,84 +5,96 @@ description: >
   exit, when guardrail-validator emits a verdict, or when authoring/diagnosing
   a G-numbered gate. Covers G01-G110: supply-chain (G32-G34),
   benchmark-regression (G65), marker-ownership (G95-G103), dependency-vetting,
-  SDK-convention gates, and the seven perf-confidence gates G104-G110
-  (alloc-budget, soak-MMD, soak-drift, complexity, oracle-margin,
+  language-adapter convention gates, and the seven perf-confidence gates
+  G104-G110 (alloc-budget, soak-MMD, soak-drift, complexity, oracle-margin,
   profile-no-surprise, perf-exception pairing). Multi-tenancy checks inverted
   to check ABSENCE.
   Triggers: guardrail, validator, PASS, FAIL, G01, G110, supply-chain, marker-ownership, perf-confidence, alloc-budget, oracle-margin, soak, complexity, phase-exit.
+version: 1.3.1
+last-evolved-in-run: v0.6.0-rc.0-sanitization-restore
+status: stable
+tags: [guardrail, validator, phase-gate, language-pluggable, multi-tenant-saas]
+cross_language_ok: true
 ---
 
-# guardrail-validation (SDK-mode, v1.2.0)
+<!-- This skill is intentionally cross-language: the catalog references both Go-pack and Python-pack guardrails by name, and the perf-confidence band detail names tooling that exists in both packs. The leakage scripts honor `cross_language_ok: true` and skip strict scanning. -->
 
 
-## Delta  (v1.0.0 -> v1.1.0)
+# guardrail-validation (v1.3.0)
 
-### Archive checks KEPT (adapted)
-- Go naming (no stuttering, acronym casing) — `G37`
-- `context.Context` first parameter — `G50`
-- Godoc on exported types — `G45`
-- Error wrapping `fmt.Errorf %w` — loaded via `go-error-handling-patterns`
-- No `init()` — `G48`
-- No global mutable state — `G49`
-- MsgPack tags on NATS-wire structs — `G46`
-- No `encoding/json` for internal serialization — `G47`
+## Scope
 
-### Archive checks INVERTED (SDK is library, not multi-tenant service)
-- **Was**: `TenantID` mandatory on domain structs -> **Now**: `G38` BLOCKS presence of `TenantID` / `tenant_id` / `schema-per-tenant` artifacts unless TPRD explicitly requests
-- **Was**: stream-per-service / no-core-NATS -> **Now**: not applicable to SDK itself (SDK may EXPOSE a NATS client; pipeline does not enforce inter-service patterns)
+Catalogs the G-numbered guardrail gates the pipeline runs at phase exits, organized by package ownership. Pack column = which manifest owns the gate. **shared** = language-neutral (lives in shared-core); **go** / **python** = language-specific (lives in the named language adapter manifest). Aspirational entries are forward-declared design intent — script not yet authored — and live in the manifest's `aspirational_guardrails` field.
 
-### Archive checks DROPPED
-- Dependency cycle detection between services (SDK is one module)
-- Migration file up/down pairs (no migrations in SDK)
-- SQL JOINs / QueryStruct DSL / pg_duckdb routing (no SQL in SDK)
-- Optimistic locking / soft delete (domain concerns, not SDK)
+## When to activate
 
-### NEW checks (G01–G110, full catalog in plan §Guardrails Catalog)
+- `guardrail-validator` agent at every phase exit.
+- Any phase lead before claiming phase-green.
+- CI-mode full-run invokes every gate end-to-end.
 
-The **Pack** column shows which package manifest owns each band. Pack = **shared** means the guardrail is language-neutral and lives in `shared-core.json`. Pack = **go** means it's Go-specific (Go tooling, Go AST). Pack = **shared (aspirational)** / **go (aspirational)** means the script isn't yet authored — design intent is recorded in the manifest's `aspirational_guardrails` field. Aspirational entries are tracked but never executed at runtime.
+## Catalog
 
 | Band | IDs | Pack | Domain |
 |------|-----|------|--------|
-| Universal | G01–G07 | shared | log validity, target-dir discipline, run_id stamping, active-packages.json validation (G05), pipeline_version drift (G06) |
+| Universal | G01–G07 | shared | Decision-log validity, target-dir discipline, `run_id` stamping, `active-packages.json` validation (G05), `pipeline_version` drift (G06) |
 | Intake | G20–G24, G69, G116 | shared | TPRD completeness, non-goals, clarification cap, §Skills-Manifest validation (G23), §Guardrails-Manifest validation (G24), creds hygiene (G69), retired-doc drift (G116) |
-| Design (Go) | G30–G38 | go | api.go.stub compile (Go), Go dep vetting, govulncheck, osv-scanner, license allowlist, semver verdict, Go convention match |
-| Impl (Go) | G40–G48 | go | no TODO in Go src, `go build`/`go vet`/`gofmt`/staticcheck, godoc, context-first, init-forbidden |
-| Testing (Go) | G60–G65 | go | `go test -race`, coverage ≥90%, goleak, flake check, benchmark delta gate, Example_* presence |
-| Feedback | G80, G85, G86 | shared | evolution-report, learning-notifications written, quality regression ≥5% cap (tightened post-golden-corpus). G82 (golden regression) retired — replaced by four compensating baselines + G86 (see CLAUDE.md Rule 28). |
-| Feedback (aspirational) | G81, G83, G84 | shared (aspirational) | baselines-not-lowered (G81), per-run decision-log entry caps (G83), output-shape hash compensating baseline (G84). All forward-declared per CLAUDE.md rule 28; scripts not yet authored. |
-| Meta | G90, G93 | shared | skill-index consistency (G90 strict), CLAUDE.md rule contiguity (G93). G91/G92/G94 retired or moved. |
-| Markers (Go) | G95–G103 | go | MANUAL-byte-preservation, constraint-bench-proof, marker-delete consent, do-not-regenerate hash, stable-since semver, deprecated-in-horizon, no-forged-traces-to. Backed by Go AST-hash backend (`scripts/ast-hash/go-backend.go`). |
-| Perf-Confidence (aspirational) | G104–G110 | go (aspirational) | alloc-budget (G104), soak-MMD (G105), soak-drift (G106), complexity-mismatch (G107), oracle-margin (G108), profile-no-surprise (G109), perf-exception pairing (G110). All forward-declared per CLAUDE.md rule 32; scripts not yet authored. Owners: sdk-profile-auditor-go, sdk-drift-detector, sdk-complexity-devil-go, sdk-benchmark-devil-go, sdk-marker-hygiene-devil. |
+| Design (Go) | G30–G38 | go | API-stub compile, dep vetting, `govulncheck`, `osv-scanner`, license allowlist, semver verdict, Go convention match |
+| Design (Python) | G30-py–G38-py | python | API-stub import-check, dep vetting (pip-audit + safety), license allowlist, semver verdict, Python convention match (PEP 8/257/484+, pyproject.toml) |
+| Impl (Go) | G40–G48 | go | No `TODO` in src, build/vet/fmt/staticcheck, godoc on exported, ctx-first, no `init()` |
+| Impl (Python) | G40-py–G48-py | python | No `TODO` / `NotImplementedError` left in src, build (`python -m build`), `mypy --strict`, `ruff format --check`, docstrings on exported, no top-level side effects |
+| Testing (Go) | G60–G65 | go | `go test -race`, coverage ≥90%, goleak, flake check (`-count=3`), benchmark delta gate, `Example_*` presence |
+| Testing (Python) | G60-py–G65-py | python | `pytest`, `pytest --cov` ≥90%, asyncio-task-leak harness, flake check (pytest-repeat `--count=3`), pytest-benchmark delta gate, doctest presence |
+| Feedback | G80, G85, G86 | shared | Evolution-report, learning-notifications written, quality regression ≥5% cap. G82 (golden regression) retired — replaced by four compensating baselines + G86 (see CLAUDE.md Rule 28). |
+| Feedback (aspirational) | G81, G83, G84 | shared (aspirational) | Baselines-not-lowered (G81), per-run decision-log entry caps (G83), output-shape hash compensating baseline (G84). All forward-declared per CLAUDE.md rule 28. |
+| Meta | G90, G93 | shared | Skill-index ↔ filesystem strict equality (G90), CLAUDE.md rule contiguity (G93). |
+| Markers (Go) | G95–G103 | go | MANUAL byte-preservation, constraint-bench-proof, marker-delete consent, do-not-regenerate hash, stable-since semver, deprecated-in horizon, no-forged-traces-to. Backed by Go AST-hash backend (`scripts/ast-hash/go-backend.go`). |
+| Markers (Python) | G95-py–G103-py | python | Same marker-protocol contracts realized over Python AST (`scripts/ast-hash/python-backend.py`). |
+| Perf-Confidence (aspirational, Go) | G104–G110 | go (aspirational) | Alloc-budget (G104), soak-MMD (G105), soak-drift (G106), complexity-mismatch (G107), oracle-margin (G108), profile-no-surprise (G109), perf-exception pairing (G110). All forward-declared per CLAUDE.md rule 32. |
+| Perf-Confidence (aspirational, Python) | G104-py–G110-py | python (aspirational) | Same perf-confidence regime realized via Python tooling (py-spy / scalene / pytest-benchmark). All forward-declared. |
 
-**Catalog–manifest drift rule**: when adding a new G* script, update both this catalog AND the owning package manifest (`.claude/package-manifests/<pack>.json:guardrails` for live, or `:aspirational_guardrails` for forward-declared). `scripts/validate-packages.sh` enforces filesystem ↔ manifest consistency. Catalog drift is checked at PR review.
+**Catalog–manifest drift rule**: when adding a new G* script, update both this catalog AND the owning package manifest (`.claude/package-manifests/<pack>.json:guardrails` for live, `:aspirational_guardrails` for forward-declared). `scripts/validate-packages.sh` enforces filesystem ↔ manifest consistency.
 
-**Python pack**: empty as of v0.5.0 Phase A (per CLAUDE.md rule 34 hybrid plan). Phase B authors Python equivalents of Go-pack guardrails (G30-equiv, G60-equiv, etc.) plus a Python AST-hash backend for the Markers band.
-
-### Perf-Confidence band (G104–G110)
+## Perf-Confidence band detail (G104–G110, applies to both Go and Python pack realizations)
 
 These seven gates collectively enforce CLAUDE.md rule 32 (Performance-Confidence Regime) and rule 33 (Verdict Taxonomy PASS / FAIL / INCOMPLETE).
 
-| ID | Severity | Phase | Owner agent | Script | Check |
-|----|---|---|---|---|---|
-| G104 | BLOCKER | Impl (M3.5) | `sdk-profile-auditor-go` | `scripts/guardrails/G104-alloc-budget.sh` | For every bench with a declared `allocs_per_op` in `design/perf-budget.md`, measured allocs/op ≤ budget. Reads `-benchmem` output. Mandates `b.ReportAllocs()` on every benchmark. |
-| G105 | BLOCKER(INCOMPLETE-gated) | Testing (T-SOAK) | `sdk-drift-detector` | `scripts/guardrails/G105-soak-mmd.sh` | For every soak-enabled symbol, final `t_elapsed_s` in state.jsonl ≥ `mmd_seconds`. Verdict < MMD = INCOMPLETE (rule 33) — never auto-passes to PASS. |
-| G106 | BLOCKER | Testing (T-SOAK) | `sdk-drift-detector` | `scripts/guardrails/G106-soak-drift.sh` | For every declared drift_signal, linear regression over the soak timeline has slope ≤ 0 OR p-value ≥ 0.05 OR R² ≤ 0.5. Warmup-excluded first 2 minutes. |
-| G107 | BLOCKER | Testing (T5) | `sdk-complexity-devil-go` | `scripts/guardrails/G107-complexity.sh` | For every symbol with declared `complexity.time` in perf-budget.md, scaling benchmark at N ∈ {10, 100, 1k, 10k} curve-fits to declared or better. Measured > declared = FAIL. |
-| G108 | BLOCKER | Testing (T5) | `sdk-benchmark-devil-go` | `scripts/guardrails/G108-oracle-margin.sh` | For every symbol with a non-`none` oracle in perf-budget.md, measured p50 ≤ `oracle.measured_p50_us × margin_multiplier`. NOT waivable via `--accept-perf-regression`. |
-| G109 | BLOCKER | Impl (M3.5) | `sdk-profile-auditor-go` | `scripts/guardrails/G109-profile-no-surprise.sh` | Top-10 CPU samples from pprof ≥ 0.80 coverage over declared hot-path functions. Also flags `runtime.mallocgc` > 15%, `runtime.gcBgMarkWorker` > 10%, unexpected `sync.Mutex.Lock` > 5% on single-threaded paths, unexpected syscalls on non-I/O benches. |
-| G110 | BLOCKER | Impl (M7 + M9) | `sdk-marker-hygiene-devil` | `scripts/guardrails/G110-perf-exception.sh` | Every `[perf-exception: ... bench/X]` marker in source has a matching entry in `design/perf-exceptions.md` with the same bench name. Orphan markers or orphan entries = FAIL. |
+| ID | Severity | Phase | Owner | Check |
+|----|---|---|---|---|
+| G104 | BLOCKER | Impl (M3.5) | profile-auditor | For every bench with a declared `allocs_per_op` in `design/perf-budget.md`, measured ≤ budget. Mandates allocation-reporting on every benchmark. |
+| G105 | BLOCKER (INCOMPLETE-gated) | Testing (T-SOAK) | drift-detector | For every soak-enabled symbol, final `t_elapsed_s` in `state.jsonl` ≥ `mmd_seconds`. Verdict < MMD = INCOMPLETE (rule 33) — never auto-passes to PASS. |
+| G106 | BLOCKER | Testing (T-SOAK) | drift-detector | For every declared drift signal, linear regression over the soak timeline has slope ≤ 0 OR p-value ≥ 0.05 OR R² ≤ 0.5. Warmup-excluded first 2 minutes. |
+| G107 | BLOCKER | Testing (T5) | complexity-devil | For every symbol with declared `complexity.time` in perf-budget.md, scaling benchmark at N ∈ {10, 100, 1k, 10k} curve-fits to declared or better. |
+| G108 | BLOCKER | Testing (T5) | benchmark-devil | For every symbol with a non-`none` oracle in perf-budget.md, measured p50 ≤ `oracle.measured_p50_us × margin_multiplier`. NOT waivable via `--accept-perf-regression`. |
+| G109 | BLOCKER | Impl (M3.5) | profile-auditor | Top-10 CPU samples from profiler ≥ 0.80 coverage over declared hot-path functions. Also flags allocator overhead, GC overhead, unexpected lock contention on single-threaded paths, unexpected syscalls on non-I/O benches. |
+| G110 | BLOCKER | Impl (M7 + M9) | marker-hygiene-devil | Every `[perf-exception: ... bench/X]` marker in source has a matching entry in `design/perf-exceptions.md` with the same bench name. Orphan markers or orphan entries = FAIL. |
 
-### Verdict Taxonomy integration (rule 33)
+## Verdict Taxonomy (rule 33)
 
-Any gate that cannot render a decision — pprof unavailable, too few samples (scaling sweep had N=10 only), MMD wallclock cap hit before soak completion, flaky benchmark with variance > 20% at -count=10 — returns verdict **INCOMPLETE**, not PASS. Phase lead surfaces INCOMPLETE verdicts at the applicable HITL gate (H7 for M3.5 gates, H9 for T5 / T-SOAK gates). H9 specifically enumerates INCOMPLETE soak verdicts; user must explicitly extend the run, accept with written waiver, or reject. INCOMPLETE never auto-merges at H10.
+Any gate that cannot render a decision — profiler unavailable, too few samples, MMD wallclock cap hit before soak completion, flaky benchmark with variance > 20% at `-count=10` — returns **INCOMPLETE**, not PASS. Phase lead surfaces INCOMPLETE verdicts at the applicable HITL gate (H7 for M3.5 gates, H9 for T5 / T-SOAK gates). H9 enumerates INCOMPLETE soak verdicts; user must explicitly extend the run, accept with written waiver, or reject. INCOMPLETE never auto-merges at H10.
 
-### Script mapping
-`scripts/guardrails/<id>.sh` (or `.go`). Each emits `PASS` / `FAIL:<reason>` / `INCOMPLETE:<reason>` exit codes (0 / 1 / 2 respectively; INCOMPLETE is new in v1.2.0).
+## Script mapping
 
-## When to Activate
-- `mechanical-guardrail-validator` (== `guardrail-validator` agent) at every phase exit
-- Any phase lead before claiming phase-green
-- CI-mode full-run invokes every G-check end-to-end
+`scripts/guardrails/<id>.sh` (or `.go` / `.py` for compiled / Python-native helpers). Each emits `PASS` / `FAIL:<reason>` / `INCOMPLETE:<reason>` exit codes (0 / 1 / 2 respectively).
+
+## Cross-references
+
+- shared-core `decision-logging` — every guardrail PASS/FAIL emits a decision-log event
+- shared-core `review-fix-protocol` — failed BLOCKER guardrails feed the deterministic-first gate before reviewer fleet runs
+- `sdk-marker-protocol` — Markers band (G95-G103) enforces the marker grammar
+- `sdk-semver-governance` — G31 / `stable-since` semver compatibility check
+- CLAUDE.md rule 32 (Performance-Confidence Regime) — rationale for the perf-confidence band
+- CLAUDE.md rule 33 (Verdict Taxonomy) — PASS / FAIL / INCOMPLETE semantics
+- CLAUDE.md rule 28 (Compensating Baselines) — why G82 retired in favor of G86 + four baselines
+
+---
+
+## Two scopes in this catalog
+
+The G01–G110 catalog above describes guardrails the pipeline runs **on the SDK itself** (`motadatagosdk`, `motadatapysdk`) — language-adapter toolchain, marker protocol, perf-confidence regime, dependency vetting.
+
+The GR-001–GR-024 section below describes guardrails the pipeline runs **on SDK consumers** — the multi-tenant SaaS platform services that depend on the SDK. These check that consumer services respect the platform's multi-tenant invariants: TenantID propagation, schema-per-tenant isolation, JetStream-only inter-service comm, MsgPack wire format, no FK constraints, no SQL JOINs across entities, optimistic locking, soft-delete-only, security headers, and so on. The SDK is built **for** this platform — its consumers must remain compatible.
+
+The two sets are complementary, not overlapping. Both are run by `guardrail-validator` at appropriate phase exits.
 
 ---
 

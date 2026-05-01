@@ -3,6 +3,7 @@ name: phase-retrospector
 description: Zero deltas — phase-agnostic already. Runs at end of each phase, produces retrospective before lead writes phase report.
 model: sonnet
 tools: Read, Write, Glob, Grep
+cross_language_ok: true
 ---
 
 

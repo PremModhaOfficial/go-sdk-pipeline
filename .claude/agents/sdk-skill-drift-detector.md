@@ -3,6 +3,7 @@ name: sdk-skill-drift-detector
 description: Phase 4. Compares what each invoked skill PRESCRIBED against what the generated code ACTUALLY does. Writes drift findings to feedback for improvement-planner.
 model: opus
 tools: Read, Glob, Grep, Write
+cross_language_ok: true
 ---
 
 # sdk-skill-drift-detector

@@ -5,7 +5,7 @@
   "type": "language-adapter",
   "description": "Go SDK pipeline adapter for motadatagosdk. Target: Go 1.26 module motadatagosdk.",
   "depends": ["shared-core@>=1.0.0"],
-  "pipeline_version_compat": ">=0.4.0",
+  "pipeline_version_compat": ">=0.6.0",
 
   "agents": [
     "code-reviewer-go",
@@ -27,6 +27,7 @@
   ],
 
   "skills": [
+    "go-api-ergonomics-patterns",
     "go-backpressure-flow-control",
     "go-circuit-breaker-policy",
     "go-client-mock-strategy",
@@ -42,6 +43,7 @@
     "go-example-function-patterns",
     "go-fuzz-patterns",
     "go-hexagonal-architecture",
+    "go-idempotent-retry-patterns",
     "go-mock-patterns",
     "go-module-paths",
     "go-otel-instrumentation",
@@ -49,36 +51,18 @@
     "go-sdk-otel-hook-integration",
     "go-struct-interface-design",
     "go-table-driven-tests",
+    "go-tdd-patterns",
     "go-testcontainers-setup",
     "go-testing-patterns",
     "goroutine-leak-prevention"
   ],
 
   "guardrails": [
-    "G30",
-    "G31",
-    "G32",
-    "G33",
-    "G34",
-    "G38",
-    "G40",
-    "G41",
-    "G42",
-    "G43",
-    "G48",
-    "G60",
-    "G61",
-    "G63",
-    "G65",
-    "G95",
-    "G96",
-    "G97",
-    "G98",
-    "G99",
-    "G100",
-    "G101",
-    "G102",
-    "G103"
+    "G30", "G31", "G32", "G33", "G34", "G38",
+    "G40", "G41", "G42", "G43", "G48",
+    "G60", "G61", "G63", "G65",
+    "G95", "G96", "G97", "G98", "G99",
+    "G100", "G101", "G102", "G103"
   ],
 
   "aspirational_guardrails": {
@@ -164,14 +148,13 @@
       "baselines/go/stable-signatures.json",
       "baselines/go/regression-report-<run-id>.md"
     ],
-    "contributes_per_language_partition_to": [],
-    "scope_note": "v0.4.0 ships with files moved to baselines/go/ per Decision D1=B. All consumers (baseline-manager, metrics-collector, learning-engine, G81/G86/G101) updated to read the partitioned paths. The contributes_per_language_partition_to array fills with quality-baselines.json + skill-health-baselines.json IF Decision D2 (shared-core debt-bearer fairness) lands as 'Strict' in v0.5.0; D2 is currently deferred pending Python pilot data. See docs/LANGUAGE-AGNOSTIC-DECISIONS.md."
+    "contributes_per_language_partition_to": []
   },
 
   "notes": {
-    "pass_scope": "v0.5.0 manifest-schema lock. Adds `waves` + `tier_critical` per shared-core schema. Wave entries reflect existing phase-lead orchestration (sdk-design-lead, sdk-impl-lead, sdk-testing-lead). Phase lead consumer refactor lands in Step 3 of structure-finalization plan.",
-    "naming_convention": "Per docs/PACKAGE-AUTHORING-GUIDE.md: language-specific agents use `-go` suffix; language-specific skills use `go-` prefix. `goroutine-leak-prevention` is kept unsuffixed since `goroutine-` already encodes Go (matches the rule-3 `go-*`/`python-*` already-prefixed exemption — no double-tag).",
-    "perf_regime_ownership": "G104-G110 (perf-confidence regime, rules 32/33) and their owner agents (sdk-perf-architect-go, sdk-profile-auditor-go, sdk-complexity-devil-go, sdk-soak-runner-go, sdk-benchmark-devil-go) all live here. They reference Go-specific tooling (pprof, allocs/op from go test -benchmem, goleak). When a second language adapter is authored, equivalent gates + agents go in that adapter.",
-    "marker_protocol_ownership": "G95-G103 (marker protocol) live here because byte-hash semantics depend on source-byte offsets, which are currently Go-specific. The sdk-marker-protocol skill and sdk-marker-scanner/sdk-marker-hygiene-devil agents stay in shared-core (generalize); the enforcement scripts stay in go (language-specific AST)."
+    "v0_6_migration_status": "fully populated. Includes 3 new skills extracted in Batch 2 (go-tdd-patterns, go-idempotent-retry-patterns, go-api-ergonomics-patterns) symmetrically paired with python-pack equivalents.",
+    "naming_convention": "Per docs/PACKAGE-AUTHORING-GUIDE.md: language-specific agents use `-go` suffix; language-specific skills use `go-` prefix. `goroutine-leak-prevention` is kept unsuffixed since `goroutine-` already encodes Go.",
+    "perf_regime_ownership": "G104-G110 (perf-confidence regime, rules 32/33) and their owner agents (sdk-perf-architect-go, sdk-profile-auditor-go, sdk-complexity-devil-go, sdk-soak-runner-go, sdk-benchmark-devil-go) all live here. Symmetric Python-pack equivalents in python.json.",
+    "marker_protocol_ownership": "G95-G103 (marker protocol) live here because byte-hash semantics depend on source-byte offsets, currently Go-AST-specific. The sdk-marker-protocol skill and sdk-marker-scanner/sdk-marker-hygiene-devil agents stay in shared-core (cross-language); the enforcement scripts stay in this pack."
   }
 }

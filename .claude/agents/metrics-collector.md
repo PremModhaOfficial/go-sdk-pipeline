@@ -3,6 +3,7 @@ name: metrics-collector
 description: Computes per-agent quality scores, per-phase and per-run metrics. Drops frontend-metrics branch. Adds per-phase skill-coverage-pct and manifest-miss-rate metrics.
 model: sonnet
 tools: Read, Write, Glob, Grep, Bash
+cross_language_ok: true
 ---
 
 

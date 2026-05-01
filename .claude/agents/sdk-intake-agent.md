@@ -3,6 +3,7 @@ name: sdk-intake-agent
 description: Phase 0 intake. Converts NL request OR partial TPRD to canonical TPRD by asking targeted clarifying questions via AskUserQuestion. Enforces 14-section TPRD schema, detects request Mode A/B/C, runs spec-completeness-guardrail, gates HITL H1.
 model: opus
 tools: Read, Write, Edit, Glob, Grep, Bash, Agent, SendMessage, TaskCreate, TaskUpdate
+cross_language_ok: true
 ---
 
 # sdk-intake-agent

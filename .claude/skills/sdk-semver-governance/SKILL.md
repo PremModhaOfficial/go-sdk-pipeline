@@ -2,11 +2,20 @@
 name: sdk-semver-governance
 description: >
   Use this when classifying a public-API diff into patch / minor / major —
-  reading current-api.json against proposed api.go.stub, applying gorelease
-  rules (added symbols, struct-field changes, interface expansion, sentinel
-  add/remove), and verifying TPRD §12 declares the matching bump.
-  Triggers: semver, major, minor, patch, breaking, api-surface, stable-since, gorelease, TPRD-§12.
+  reading the current API manifest against the proposed API stub, applying
+  language-adapter-specific compatibility rules (added symbols, struct/class
+  field changes, interface/Protocol expansion, sentinel add/remove, exception
+  hierarchy changes), and verifying TPRD §12 declares the matching bump.
+  Triggers: semver, major, minor, patch, breaking, api-surface, stable-since, gorelease, griffe, TPRD-§12.
+version: 1.1.0
+last-evolved-in-run: v0.6.0-rc.0-sanitization
+status: stable
+tags: [semver, governance, api-surface, language-pluggable]
+cross_language_ok: true
 ---
+
+<!-- Semver classification rules are language-neutral; the reference tooling differs per pack: `gorelease` for Go (`golang.org/x/exp/cmd/gorelease`), `griffe` or `pylint --diff` for Python. Examples in this skill are Go-flavored because Go is the canonical pack; the same rules apply to Python with `class` instead of `struct`, `Protocol` instead of `interface`, and exception classes instead of sentinel `var`s. The leakage scripts honor `cross_language_ok: true`. -->
+
 
 # sdk-semver-governance (v1.0.0)
 
@@ -134,11 +143,25 @@ For Mode A (new package): initial v1.0.0 is reasonable if SDK conventions are v1
 
 For Mode B (extension): verify each new export carries `[stable-since: <current-or-next-version>]`. Existing stable-since strings must not regress (v1.1.0 → v1.0.0 is meaningless and G102 rejects the syntax anyway).
 
+## Per-language adapter realization
+
+| Aspect | Go pack | Python pack |
+|---|---|---|
+| Reference classifier | `golang.org/x/exp/cmd/gorelease` | `griffe` (or `pylint --diff` against pinned baselines) |
+| API stub artifact | `design/api.go.stub` | `design/api.pyi.stub` |
+| API manifest | `current-api.json` (gorelease format) | `current-api.json` (griffe diff format) |
+| Module path bump on major | `motadatagosdk/.../v2` | `motadatapysdk` package version in `pyproject.toml`; consumers pin via constraints |
+| Sentinel-error model | `var ErrX = errors.New(...)` package vars | exception class hierarchy under `MotadataError` |
+| Interface expansion | `interface { ... }` adding a method = major | `Protocol` / ABC adding an abstract method = major |
+| `errors.Is` / `isinstance` semantics | `errors.Is(err, ErrX)` | `isinstance(exc, ErrX)` |
+
+The classification table above is Go-flavored; the same rules apply per-pack. The bump verdict, TPRD §12 cross-check, and `[stable-since:]` marker enforcement are identical across packs.
+
 ## Cross-references
 
 - `sdk-marker-protocol` — consumes `[stable-since:]` and `[deprecated-in:]`; G101 is the enforcement arm
-- `go-error-handling-patterns` — sentinel addition is minor; sentinel removal is major
-- `sdk-convention-devil-go` — flags missing `[stable-since:]` on new exports
+- `go-error-handling-patterns` / `python-exception-patterns` — sentinel/exception addition is minor; removal is major
+- `sdk-convention-devil-go` / `sdk-convention-devil-python` — flag missing `[stable-since:]` on new exports
 - `api-ergonomics-audit` — an ergonomics NEEDS-FIX finding may force an API rewrite that triggers major bump
 
 ## Guardrail hooks

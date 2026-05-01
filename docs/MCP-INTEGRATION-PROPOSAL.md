@@ -1,3 +1,5 @@
+<!-- cross_language_ok: true — pipeline design/decision doc references per-pack tooling. Multi-tenant SaaS platform context preserved per F-008. -->
+
 # MCP Integration Proposal — motadata-sdk-pipeline
 
 **Status**: DRAFT (for tech-lead review)

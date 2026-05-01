@@ -3,6 +3,7 @@ name: sdk-semver-devil
 description: READ-ONLY. Classifies every proposed API change as patch/minor/major per semver. In Mode A (new package) bounds to new-pkg-only; in Mode B/C delegates to sdk-breaking-change-devil-go for cross-API comparison.
 model: sonnet
 tools: Read, Glob, Grep, Write
+cross_language_ok: true
 ---
 
 # sdk-semver-devil

@@ -3,6 +3,7 @@ name: improvement-planner
 description: Reads metrics, retros, root-causes, drift, coverage. Outputs categorized improvement plan (prompt patches, new skills, guardrails, process/threshold proposals) with confidence levels. Drops archive's HTTP/gRPC rejection clause; adds SDK-specific skill-evolution input.
 model: opus
 tools: Read, Write, Glob, Grep
+cross_language_ok: true
 ---
 
 

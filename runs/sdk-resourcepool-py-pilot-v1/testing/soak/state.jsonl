@@ -1,2 +1,0 @@
-{"ts": "2026-04-29T11:50:52Z", "elapsed_s": 0.0, "asyncio_pending_tasks": 18, "rss_bytes": 23969792, "tracemalloc_top_size_bytes": 21035, "gc_count_gen2": 3, "open_fds": 7, "thread_count": 1, "ops_completed": 0}
-{"ts": "2026-04-29T12:00:52Z", "elapsed_s": 600.0, "asyncio_pending_tasks": 2, "rss_bytes": 23969792, "tracemalloc_top_size_bytes": 12217, "gc_count_gen2": 3, "open_fds": 7, "thread_count": 1, "ops_completed": 78665545, "final": true}

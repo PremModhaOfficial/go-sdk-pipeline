@@ -10,6 +10,7 @@ description: >
   scan, native-code provenance for wheels, and ACCEPT / CONDITIONAL / REJECT /
   INCOMPLETE aggregate verdict logic.
   Triggers: pip-audit, safety, license, CVE, Trove classifier, pip install, PyPI, Sigstore, typosquat, py.typed, manylinux, abi3, dependencies.
+cross_language_ok: true
 ---
 
 # python-dependency-vetting (v1.0.0)

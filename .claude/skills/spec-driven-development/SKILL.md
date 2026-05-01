@@ -2,14 +2,22 @@
 name: spec-driven-development
 description: >
   Use this when intake extracts FRs from a TPRD, when design maps FRs to
-  symbols in api.go.stub, when impl verifies every TPRD §7 symbol has TDD
+  symbols in the API stub, when impl verifies every TPRD §7 symbol has TDD
   red-green-refactor evidence, or when feedback computes symbol-coverage.
-  Covers TPRD-to-symbol traceability — every §7 symbol gains impl + godoc +
-  table-driven test + Example_* (where applicable) + benchmark (hot path) +
-  [traces-to: TPRD-<section>-<id>] marker — plus feature-level validation
-  and intra-package dependency ordering.
+  Covers TPRD-to-symbol traceability — every §7 symbol gains impl + doc-comment
+  + structured test + runnable example (where applicable) + benchmark (hot path)
+  + [traces-to: TPRD-<section>-<id>] marker — plus feature-level validation,
+  cross-service NATS contract definition, and intra-package dependency ordering.
   Triggers: TPRD, FR, symbol coverage, traces-to, story, acceptance criteria, TDD, red-green-refactor, Example_, benchmark, godoc, traceability.
+version: 1.1.0
+last-evolved-in-run: v0.6.0-rc.0-sanitization
+status: stable
+tags: [spec, traceability, tdd, multi-tenant-saas, language-pluggable]
+cross_language_ok: true
 ---
+
+<!-- The TPRD-to-symbol traceability concept is language-neutral; specific syntax (Example_* in Go, Examples block in Python doctest, *_test.go vs test_*.py) varies per language pack. The cross-service NATS contracts and multi-tenant scoping reference the multi-tenant SaaS platform context that the SDK consumers operate in. The leakage scripts honor `cross_language_ok: true`. -->
+
 
 # spec-driven-development (SDK-mode)
 

@@ -5,8 +5,7 @@
   "type": "core",
   "description": "Language-agnostic orchestration, meta-skills, governance. Any language adapter depends on this.",
   "depends": [],
-  "pipeline_version_compat": ">=0.4.0",
-
+  "pipeline_version_compat": ">=0.6.0",
   "agents": [
     "baseline-manager",
     "defect-analyzer",
@@ -31,7 +30,6 @@
     "sdk-skill-drift-detector",
     "sdk-testing-lead"
   ],
-
   "skills": [
     "api-ergonomics-audit",
     "conflict-resolution",
@@ -50,111 +48,19 @@
     "spec-driven-development",
     "tdd-patterns"
   ],
-
   "guardrails": [
-    "G01",
-    "G02",
-    "G03",
-    "G04",
-    "G05",
-    "G06",
-    "G07",
-    "G20",
-    "G21",
-    "G22",
-    "G23",
-    "G24",
-    "G69",
-    "G80",
-    "G85",
-    "G86",
-    "G90",
-    "G93",
-    "G116"
+    "G01", "G02", "G03", "G04", "G05", "G06", "G07",
+    "G20", "G21", "G22", "G23", "G24",
+    "G69", "G80", "G85", "G86", "G90", "G93", "G116"
   ],
-
   "aspirational_guardrails": {
     "G81": "Baselines-not-lowered enforcement. Design rule decided in v0.2.0; script not yet authored.",
     "G83": "Per-run decision-log entry caps. Caps documented in CLAUDE.md rule 11; script not yet authored.",
     "G84": "Output-shape hash compensating baseline. Decided in CLAUDE.md rule 28 v0.3.0; script not yet authored."
   },
-
-  "waves": {
-    "I1_intake":          ["sdk-intake-agent"],
-    "I2_marker_scan":     ["sdk-marker-scanner"],
-    "D2_mechanical":      ["guardrail-validator"],
-    "D3_devils":          ["sdk-design-devil", "sdk-semver-devil", "sdk-security-devil"],
-    "M2_merge_plan":      ["sdk-merge-planner"],
-    "M7_devils":          ["sdk-overengineering-critic", "sdk-marker-hygiene-devil"],
-    "M9_mechanical":      ["guardrail-validator"],
-    "T5_5_drift":         ["sdk-drift-detector"],
-    "T8_supply_chain":    ["guardrail-validator"],
-    "F1_metrics":         ["metrics-collector"],
-    "F2_defect_analysis": ["defect-analyzer", "root-cause-tracer"],
-    "F3_skill_audit":     ["sdk-skill-coverage-reporter", "sdk-skill-drift-detector"],
-    "F4_retrospective":   ["phase-retrospector"],
-    "F5_planning":        ["improvement-planner"],
-    "F6_learning":        ["learning-engine"],
-    "F7_baselines":       ["baseline-manager"]
-  },
-
-  "tier_critical": {
-    "design": {
-      "T1": ["sdk-design-devil", "sdk-semver-devil", "sdk-security-devil"],
-      "T2": ["sdk-design-devil", "sdk-semver-devil"]
-    },
-    "implementation": {
-      "T1": ["sdk-marker-hygiene-devil"],
-      "T2": []
-    },
-    "testing": {
-      "T1": ["sdk-drift-detector"],
-      "T2": []
-    }
-  },
-
-  "baselines": {
-    "scope_owned": "shared",
-    "owns_shared": [
-      "quality-baselines.json",
-      "skill-health-baselines.json",
-      "skill-health.json",
-      "baseline-history.jsonl"
-    ],
-    "owns_shared_paths": [
-      "baselines/shared/quality-baselines.json",
-      "baselines/shared/skill-health-baselines.json",
-      "baselines/shared/skill-health.json",
-      "baselines/shared/baseline-history.jsonl"
-    ],
-    "scope_note": "v0.4.0 ships with files moved to baselines/shared/ per Decision D1=B. Per-agent quality + per-skill stability are intrinsically language-neutral; one shared partition. All consumers (baseline-manager, metrics-collector, learning-engine, G86) updated to read the partitioned paths. Decision D2 (resolved 2026-04-27 post-R2 spike): Lenient default — one shared score. Progressive fallback if Phase B Python pilot shows ≥3pp quality_score divergence on a specific debt-bearer (that agent flips to per-language partition until D6=Split rewrite lands in its conventions.yaml). See docs/LANGUAGE-AGNOSTIC-DECISIONS.md + docs/R2-DEBT-REWRITE-FEASIBILITY.md."
-  },
-
-  "generalization_debt": {
-    "agents": [],
-    "skills": [
-      {"name": "tdd-patterns", "reason": "examples use Go `*_test.go` and `testing.T`; TDD cycle itself is language-neutral"},
-      {"name": "idempotent-retry-safety", "reason": "code snippets use Go context + errgroup; retry classification generalizes"},
-      {"name": "network-error-classification", "reason": "uses `errors.Is` / `net.Error` examples; classification taxonomy generalizes"}
-    ],
-    "resolution_policy": "v0.5.0 Step 13 resolved all 4 debt-bearer AGENTS via D6=Split: rule body stays in shared-core/<agent>.md (language-neutral statements with [rule-key:<key>] tags), per-language flavor lives in `.claude/package-manifests/<lang>/conventions.yaml` keyed by agent + rule-key. Resolved agents (no longer debt): sdk-design-devil, sdk-overengineering-critic, sdk-semver-devil, sdk-security-devil. The 3 remaining SKILL debt items follow the same Split pattern in a future pass — universal rule body in shared-core skill file, language examples in <lang>/conventions.yaml under a `skills:` top-level key (schema extends conventions.yaml v1.0)."
-  },
-
-  "split_resolved_log": {
-    "v0.5.0_step13": {
-      "applied_to": ["sdk-design-devil", "sdk-overengineering-critic", "sdk-semver-devil", "sdk-security-devil"],
-      "mechanism": "D6=Split per docs/LANGUAGE-AGNOSTIC-DECISIONS.md (R2 spike, 2026-04-27)",
-      "go_overlay_at": ".claude/package-manifests/go/conventions.yaml",
-      "loader_protocol": "Each agent's Startup Protocol reads runs/<run-id>/context/active-packages.json:target_language and loads .claude/package-manifests/<lang>/conventions.yaml as LANG_CONVENTIONS. Each rule in the agent body has a [rule-key:<key>] tag matching LANG_CONVENTIONS.agents.<agent-name>.rules.<key>."
-    }
-  },
-
+  "waves": {},
+  "tier_critical": {},
   "notes": {
-    "pass_scope": "v0.5.0 manifest-schema lock. Adds `waves` (per-wave agent contributions) + `tier_critical` (per-phase tier-gating) so phase leads can dispatch from manifest data instead of hardcoded prompt lists. Phase lead refactor (Step 3 of structure-finalization plan) consumes these fields.",
-    "waves_field": "Each entry maps wave-id → list of THIS package's agents that fire in that wave. Phase lead unions across active packages: ACTIVE_AGENTS_FOR_WAVE = ⋃ (pkg.waves[wave] for pkg in active-packages). Mode-specific waves use suffix `_mode_bc` (e.g. D3_devils_mode_bc) — lead conditionally adds when mode∈{B,C}. Wave-id naming: <phase-letter><number>_<short-purpose> (I=intake, D=design, M=impl, T=testing, F=feedback).",
-    "tier_critical_field": "Per-phase, per-tier list of THIS package's agents the phase lead REQUIRES in active-packages union; halt with BLOCKER if any missing. Phase lead unions per (phase, tier) across active packages.",
-    "contains_drift_gates": "G06, G90 (strict), G116 ship in shared-core because drift-prevention is language-neutral and is load-bearing for every run. Removing them from shared-core would let intake proceed on a drifted repo.",
-    "contains_meta_baselines": "G81 (baseline-advance), G83 (determinism), G84 (output-shape hash), G85 (learning-notifications), G86 (quality regression) are cross-run observability gates; language-neutral.",
-    "G04_mcp_health": "WARN-only by design (rule 31). Shared-core because MCP fallback policy applies to any language."
+    "v0_6_migration_status": "stub. Arrays grow per migration batch as files arrive from v0.5.0. validate-packages.sh passes against the empty manifest because the corresponding fs locations are also empty."
   }
 }

@@ -3,6 +3,7 @@ name: sdk-drift-detector
 description: Testing-phase agent (T-SOAK wave). Observes soak state files on a poll ladder (30s, 2m, 5m, 15m, 30m, 60m, 2h, 4h, 6h). Fits linear regression over time on drift_signals (heap_bytes, goroutines, gc_pause_p99_ns, etc.). Fast-fails on statistically significant positive slope (p<0.05). Issues PASS / FAIL / INCOMPLETE per MMD. Backs G105 (MMD) + G106 (drift) + rule 33. READ-ONLY.
 model: opus
 tools: Read, Write, Glob, Grep, Bash
+cross_language_ok: true
 ---
 
 # sdk-drift-detector

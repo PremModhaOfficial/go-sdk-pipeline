@@ -226,7 +226,7 @@ FUNCTION ResolutionLoop(phase, review_findings_dir, fix_agents_map):
 
 ### Why
 
-Rule 13 (Post-Iteration Review Re-Run) requires the full reviewer fleet on every rework iteration. The fleet is expensive: 5+ devil agents × full-artifact input × per-agent decision-log writes. Running the fleet on code that hasn't even passed `go build` / `go vet` / `goleak` wastes tokens — reviewer findings on broken code are dominated by the mechanical breakage and get superseded on the next iteration anyway.
+Rule 13 (Post-Iteration Review Re-Run) requires the full reviewer fleet on every rework iteration. The fleet is expensive: 5+ devil agents × full-artifact input × per-agent decision-log writes. Running the fleet on code that hasn't even passed the deterministic gate (build, static analysis, leak check) wastes tokens — reviewer findings on broken code are dominated by the mechanical breakage and get superseded on the next iteration anyway.
 
 The gate preserves Rule 13's correctness invariant: **every iteration whose output a reviewer would meaningfully evaluate still gets reviewed.** What it removes is reviewer-fleet spawn cost for iterations we already know are going to need another fix pass.
 
@@ -234,10 +234,10 @@ The gate preserves Rule 13's correctness invariant: **every iteration whose outp
 
 BLOCKER checks that are 100% script-driven and produce PASS/FAIL without LLM judgment. In this pipeline:
 
-- `go build ./...`, `go vet ./...`, `gofmt -l`, `staticcheck ./...`
-- `go test ./... -race -count=1`
-- `goleak.VerifyTestMain` (G51)
-- `govulncheck` / `osv-scanner` (supply-chain, G32–G34)
+- The active language adapter's build, vet, fmt, and static-analysis commands (`toolchain.build`, `toolchain.vet`, `toolchain.fmt` from the package manifest)
+- The active adapter's test command (`toolchain.test`), including race-detection if the language supports it
+- The active adapter's leak-check harness (`toolchain.leak_check`) — surfaces as a guardrail in the leak-prevention category
+- The active adapter's supply-chain commands (`toolchain.supply_chain`) — supply-chain guardrails (G32–G34)
 - Marker hygiene byte-hash checks (G95, G96, G98, G100, G103)
 - Constraint-bench proofs (G97) — deterministic given pinned seeds
 - License allowlist check (dep-vet, G33)

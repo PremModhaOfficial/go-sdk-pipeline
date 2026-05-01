@@ -1,5 +1,5 @@
 {
-  "pipeline_version": "0.5.0",
+  "pipeline_version": "0.6.0",
   "target_sdk_dir_env": "SDK_TARGET_DIR",
   "phase_budgets": {
     "intake": {
@@ -64,6 +64,14 @@
       "Bash(govulncheck:*)",
       "Bash(osv-scanner:*)",
       "Bash(benchstat:*)",
+      "Bash(pytest:*)",
+      "Bash(mypy:*)",
+      "Bash(ruff:*)",
+      "Bash(bandit:*)",
+      "Bash(pip-audit:*)",
+      "Bash(safety:*)",
+      "Bash(python -m build:*)",
+      "Bash(python -m pytest:*)",
       "Bash(git status:*)",
       "Bash(git diff:*)",
       "Bash(git log:*)",

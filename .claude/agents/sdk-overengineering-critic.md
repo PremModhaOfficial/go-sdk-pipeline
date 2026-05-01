@@ -3,6 +3,7 @@ name: sdk-overengineering-critic
 description: READ-ONLY. Reviews impl code for unnecessary abstractions, speculative interfaces, unused options, premature optimization, dead flags, ceremonial wrapper types. Simplification is a virtue.
 model: sonnet
 tools: Read, Glob, Grep, Write
+cross_language_ok: true
 ---
 
 # sdk-overengineering-critic

@@ -6,7 +6,15 @@ description: >
   do-not-regenerate, owned-by, perf-exception — that drive marker-scanner,
   constraint-devil, marker-hygiene-devil, and Mode B/C merge safety.
   Triggers: traces-to, constraint, stable-since, deprecated-in, do-not-regenerate, owned-by, perf-exception, ownership-map, marker-hygiene, MANUAL, byte-hash.
+version: 1.1.0
+last-evolved-in-run: v0.6.0-rc.0-sanitization
+status: stable
+tags: [markers, provenance, sdk, language-pluggable]
+cross_language_ok: true
 ---
+
+<!-- The marker grammar (the 7 keys + their value formats) is language-neutral. The realization is per-language: line vs block comment delimiters, AST-hash backend per file extension, regex parsing per godoc style. Examples below use Go syntax because Go is the canonical pack today; the same markers apply over Python `#`-comment lines using the Python AST backend (`scripts/ast-hash/python-backend.py`). The leakage scripts honor `cross_language_ok: true`. -->
+
 
 # sdk-marker-protocol (v1.0.0)
 
@@ -154,10 +162,24 @@ When NOT to add a marker:
 - Test files (`*_test.go`) — G99 excludes them
 - Generated code from `go generate` — use `// Code generated ... DO NOT EDIT.` instead, pipeline respects it
 
+## Per-language adapter realization
+
+The marker grammar is language-neutral; the comment syntax around it is per-language adapter:
+
+| Aspect | Go realization | Python realization |
+|---|---|---|
+| Line marker delimiter | `// [traces-to: ...]` | `# [traces-to: ...]` |
+| File extension | `.go` | `.py`, `.pyi` |
+| AST-hash backend | `scripts/ast-hash/go-backend.go` | `scripts/ast-hash/python-backend.py` |
+| Doc-comment block (G99 anchor) | godoc preceding declaration | docstring inside declaration |
+| Test-file exclusion glob (G99) | `*_test.go` | `test_*.py`, `*_test.py`, `tests/` |
+
+The 7-key taxonomy, regex grammar, and BLOCKER-vs-WARN severity assignments are identical across packs. `marker-hygiene-devil` and `sdk-marker-scanner` resolve the right backend from `runs/<run-id>/context/active-packages.json:target_language`.
+
 ## Cross-references
 
 - `sdk-semver-governance` — reads `[stable-since:]` markers to classify bump size; G101 pairs with §10 of semver skill
-- `go-example-function-patterns` — `Example_*` functions in `_test.go` do not carry `[traces-to:]` markers (G99 excludes test files)
+- `go-example-function-patterns` / `python-doctest-patterns` — runnable-example functions in test files do not carry `[traces-to:]` markers (G99 excludes test files)
 - `review-fix-protocol` — marker-hygiene-devil is one of the READ-ONLY reviewers; failures loop through the fix protocol
 - `mcp-knowledge-graph` — marker state persists to neo4j-memory as Entity/Observation for cross-run queries
 

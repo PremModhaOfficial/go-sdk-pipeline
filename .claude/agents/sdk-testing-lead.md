@@ -3,6 +3,7 @@ name: sdk-testing-lead
 description: Orchestrator for Phase 3 Testing. Runs unit-coverage audit, integration (testcontainers), bench vs. baseline, leak hunt, fuzz (conditional), supply-chain scans. Gates HITL H8 on benchmark regression.
 model: opus
 tools: Read, Write, Edit, Glob, Grep, Bash, Agent, SendMessage, TaskCreate, TaskUpdate
+cross_language_ok: true
 ---
 
 # sdk-testing-lead

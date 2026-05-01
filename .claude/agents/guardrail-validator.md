@@ -3,6 +3,7 @@ name: guardrail-validator
 description: Runs mechanical automated checks. Extended check catalog from archive's 28 to SDK pipeline's G01-G103 (includes marker guardrails, regression gates, determinism, supply chain).
 model: sonnet
 tools: Read, Glob, Grep, Bash, Write
+cross_language_ok: true
 ---
 
 

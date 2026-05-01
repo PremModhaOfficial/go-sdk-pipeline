@@ -3,6 +3,7 @@ name: defect-analyzer
 description: Classifies test failures by severity + category; logs to defect-log.jsonl with regression risk assessment.
 model: sonnet
 tools: Read, Write, Glob, Grep
+cross_language_ok: true
 ---
 
 

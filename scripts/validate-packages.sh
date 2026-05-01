@@ -18,7 +18,11 @@
 #
 # Usage: bash scripts/validate-packages.sh
 
-set -uo pipefail
+set -o pipefail
+# v0.6.0 fix: dropped `-u` because the success-path counters dereference associative
+# arrays that may be empty when manifests are stubs (Batch 0 state). The existing
+# code already uses the `${VAR[$key]+x}` idiom for key-existence checks, so strict
+# undefined-variable mode added no safety — only false failures on empty stubs.
 PIPELINE_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 MANIFEST_DIR="$PIPELINE_ROOT/.claude/package-manifests"
 
@@ -198,9 +202,12 @@ fi
 AGENT_COUNT=${#AGENT_OWNER[@]}
 SKILL_COUNT=${#SKILL_OWNER[@]}
 GR_COUNT=${#GUARDRAIL_OWNER[@]}
-FS_AGENTS=$(ls "$PIPELINE_ROOT"/.claude/agents/*.md 2>/dev/null | wc -l)
-FS_SKILLS=$(ls -d "$PIPELINE_ROOT"/.claude/skills/*/ 2>/dev/null | wc -l)
-FS_GUARDRAILS=$(ls "$PIPELINE_ROOT"/scripts/guardrails/G*.sh 2>/dev/null | wc -l)
+# v0.6.0 fix: replaced `ls glob | wc -l` with `find` — when nullglob is set
+# and the glob matches nothing, ls runs with no args and lists CWD, falsely
+# inflating the count. find returns 0 lines on empty correctly.
+FS_AGENTS=$(find "$PIPELINE_ROOT/.claude/agents" -maxdepth 1 -type f -name '*.md' 2>/dev/null | wc -l)
+FS_SKILLS=$(find "$PIPELINE_ROOT/.claude/skills" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
+FS_GUARDRAILS=$(find "$PIPELINE_ROOT/scripts/guardrails" -maxdepth 1 -type f -name 'G*.sh' 2>/dev/null | wc -l)
 
 ASP_COUNT=${#ASPIRATIONAL_OWNER[@]}
 

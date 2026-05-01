@@ -291,8 +291,8 @@ Captures major and minor happenings during agent work:
 | `input-read` | Reading a critical input file or context summary |
 | `output-write` | Writing a major output artifact |
 | `validation` | Running a validation check (schema, syntax, constraint) |
-| `compilation` | Running `go build` or `tsc` |
-| `test-run` | Running `go test` or `vitest` |
+| `compilation` | Running the active language adapter's build command (resolved from `toolchain.build` in the package manifest) |
+| `test-run` | Running the active language adapter's test command (resolved from `toolchain.test`) |
 | `tool-call` | Invoking an external tool or script |
 | `dependency-resolution` | Resolving a dependency between agents or packages |
 | `assumption` | Making an assumption about upstream agent output |
@@ -337,8 +337,8 @@ Rich failure context for individual operations (supplements lifecycle `"event":"
 | `timeout` | Operation exceeded time limit |
 | `missing-input` | Required upstream file or context not found |
 | `validation-error` | Output failed schema/syntax/constraint validation |
-| `compilation-error` | `go build` or `tsc` failed |
-| `test-failure` | `go test` or `vitest` tests failed |
+| `compilation-error` | The active adapter's `toolchain.build` command failed |
+| `test-failure` | The active adapter's `toolchain.test` command failed |
 | `dependency-failure` | Upstream agent failed, blocking this agent |
 | `tool-error` | External tool (linter, formatter, script) failed |
 | `resource-limit` | Exceeded entry limit, file size limit, or iteration cap |

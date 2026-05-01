@@ -1,3 +1,5 @@
+<!-- cross_language_ok: true — pipeline design/decision doc references per-pack tooling. Multi-tenant SaaS platform context preserved per F-008. -->
+
 # R2 — Generalization-Debt Rewrite Feasibility Study
 
 **Date**: 2026-04-27

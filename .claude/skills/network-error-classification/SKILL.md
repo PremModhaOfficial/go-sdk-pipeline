@@ -4,48 +4,80 @@ description: >
   Use this when an SDK client returns errors from a wire call and callers need
   to know whether to retry, fail-fast, or re-auth — building the sentinel
   taxonomy (retriable / fatal / auth-failure), the mapErr precedence ladder,
-  and wrapping with %w (Go) or `raise … from` (Python). Cross-language.
-  Triggers: errors.Is, errors.As, fmt.Errorf %w, sentinel, ErrTimeout, ErrAuth, ErrUnavailable, net.Error, tls.CertificateVerificationError, mapErr, raise from, PoolError, PoolTimeout, asyncio.TimeoutError.
+  and chaining the original cause through the language's wrapping idiom.
+  Cross-language; pairs language-pack realizations.
+  Triggers: sentinel, mapErr, classify, retriable, fatal, auth-failure, ErrTimeout, ErrAuth, ErrUnavailable, TLS, PoolError, PoolTimeout, asyncio.TimeoutError, raise from.
+version: 1.1.0
+last-evolved-in-run: v0.6.0-rc.0-sanitization
+status: stable
+tags: [errors, taxonomy, sdk, cross-language]
+cross_language_ok: true
 ---
 
-# network-error-classification (v1.0.0)
+<!-- This skill is intentionally cross-language: the body shows side-by-side Go and Python realizations of the same taxonomy. The leakage scripts honor `cross_language_ok: true` and skip strict scanning. See README in /sanitize-tools/. -->
+
+
+# network-error-classification (v1.1.0)
 
 ## Rationale
 
-Every SDK client returns errors from a wire call. Callers need to know, from
-the error alone, whether to: **retry** (transient), **fail-fast** (fatal /
-programmer error), or **re-auth** (credentials no longer valid). Without a
-taxonomy, callers string-match on `err.Error()` — fragile, breaks on dependency
-upgrades.
+Every SDK client returns errors from a wire call. Callers need to know, from the error alone, whether to: **retry** (transient), **fail-fast** (fatal / programmer error), or **re-auth** (credentials no longer valid). Without a taxonomy, callers string-match on the error message — fragile, breaks on dependency upgrades.
 
-The SDK commits to a **sentinel-based** model at minimum three classes:
+The SDK commits to a sentinel-based taxonomy at minimum three classes:
 
-1. **Retriable / transient** — `ErrTimeout`, `ErrUnavailable`, `ErrPoolExhausted`, `ErrPoolClosed`. Safe to retry with backoff (subject to idempotency).
-2. **Fatal / permanent** — `ErrInvalidConfig`, `ErrWrongType`, `ErrSyntax`, `ErrOutOfRange`, `ErrNotConnected`. Retrying is useless; the caller or the data is wrong.
-3. **Auth-failure** — `ErrAuth`, `ErrNoPerm`, `ErrTLS`. Retrying won't help; the caller must rotate credentials / fix cert chain.
+1. **Retriable / transient** — timeout, unavailable, pool exhausted, pool closed. Safe to retry with backoff (subject to idempotency).
+2. **Fatal / permanent** — invalid config, wrong type, syntax error, out of range, not connected. Retrying is useless; the caller or the data is wrong.
+3. **Auth-failure** — auth failed, no permission, TLS verification failure. Retrying won't help; the caller must rotate credentials or fix the cert chain.
 
-Classification happens at the adapter boundary via a `mapErr(err) error`
-helper. It wraps every return value through `fmt.Errorf("%w: %v", sentinel,
-err)` so `errors.Is(err, ErrTimeout)` works AND the original message survives
-for logs.
+Classification happens at the adapter boundary via a `mapErr(err) → typed-error` helper. It chains every return value through the language's error-wrapping idiom so callers can use the language's typed-discrimination idiom AND the original cause survives for logs.
 
-CLAUDE.md rule 6 demands this: sentinel errors, wrapping via `%w`,
-`errors.Is` matchable. The target SDK's `dragonfly` package freezes a 17-set
-of sentinels in TPRD §7 — adding/removing is a semver-major break.
+## Sentinel catalog (language-neutral)
 
-## Activation signals
+A new SDK client should declare at minimum the following sentinels (concrete names per pack):
 
-- New client returns errors from a remote server
-- TPRD §Skills-Manifest lists `network-error-classification`
-- Design review flags "string-match on err" or "no retry hint"
-- `sdk-convention-devil-go` requires sentinel taxonomy
-- Reviewer asks "how does the caller know to retry?"
+| Intent | Class |
+|---|---|
+| `Timeout` | retriable |
+| `Unavailable` | retriable |
+| `PoolExhausted` | retriable |
+| `PoolClosed` | retriable (transient) or fatal (caller-initiated) |
+| `InvalidConfig` | fatal |
+| `NotConnected` | fatal |
+| `WrongType` | fatal |
+| `Syntax` | fatal |
+| `Canceled` | fatal (caller-driven) |
+| `NotFound` (or "Nil") | fatal — caller decides whether "miss" is an error |
+| `Auth` | auth-failure |
+| `NoPerm` | auth-failure |
+| `TLS` | auth-failure |
 
-## GOOD examples
+Exact names follow each language's idioms — see Go and Python realizations below.
 
-### 1. Sentinel catalog — `errors.New` at package scope
+## Decision criteria (language-neutral)
 
-From `core/l2cache/dragonfly/errors.go`:
+| Category | Default sentinel | Retry? |
+|---|---|---|
+| Caller deadline exceeded | `Timeout` | Yes, fresh deadline |
+| Caller cancellation | `Canceled` | No — caller asked to stop |
+| Network read/write timeout | `Timeout` | Yes |
+| TLS certificate verification | `TLS` | No — rotate creds |
+| Server "auth-failed" wire response | `Auth` | No — re-auth |
+| Server "no-permission" wire response | `NoPerm` | No — fix ACL |
+| Pool acquire timeout | `PoolExhausted` | Yes — backoff |
+| Closed pool | `PoolClosed` | No — client closed |
+| Unclassified wire error | `Unavailable` | Yes, with caution |
+| Config validation | `InvalidConfig` | No |
+
+Precedence rules:
+
+1. **Check sentinel identity before message string.** Short-circuits double-wrapping.
+2. **Use typed checks for stdlib error types.** Whatever the language's "match by type" idiom is — Go's `errors.As`, Python's `isinstance`.
+3. **String scan is LAST.** Server wire-protocol strings only checked after typed checks fail.
+4. **Sentinel set is semver-public.** Adding is minor; removing or renaming is major. Document the set in package docs.
+
+## Go realization
+
+Sentinels as package-level `var ErrX = errors.New(...)`. Caller uses `errors.Is`. Pattern from `core/l2cache/dragonfly/errors.go`:
 
 ```go
 var (
@@ -53,165 +85,95 @@ var (
     ErrTimeout       = errors.New("dragonfly: timeout")
     ErrUnavailable   = errors.New("dragonfly: unavailable")
     ErrPoolExhausted = errors.New("dragonfly: pool exhausted")
-    ErrPoolClosed    = errors.New("dragonfly: pool closed")
-
     // Fatal
     ErrInvalidConfig = errors.New("dragonfly: invalid config")
     ErrNotConnected  = errors.New("dragonfly: not connected")
-    ErrWrongType     = errors.New("dragonfly: wrong type")
-    ErrSyntax        = errors.New("dragonfly: syntax error")
-    ErrOutOfRange    = errors.New("dragonfly: value out of range")
-    ErrCanceled      = errors.New("dragonfly: canceled")
-    ErrNil           = errors.New("dragonfly: key not found")
-
     // Auth-failure
-    ErrAuth   = errors.New("dragonfly: auth failed")
-    ErrNoPerm = errors.New("dragonfly: no perm")
-    ErrTLS    = errors.New("dragonfly: tls failure")
+    ErrAuth = errors.New("dragonfly: auth failed")
+    ErrTLS  = errors.New("dragonfly: tls failure")
 )
-```
 
-### 2. Central `mapErr` with precedence and `errors.As` for typed errors
-
-From `core/l2cache/dragonfly/errors.go` — precedence-sensitive, typed checks
-before string scans:
-
-```go
 func mapErr(err error) error {
     if err == nil { return nil }
-
-    // 1. Passthrough if caller already wrapped with our sentinel.
-    if errors.Is(err, ErrNil) || errors.Is(err, ErrTimeout) /* ... */ {
-        return err
-    }
-
-    // 2. Stdlib sentinels.
     switch {
     case errors.Is(err, context.Canceled):
         return fmt.Errorf("%w: %v", ErrCanceled, err)
     case errors.Is(err, context.DeadlineExceeded):
         return fmt.Errorf("%w: %v", ErrTimeout, err)
     }
-
-    // 3. net.Error.Timeout() — typed via errors.As.
     var ne net.Error
     if errors.As(err, &ne) && ne.Timeout() {
         return fmt.Errorf("%w: %v", ErrTimeout, err)
     }
-
-    // 4. TLS identity — typed errors.As, NOT string match.
     var certErr *tls.CertificateVerificationError
     if errors.As(err, &certErr) {
         return fmt.Errorf("%w: %v", ErrTLS, err)
     }
-    var x509Err x509.UnknownAuthorityError
-    if errors.As(err, &x509Err) {
-        return fmt.Errorf("%w: %v", ErrTLS, err)
-    }
-
-    // 5. Last-resort string prefix scan on server-returned wire errors.
-    msg := err.Error()
-    switch {
-    case strings.HasPrefix(msg, "WRONGPASS"), strings.HasPrefix(msg, "NOAUTH"):
-        return fmt.Errorf("%w: %v", ErrAuth, err)
-    case strings.HasPrefix(msg, "NOPERM"):
-        return fmt.Errorf("%w: %v", ErrNoPerm, err)
-    case strings.HasPrefix(msg, "WRONGTYPE"):
-        return fmt.Errorf("%w: %v", ErrWrongType, err)
-    }
-
-    // 6. Fallback.
     return fmt.Errorf("%w: %v", ErrUnavailable, err)
 }
-```
 
-### 3. Caller-side dispatch via `errors.Is`
-
-```go
-func fetch(ctx context.Context, cache *dragonfly.Cache, key string) ([]byte, error) {
-    val, err := cache.Get(ctx, key)
-    switch {
-    case err == nil:
-        return val, nil
-    case errors.Is(err, dragonfly.ErrNil):
-        return nil, nil // miss
-    case errors.Is(err, dragonfly.ErrTimeout),
-         errors.Is(err, dragonfly.ErrUnavailable),
-         errors.Is(err, dragonfly.ErrPoolExhausted):
-        return retryWithBackoff(ctx, cache, key) // retriable
-    case errors.Is(err, dragonfly.ErrAuth),
-         errors.Is(err, dragonfly.ErrTLS):
-        return nil, fmt.Errorf("credentials: %w", err) // re-auth, don't retry
-    default:
-        return nil, err // fatal; caller decides
-    }
+// Caller side
+v, err := cache.Get(ctx, "k")
+if errors.Is(err, dragonfly.ErrTimeout) {
+    return retryWithBackoff(ctx, cache, "k")
 }
 ```
 
-## BAD examples
+Wrap with `%w` (not `%v`) so identity check traverses the chain. See `go-error-handling-patterns` for fuller wrapping discipline.
 
-### 1. `%v` instead of `%w` — breaks `errors.Is`
+## Python realization
 
-```go
-// BAD: caller's errors.Is(err, ErrTimeout) will be false.
-return fmt.Errorf("%s: %v", ErrTimeout, err) // %w required
+Exception class hierarchy under a single SDK base. Caller uses `isinstance` or `try/except`:
+
+```python
+class MotadataError(Exception):
+    """Base for all SDK exceptions."""
+
+# Retriable
+class NetworkError(MotadataError): pass
+class TimeoutError(NetworkError): pass
+class PoolExhaustedError(NetworkError): pass
+
+# Fatal
+class ValidationError(MotadataError): pass
+class NotConnectedError(MotadataError): pass
+
+# Auth
+class AuthError(MotadataError): pass
+class TLSError(AuthError): pass
+
+def map_exc(exc: BaseException) -> MotadataError:
+    if isinstance(exc, asyncio.CancelledError):
+        raise  # never wrap cancellation
+    if isinstance(exc, asyncio.TimeoutError):
+        return TimeoutError("network timeout") from exc
+    if isinstance(exc, ssl.SSLCertVerificationError):
+        return TLSError("certificate verification failed") from exc
+    if isinstance(exc, ConnectionError):
+        return NetworkError("network failure") from exc
+    return MotadataError("unclassified") from exc
+
+# Caller side
+try:
+    v = await cache.get("k")
+except TimeoutError:
+    return await retry_with_backoff(cache, "k")
+except AuthError:
+    raise  # rotate creds, don't retry
 ```
 
-### 2. Ad-hoc error types per call site
+Use `raise X from y` (not bare `raise X`) so `__cause__` preserves the original. See `python-exception-patterns` for fuller chaining discipline.
 
-```go
-// BAD: every adapter defines its own error type; callers can't compose.
-type GetError struct{ Cause error }
-type SetError struct{ Cause error }
-// ... no shared taxonomy; retry logic can't generalise.
-```
+## Universal anti-patterns
 
-### 3. String matching the message
-
-```go
-// BAD: fragile on go-redis minor upgrade; misses wrapped errors.
-if strings.Contains(err.Error(), "connection refused") {
-    // retry
-}
-```
-
-Fix: wrap into `ErrUnavailable` in `mapErr`, then caller uses `errors.Is`.
-
-## Decision criteria
-
-| Category | Default sentinel | Retry? |
-|---|---|---|
-| `context.DeadlineExceeded` | `ErrTimeout` | Yes, fresh context |
-| `context.Canceled` | `ErrCanceled` | No — caller asked to stop |
-| `net.Error` with `Timeout() == true` | `ErrTimeout` | Yes |
-| `tls.CertificateVerificationError` | `ErrTLS` | No — rotate creds / fix chain |
-| `x509.UnknownAuthorityError` | `ErrTLS` | No |
-| Server "WRONGPASS" / "NOAUTH" | `ErrAuth` | No — reauth |
-| Server "NOPERM" | `ErrNoPerm` | No — fix ACL |
-| Server "WRONGTYPE" | `ErrWrongType` | No — fix caller |
-| Pool timeout | `ErrPoolExhausted` | Yes — backoff |
-| Closed pool | `ErrPoolClosed` | No — client closed |
-| Unclassified wire error | `ErrUnavailable` | Yes, with caution |
-| Config validation | `ErrInvalidConfig` | No |
-
-Precedence rules:
-
-1. **Check sentinel identity before message string.** `errors.Is` on our own sentinels short-circuits double-wrapping.
-2. **Use `errors.As` for typed stdlib errors** (`net.Error`, `*tls.CertificateVerificationError`, `x509.UnknownAuthorityError`). Never rely on `strings.Contains("tls:")` alone.
-3. **String scan is LAST.** Server wire-protocol strings ("WRONGPASS") only checked after typed checks fail.
-4. **Sentinel set is semver-public.** Adding is minor; removing or renaming is major. Document the set in the package godoc.
+1. **Wrong wrapping verb.** `%v` instead of `%w` (Go) or no `from` clause (Python) breaks the cause chain.
+2. **Ad-hoc error types per call site.** Every adapter defines its own — callers can't compose. Use the shared taxonomy.
+3. **String matching the message.** Fragile to dependency upgrades. Map to a sentinel in `mapErr` / `map_exc`, then caller uses typed checks.
 
 ## Cross-references
 
-- `go-error-handling-patterns` — `fmt.Errorf %w` chain, sentinel definition
-- `idempotent-retry-safety` — which ops are safe to retry on a retriable sentinel
-- `go-client-rate-limiting` — 429 / `Retry-After` plumbs into retry decision
-- `go-client-tls-configuration` — `ErrTLS` sentinel pairing
-- `go-credential-provider-pattern` — `ErrAuth` triggers provider refresh
-
-## Guardrail hooks
-
-- **G38.sh** family — sentinel error presence + precedence order in `mapErr`
-- **G48.sh** — no `init()`; sentinels are package-level `var`, not registered in init
-- **G98/G99** — every sentinel + `mapErr` symbol carries `[traces-to:]` marker
-- Devil: `sdk-convention-devil-go` — rejects custom error struct when sentinel would suffice; `sdk-security-devil` — rejects PII in wrapped error messages
+- shared-core `idempotent-retry-safety` — which sentinels are retriable
+- `go-error-handling-patterns` — `fmt.Errorf %w` chain, sentinel definition discipline
+- `python-exception-patterns` — `raise from` chaining, `__cause__` walk
+- `go-client-tls-configuration` / `python-client-tls-configuration` — TLS sentinel pairing
+- `go-credential-provider-pattern` / `python-credential-provider-pattern` — Auth sentinel triggers provider refresh

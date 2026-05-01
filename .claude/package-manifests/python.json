@@ -3,9 +3,9 @@
   "name": "python",
   "version": "1.0.0",
   "type": "language-adapter",
-  "description": "Python SDK pipeline adapter. Target: Python 3.12+ async-capable client SDK (motadata-py-sdk or equivalent).",
+  "description": "Python SDK pipeline adapter. Target: Python 3.12+ async-capable client SDK (motadatapysdk).",
   "depends": ["shared-core@>=1.0.0"],
-  "pipeline_version_compat": ">=0.5.0",
+  "pipeline_version_compat": ">=0.6.0",
 
   "agents": [
     "code-reviewer-python",
@@ -26,7 +26,9 @@
     "sdk-profile-auditor-python",
     "sdk-soak-runner-python"
   ],
+
   "skills": [
+    "python-api-ergonomics-patterns",
     "python-asyncio-leak-prevention",
     "python-asyncio-patterns",
     "python-backpressure-flow-control",
@@ -41,26 +43,32 @@
     "python-exception-patterns",
     "python-hexagonal-architecture",
     "python-hypothesis-patterns",
+    "python-idempotent-retry-patterns",
     "python-mock-strategy",
     "python-mypy-strict-typing",
     "python-otel-instrumentation",
     "python-pytest-patterns",
     "python-sdk-config-pattern",
+    "python-tdd-patterns",
     "python-testcontainers-setup"
   ],
+
   "guardrails": [
-    "G31-py",
-    "G32-py",
-    "G34-py",
-    "G40-py",
-    "G41-py",
-    "G42-py",
-    "G43-py",
-    "G60-py",
-    "G61-py",
-    "G63-py",
+    "G31-py", "G32-py", "G34-py",
+    "G40-py", "G41-py", "G42-py", "G43-py",
+    "G60-py", "G61-py", "G63-py",
     "G200-py"
   ],
+
+  "aspirational_guardrails": {
+    "G104-py": "Alloc-budget gate (Python — measured via tracemalloc / py-spy). Owner: sdk-profile-auditor-python. Phase: Impl M3.5. Script not yet authored.",
+    "G105-py": "Soak-MMD verdict gate. Owner: sdk-drift-detector. Phase: Testing T-SOAK. Script not yet authored.",
+    "G106-py": "Soak-drift detection. Owner: sdk-drift-detector. Phase: Testing T-SOAK. Script not yet authored.",
+    "G107-py": "Complexity-mismatch gate. Owner: sdk-complexity-devil-python. Phase: Testing T5. Script not yet authored.",
+    "G108-py": "Oracle-margin sanity. Owner: sdk-benchmark-devil-python. Phase: Testing T5. Script not yet authored.",
+    "G109-py": "Profile-no-surprise hot-path coverage (py-spy / scalene). Owner: sdk-profile-auditor-python. Phase: Impl M3.5. Script not yet authored.",
+    "G110-py": "Perf-exception marker pairing. Owner: sdk-marker-hygiene-devil. Phases: Impl M7 + M9. Script not yet authored."
+  },
 
   "waves": {
     "I3_existing_api":    ["sdk-existing-api-analyzer-python"],
@@ -98,17 +106,17 @@
   "toolchain": {
     "build": "python -m build",
     "test": "pytest -x --no-header",
-    "lint": "ruff check .",
-    "vet": "mypy --strict .",
-    "fmt": "ruff format --check .",
-    "coverage": "pytest --cov=src --cov-report=json --cov-report=term",
+    "lint": "ruff check",
+    "vet": "mypy --strict",
+    "fmt": "ruff format --check",
+    "coverage": "pytest --cov --cov-report=json",
     "coverage_min_pct": 90,
     "bench": "pytest --benchmark-only --benchmark-json=bench.json",
-    "supply_chain": ["pip-audit", "safety check --full-report"],
-    "leak_check": "pytest tests/leak --asyncio-mode=auto"
+    "supply_chain": ["pip-audit", "safety check"],
+    "leak_check": "asyncio-task-tracker fixture"
   },
 
-  "file_extensions": [".py"],
+  "file_extensions": [".py", ".pyi"],
 
   "marker_comment_syntax": {
     "line": "#",
@@ -137,24 +145,12 @@
       "baselines/python/stable-signatures.json",
       "baselines/python/regression-report-<run-id>.md"
     ],
-    "contributes_per_language_partition_to": [],
-    "scope_note": "v0.5.0 Phase A scaffold: directory baselines/python/ exists but is empty. Files materialize on first Python pilot run (Phase B). Per Decision D2=Lenient, no contribution to shared-partition partitioning unless Phase B data shows ≥3pp quality_score divergence on a debt-bearer; then that specific agent flips to Progressive (per-language partition) until its Split rewrite ships. See docs/LANGUAGE-AGNOSTIC-DECISIONS.md and docs/R2-DEBT-REWRITE-FEASIBILITY.md."
-  },
-
-  "generalization_debt": {
-    "agents": [],
-    "skills": [],
-    "resolution_policy": "Python pack starts debt-free at v0.5.0 Phase A. Generalization debt is tracked on shared-core (the package whose role is neutral but whose body cites idioms of a specific language) — not on language-adapter packs. If a Python-specific agent or skill is later authored that turns out to also be useful for Rust/TS/Java, it gets moved to shared-core with an entry in shared-core.json's generalization_debt array."
+    "contributes_per_language_partition_to": []
   },
 
   "notes": {
-    "phase_a_scope": "Scaffold only. Empty agents/skills/guardrails arrays — Python-specific artifacts authored in Phase B as the first Python TPRD exposes which gaps need filling. Toolchain block declared inline (rule L3); externalization to .claude/package-manifests/python/adapters/*.sh deferred until Phase C touchpoint hardening (T2-7).",
-    "shared_inheritance": "All shared-core agents (sdk-intake-agent, sdk-design-lead, sdk-impl-lead, sdk-testing-lead, sdk-design-devil, sdk-security-devil, sdk-overengineering-critic, sdk-marker-scanner, sdk-marker-hygiene-devil, baseline-manager, learning-engine, metrics-collector, etc.) and all shared skills (tdd-patterns, idempotent-retry-safety, network-error-classification, etc.) apply to Python runs via depends: shared-core. Per D6=Split, debt-bearer agent bodies stay in shared-core; per-language overrides go in <pack>/conventions.yaml when authored in Phase B.",
-    "tier_default": "T1 (full perf-confidence regime). Python perf-budget MMD authoring + py-spy/scalene profile parser + asyncio leak harness all materialize lazily during Phase B.",
-    "marker_protocol_note": "G95-G103 (marker protocol) currently live in go because byte-hash semantics use Go-specific source-byte offsets. When the first Python TPRD lands a [traces-to:] marker, the marker-scanner needs to learn Python's # comment syntax (already declared above in marker_comment_syntax). G95-G103 may need to migrate from go to shared-core, OR get python-specific siblings — decided in Phase B based on observed implementation cost.",
-    "pipeline_version_compat_rationale": "Python adapter requires v0.5.0+ because that's when this manifest was authored and when the per-language baseline partitioning at baselines/python/ ships.",
-    "guardrails_phase_b_batch1": "First Python guardrail batch shipped in Phase 2C: 11 scripts under scripts/guardrails/ with -py.sh suffix. Reuse-shaped (G31/G34/G41/G42/G43/G60/G61/G63 use run-toolchain.sh dispatch internally), fresh Python-specific (G200-py validates pyproject.toml PEP 517/518/621/639 + py.typed marker). Shared with go pack via filename-suffix convention rather than mutating shared scripts; zero cross-language references in any -py.sh file.",
-    "guardrails_intentionally_skipped": "Skipped from initial Python pack: (a) G33 osv-scanner — pip-audit covers most of OSV's database; defer if pilot exposes need; (b) G48 init() functions — Go-specific; Python equivalent (no module-level side effects) is a smell, not a bug; defer; (c) G95-G103 marker protocol — byte-hash semantics need Python-aware AST work; defer to Phase 2D when first Python TPRD exposes a [traces-to:] marker; (d) G65 bench regression — pytest-benchmark JSON compare implementation deferred; backed by sdk-benchmark-devil-python agent which renders the verdict, so the gate fires through the agent path even without a dedicated guardrail script. Promote any of these from this skip list to the guardrails array when Phase 2D pilot run shows the gap.",
-    "guardrails_followup_candidates": "Phase B-3 second-batch candidates (HIGH value, defer until Phase 2D pilot identifies need): G-py-MUTABLE-DEFAULT (AST scan for mutable default arguments — Python-only footgun), G-py-BARE-EXCEPT (AST scan for bare `except:` per python-exception-patterns Rule 4), G-py-PRINT (no print() in src/ library code — only logger.X), G-py-WILDCARD-IMPORT (no `from X import *` in implementation modules), G-py-ASYNC-DISCARDED-TASK (AST scan for asyncio.create_task whose return value is discarded — per python-asyncio-patterns Rule 2)."
+    "v0_6_migration_status": "fully populated. Includes 3 new skills authored fresh in Batch 2 as symmetry pairs to the go-pack extractions (python-tdd-patterns, python-idempotent-retry-patterns, python-api-ergonomics-patterns).",
+    "naming_convention": "Per docs/PACKAGE-AUTHORING-GUIDE.md: language-specific agents use `-python` suffix; language-specific skills use `python-` prefix.",
+    "perf_regime_ownership": "G104-py through G110-py mirror the Go-pack perf-confidence regime, realized via Python tooling (py-spy, scalene, pytest-benchmark, asyncio-task-tracker). All forward-declared in aspirational_guardrails until scripts are authored."
   }
 }

@@ -2,17 +2,25 @@
 name: environment-prerequisites-check
 description: >
   Use this at the start of any phase before launching agent waves, or when
-  guardrails report SKIP / FAIL due to missing tools. Covers the runtime
-  checklist (Go, gcc, golangci-lint, gosec) plus SDK-pipeline additions
-  (govulncheck, osv-scanner, staticcheck, benchstat, Docker for testcontainers,
-  jq, git) and the impact of each missing tool on guardrails.
-  Triggers: prerequisites, phase-start, govulncheck, osv-scanner, staticcheck, benchstat, testcontainers, Docker, toolchain, missing tool.
+  guardrails report SKIP / FAIL due to missing tools. Covers the language-
+  adapter toolchain, SDK-pipeline-specific tools (security/supply-chain
+  scanners, perf benchmarking, container runtime for integration tests),
+  shared infrastructure (jq, git, Docker), and per-MCP availability.
+  Triggers: prerequisites, phase-start, govulncheck, osv-scanner, staticcheck, benchstat, pip-audit, mypy, pytest, ruff, testcontainers, Docker, toolchain, missing tool.
+version: 1.1.0
+last-evolved-in-run: v0.6.0-rc.0-sanitization
+status: stable
+tags: [prerequisites, phase-start, language-pluggable, multi-tenant-saas]
+cross_language_ok: true
 ---
+
+<!-- The "phase-start prereq check" concept is language-neutral; the actual tool list resolves from the active language adapter's toolchain manifest (`go.json:toolchain` or `python.json:toolchain`). Tables below show Go and Python prerequisites side-by-side; the consumer-side frontend prerequisites (Node/Vitest/Playwright) apply to multi-tenant SaaS consumer apps that depend on the SDK. The leakage scripts honor `cross_language_ok: true`. -->
+
 
 # environment-prerequisites-check
 
 
-## SDK-pipeline additions (checked at phase start by every phase lead)
+## SDK-pipeline additions — Go pack (checked when `target_language: go`)
 
 | Tool | Phase needed | Install | Impact if missing |
 |------|--------------|---------|--------------------|
@@ -21,8 +29,26 @@ description: >
 | `osv-scanner` | design | `go install github.com/google/osv-scanner/cmd/osv-scanner@latest` | G33 fails |
 | `staticcheck` | impl | `go install honnef.co/go/tools/cmd/staticcheck@latest` | G44 downgrades to MEDIUM |
 | `benchstat` | testing | `go install golang.org/x/perf/cmd/benchstat@latest` | benchmark delta fallback to raw diff |
+
+## SDK-pipeline additions — Python pack (checked when `target_language: python`)
+
+| Tool | Phase needed | Install | Impact if missing |
+|------|--------------|---------|--------------------|
+| `python` (>=3.12) | all | https://www.python.org/downloads | HARD BLOCK |
+| `pip-audit` | design, testing | `pip install pip-audit` | G32-py fails |
+| `safety` | design | `pip install safety` | G33-py fails |
+| `mypy` (>=1.0) | impl | `pip install mypy` | G42-py fails (strict typing) |
+| `ruff` | impl | `pip install ruff` | G43-py / G44-py fail |
+| `pytest` (>=8) | testing | `pip install pytest pytest-asyncio` | G60-py fails |
+| `pytest-benchmark` | testing | `pip install pytest-benchmark` | benchmark delta fallback |
+| `pytest-repeat` | testing | `pip install pytest-repeat` | G63-py flake check fails |
+
+## Shared (every pack)
+
+| Tool | Phase needed | Install | Impact if missing |
+|------|--------------|---------|--------------------|
 | Docker / Podman | testing | OS package | testcontainers integration tests skipped |
-| `jq` | feedback (baseline-manager) | OS package | baseline recompute uses Go fallback |
+| `jq` | feedback (baseline-manager) | OS package | baseline recompute uses language-native fallback |
 | `git` (>=2.40) | all | OS package | HARD BLOCK (Rule 21) |
 
 ---

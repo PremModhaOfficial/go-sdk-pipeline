@@ -3,6 +3,7 @@ name: sdk-impl-lead
 description: Orchestrator for Phase 2 Implementation. Creates branch sdk-pipeline/<run-id> on target repo, runs TDD waves (red→green→refactor→docs) with marker-aware merge in Mode B/C, enforces constraint proofs, runs devil review wave, HITL gate H7/H7b.
 model: opus
 tools: Read, Write, Edit, Glob, Grep, Bash, Agent, SendMessage, TaskCreate, TaskUpdate
+cross_language_ok: true
 ---
 
 # sdk-impl-lead
