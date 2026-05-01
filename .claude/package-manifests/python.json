@@ -57,16 +57,12 @@
     "G31-py", "G32-py", "G34-py",
     "G40-py", "G41-py", "G42-py", "G43-py",
     "G60-py", "G61-py", "G63-py",
-    "G200-py"
+    "G200-py",
+    "G104-py", "G107-py", "G109-py"
   ],
 
   "aspirational_guardrails": {
-    "G104-py": "Alloc-budget gate (Python — measured via tracemalloc / py-spy). Owner: sdk-profile-auditor-python. Phase: Impl M3.5. Script not yet authored.",
-    "G105-py": "Soak-MMD verdict gate. Owner: sdk-drift-detector. Phase: Testing T-SOAK. Script not yet authored.",
-    "G106-py": "Soak-drift detection. Owner: sdk-drift-detector. Phase: Testing T-SOAK. Script not yet authored.",
-    "G107-py": "Complexity-mismatch gate. Owner: sdk-complexity-devil-python. Phase: Testing T5. Script not yet authored.",
-    "G109-py": "Profile-no-surprise hot-path coverage (py-spy / scalene). Owner: sdk-profile-auditor-python. Phase: Impl M3.5. Script not yet authored.",
-    "G110-py": "Perf-exception marker pairing. Owner: sdk-marker-hygiene-devil. Phases: Impl M7 + M9. Script not yet authored."
+    "G110-py": "Perf-exception marker pairing. Owner: sdk-marker-hygiene-devil. Phases: Impl M7 + M9. Script not yet authored — defer until first [perf-exception:] marker ships in source. Shareable as single shared-core script when authored."
   },
 
   "waves": {
@@ -150,6 +146,6 @@
   "notes": {
     "v0_6_migration_status": "fully populated. Includes 3 new skills authored fresh in Batch 2 as symmetry pairs to the go-pack extractions (python-tdd-patterns, python-idempotent-retry-patterns, python-api-ergonomics-patterns).",
     "naming_convention": "Per docs/PACKAGE-AUTHORING-GUIDE.md: language-specific agents use `-python` suffix; language-specific skills use `python-` prefix.",
-    "perf_regime_ownership": "G104-py through G110-py mirror the Go-pack perf-confidence regime, realized via Python tooling (py-spy, scalene, pytest-benchmark, asyncio-task-tracker). All forward-declared in aspirational_guardrails until scripts are authored."
+    "perf_regime_ownership": "G104-py, G107-py, G109-py (Python-specific perf-confidence regime, rules 32/33) realized via py-spy, scalene, pytest-benchmark + tracemalloc. Authored as language-specific scripts. G105 and G106 are shared-core single-script form (read state.jsonl from this pack's soak runner; signal-list and column names language-neutral). G110-py stays aspirational until first [perf-exception:] marker ships."
   }
 }

@@ -62,16 +62,12 @@
     "G40", "G41", "G42", "G43", "G48",
     "G60", "G61", "G63", "G65",
     "G95", "G96", "G97", "G98", "G99",
-    "G100", "G101", "G102", "G103"
+    "G100", "G101", "G102", "G103",
+    "G104", "G107", "G109"
   ],
 
   "aspirational_guardrails": {
-    "G104": "Alloc-budget gate (CLAUDE.md rule 32, perf-confidence axis 3). Owner: sdk-profile-auditor-go. Phase: Impl M3.5. Script not yet authored.",
-    "G105": "Soak-MMD verdict gate (rule 33). Owner: sdk-drift-detector. Phase: Testing T-SOAK. Script not yet authored.",
-    "G106": "Soak-drift detection (rule 32 axis 6). Owner: sdk-drift-detector. Phase: Testing T-SOAK. Script not yet authored.",
-    "G107": "Complexity-mismatch gate (rule 32 axis 4). Owner: sdk-complexity-devil-go. Phase: Testing T5. Script not yet authored.",
-    "G109": "Profile-no-surprise hot-path coverage (rule 32 axis 2). Owner: sdk-profile-auditor-go. Phase: Impl M3.5. Script not yet authored.",
-    "G110": "Perf-exception marker pairing (rule 32 axis 7, rule 29). Owner: sdk-marker-hygiene-devil. Phases: Impl M7 + M9. Script not yet authored."
+    "G110": "Perf-exception marker pairing (rule 32 axis 7, rule 29). Owner: sdk-marker-hygiene-devil. Phases: Impl M7 + M9. Script not yet authored — defer until first [perf-exception:] marker ships in source. Shareable as single shared-core script when authored."
   },
 
   "waves": {
@@ -153,7 +149,7 @@
   "notes": {
     "v0_6_migration_status": "fully populated. Includes 3 new skills extracted in Batch 2 (go-tdd-patterns, go-idempotent-retry-patterns, go-api-ergonomics-patterns) symmetrically paired with python-pack equivalents.",
     "naming_convention": "Per docs/PACKAGE-AUTHORING-GUIDE.md: language-specific agents use `-go` suffix; language-specific skills use `go-` prefix. `goroutine-leak-prevention` is kept unsuffixed since `goroutine-` already encodes Go.",
-    "perf_regime_ownership": "G104-G110 (perf-confidence regime, rules 32/33) and their owner agents (sdk-perf-architect-go, sdk-profile-auditor-go, sdk-complexity-devil-go, sdk-soak-runner-go, sdk-benchmark-devil-go) all live here. Symmetric Python-pack equivalents in python.json.",
+    "perf_regime_ownership": "G104, G107, G109 (Go-specific perf-confidence regime, rules 32/33) live here as authored guardrails; G105 and G106 are shared-core (single language-neutral scripts that dispatch via active-packages); G110 stays aspirational until first [perf-exception:] marker ships. Owner agents: sdk-perf-architect-go, sdk-profile-auditor-go, sdk-complexity-devil-go, sdk-soak-runner-go, sdk-benchmark-devil-go. Symmetric Python-pack equivalents in python.json.",
     "marker_protocol_ownership": "G95-G103 (marker protocol) live here because byte-hash semantics depend on source-byte offsets, currently Go-AST-specific. The sdk-marker-protocol skill and sdk-marker-scanner/sdk-marker-hygiene-devil agents stay in shared-core (cross-language); the enforcement scripts stay in this pack."
   }
 }

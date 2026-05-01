@@ -49,23 +49,25 @@ Catalogs the G-numbered guardrail gates the pipeline runs at phase exits, organi
 | Meta | G90, G93 | shared | Skill-index ↔ filesystem strict equality (G90), CLAUDE.md rule contiguity (G93). |
 | Markers (Go) | G95–G103 | go | MANUAL byte-preservation, constraint-bench-proof, marker-delete consent, do-not-regenerate hash, stable-since semver, deprecated-in horizon, no-forged-traces-to. Backed by Go AST-hash backend (`scripts/ast-hash/go-backend.go`). |
 | Markers (Python) | G95-py–G103-py | python | Same marker-protocol contracts realized over Python AST (`scripts/ast-hash/python-backend.py`). |
-| Perf-Confidence (aspirational, Go) | G104–G107, G109, G110 | go (aspirational) | Alloc-budget (G104), soak-MMD (G105), soak-drift (G106), complexity-mismatch (G107), profile-no-surprise (G109), perf-exception pairing (G110). All forward-declared per CLAUDE.md rule 32. |
-| Perf-Confidence (aspirational, Python) | G104-py–G107-py, G109-py, G110-py | python (aspirational) | Same perf-confidence regime realized via Python tooling (py-spy / scalene / pytest-benchmark). All forward-declared. |
+| Perf-Confidence (Go) | G104, G107, G109 | go | Alloc-budget (G104), complexity-mismatch (G107), profile-no-surprise (G109). Authored. |
+| Perf-Confidence (Python) | G104-py, G107-py, G109-py | python | Same axes via Python tooling (pytest-benchmark JSON peak_memory_b, parametrize-N scaling, py-spy CPU profile). Authored. |
+| Perf-Confidence (shared) | G105, G106 | shared | Soak-MMD (G105), soak-drift (G106). Single language-neutral scripts; dispatch via active-packages.json:target_language and read perf-budget.md / state.jsonl regardless of pack. |
+| Perf-Confidence (aspirational) | G110, G110-py | go / python (aspirational) | Perf-exception marker pairing. Defer until first [perf-exception:] marker ships; shareable as single shared-core script when authored. |
 
 **Catalog–manifest drift rule**: when adding a new G* script, update both this catalog AND the owning package manifest (`.claude/package-manifests/<pack>.json:guardrails` for live, `:aspirational_guardrails` for forward-declared). `scripts/validate-packages.sh` enforces filesystem ↔ manifest consistency.
 
 ## Perf-Confidence band detail (G104–G107, G109, G110, applies to both Go and Python pack realizations)
 
-These six gates collectively enforce CLAUDE.md rule 32 (Performance-Confidence Regime) and rule 33 (Verdict Taxonomy PASS / FAIL / INCOMPLETE).
+These six gates collectively enforce CLAUDE.md rule 32 (Performance-Confidence Regime) and rule 33 (Verdict Taxonomy PASS / FAIL / INCOMPLETE). G104, G107, G109 are language-specific (separate Go and Python scripts because bench-output and profile formats differ irreducibly). G105, G106 are single shared-core scripts (state-file schema is language-neutral; signal names manifest-driven). G110 is shareable but deferred until first marker ships.
 
 | ID | Severity | Phase | Owner | Check |
 |----|---|---|---|---|
-| G104 | BLOCKER | Impl (M3.5) | profile-auditor | For every bench with a declared `allocs_per_op` in `design/perf-budget.md`, measured ≤ budget. Mandates allocation-reporting on every benchmark. |
-| G105 | BLOCKER (INCOMPLETE-gated) | Testing (T-SOAK) | drift-detector | For every soak-enabled symbol, final `t_elapsed_s` in `state.jsonl` ≥ `mmd_seconds`. Verdict < MMD = INCOMPLETE (rule 33) — never auto-passes to PASS. |
-| G106 | BLOCKER | Testing (T-SOAK) | drift-detector | For every declared drift signal, linear regression over the soak timeline has slope ≤ 0 OR p-value ≥ 0.05 OR R² ≤ 0.5. Warmup-excluded first 2 minutes. |
-| G107 | BLOCKER | Testing (T5) | complexity-devil | For every symbol with declared `complexity.time` in perf-budget.md, scaling benchmark at N ∈ {10, 100, 1k, 10k} curve-fits to declared or better. |
-| G109 | BLOCKER | Impl (M3.5) | profile-auditor | Top-10 CPU samples from profiler ≥ 0.80 coverage over declared hot-path functions. Also flags allocator overhead, GC overhead, unexpected lock contention on single-threaded paths, unexpected syscalls on non-I/O benches. |
-| G110 | BLOCKER | Impl (M7 + M9) | marker-hygiene-devil | Every `[perf-exception: ... bench/X]` marker in source has a matching entry in `design/perf-exceptions.md` with the same bench name. Orphan markers or orphan entries = FAIL. |
+| G104 / G104-py | BLOCKER | Impl (M3.5) | profile-auditor (per-pack) | For every bench with a declared `allocs_per_op` (Go) or `heap_bytes_per_call` (Python) in `design/perf-budget.md`, measured ≤ budget. Python uses widened threshold (×1.10 hot, ×1.20 cold) to absorb refcount/GC noise. |
+| G105 (shared) | BLOCKER (INCOMPLETE-gated) | Testing (T-SOAK) | drift-detector | For every soak-enabled symbol, final `elapsed_s` in `state.jsonl` ≥ `mmd_seconds`. Verdict < MMD = INCOMPLETE (rule 33) — never auto-passes to PASS. Single language-neutral script. |
+| G106 (shared) | BLOCKER | Testing (T-SOAK) | drift-detector | For every declared drift signal, OLS regression over the post-warmup soak timeline. FAIL when slope > 0 AND p < 0.05 AND R² > 0.5 (all three; widens false-positive resistance). Pure-stdlib (no scipy dep). |
+| G107 / G107-py | BLOCKER | Testing (T5) | complexity-devil (per-pack) | Scaling sweep at N ∈ {10, 100, 1k, 10k}. Log-log slope fit; compared against declared big-O tolerance window (O(1)→[-0.3,0.5], O(n)→[0.6,1.4], O(n²)→[1.5,2.5], etc.). |
+| G109 / G109-py | BLOCKER | Impl (M3.5) | profile-auditor (per-pack) | Top-10 CPU samples ≥ 0.80 coverage over declared hot-path functions. Go: `go tool pprof -top` parsing, runtime.* / syscall.* excluded. Python: py-spy/scalene parsing, asyncio.* / _socket.* / _asyncio.* runtime symbols excluded. <5 user-code samples → INCOMPLETE. |
+| G110 (aspirational) | BLOCKER | Impl (M7 + M9) | marker-hygiene-devil | Every `[perf-exception: ... bench/X]` marker in source has a matching entry in `design/perf-exceptions.md` with the same bench name. Orphan markers or orphan entries = FAIL. Authored when first marker ships. |
 
 ## Verdict Taxonomy (rule 33)
 
