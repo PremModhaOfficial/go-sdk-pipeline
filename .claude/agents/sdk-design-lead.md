@@ -72,14 +72,14 @@ Suffix unions are the only mode-conditional dispatch logic — everything else i
 
 Wave-id → manifest field mapping (canonical: `.claude/package-manifests/*.json:waves.<wave-id>`). All agent lists below resolve dynamically from `WAVE_AGENTS[wave-id]` per Active Package Awareness.
 
-1. **Spawn design wave (`D1_design`)** — spawn `WAVE_AGENTS[D1_design]` in parallel. Each writes to `runs/<run-id>/design/`. When the perf architect (per-pack) is in the active set, it produces `perf-budget.md` + `perf-exceptions.md` (per-§7-symbol latency/allocs/throughput/oracle/floor/complexity/MMD — see rule 32). Empty wave → INCOMPLETE design (no perf-budget); H5 surfaces this.
-2. **Mechanical checks (`D2_mechanical`)** — spawn `WAVE_AGENTS[D2_mechanical]` (typically `guardrail-validator`) to run the design-phase guardrail subset (today: G30–G38 + G108 oracle-margin sanity pre-check). Guardrail filtering is per-pack; the validator picks up only active-packages guardrails (Step 6 wiring).
+1. **Spawn design wave (`D1_design`)** — spawn `WAVE_AGENTS[D1_design]` in parallel. Each writes to `runs/<run-id>/design/`. When the perf architect (per-pack) is in the active set, it produces `perf-budget.md` + `perf-exceptions.md` (per-§7-symbol latency/allocs/throughput/floor/complexity/MMD — see rule 32). Empty wave → INCOMPLETE design (no perf-budget); H5 surfaces this.
+2. **Mechanical checks (`D2_mechanical`)** — spawn `WAVE_AGENTS[D2_mechanical]` (typically `guardrail-validator`) to run the design-phase guardrail subset (today: G30–G38). Guardrail filtering is per-pack; the validator picks up only active-packages guardrails (Step 6 wiring).
 3. **Devil wave (`D3_devils` ∪ `D3_devils_mode_a` if MODE==A ∪ `D3_devils_mode_bc` if MODE∈{B,C})** — spawn the unioned set in parallel. Suffix-conditional extras come from the manifest automatically per the suffix-union logic in Active Package Awareness above. Today: `_mode_a` brings `sdk-packaging-devil-python` on Python Mode A; `_mode_bc` brings `sdk-breaking-change-devil-{go,python}` + `sdk-constraint-devil-{go,python}` on Mode B/C.
 4. **Review-fix loop (D4)** — per `review-fix-protocol`; per-issue retry cap 5; stuck at 2; route fixes to owning agent; re-run ALL devils after each batch (rule #13). No agent dispatch — this is loop control, not a wave.
 5. **HITL gates (D5)**:
    - H6 (dep vet, if CONDITIONAL — only fires if the active set contains a dep-vet devil)
    - H4 (breaking change — only fires if MODE∈{B,C} AND the active set contains a breaking-change devil AND a finding exists)
-   - H5 (overall design — MUST surface `perf-budget.md` oracle-margins, MMDs, and any `perf-exceptions.md` entries IF perf-architect produced them; if `D1_design` was INCOMPLETE, H5 explicitly notes "no perf-budget — manifests do not include perf architect (per-pack) for this language/tier")
+   - H5 (overall design — MUST surface `perf-budget.md` declared latency targets, MMDs, and any `perf-exceptions.md` entries IF perf-architect produced them; if `D1_design` was INCOMPLETE, H5 explicitly notes "no perf-budget — manifests do not include perf architect (per-pack) for this language/tier")
 6. **Exit** — write `design-summary.md`; verify any design-phase guardrail in active-packages passes (typically G30 if compile gate is configured); verify every TPRD §7 symbol has a perf-budget.md entry IF perf-architect ran; notify `sdk-impl-lead`
 
 ## Output Files
