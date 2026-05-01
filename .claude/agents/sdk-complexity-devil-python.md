@@ -1,6 +1,6 @@
 ---
 name: sdk-complexity-devil-python
-description: Wave T5 testing-phase devil. Reads perf-budget.md complexity.time declarations, runs scaling sweep at N ∈ {10, 100, 1k, 10k} via pytest-benchmark + parametrize for any §7 symbol that takes variable-size input, curve-fits log-log slope, compares to declared big-O. BLOCKER on mismatch. Catches the accidental quadratic that micro-benches at fixed N never expose. Backs G107 (perf-confidence axis 4).
+description: Wave T5 testing-phase devil. Reads perf-budget.md complexity.time declarations, runs scaling sweep at N ∈ {10, 100, 1k, 10k} via pytest-benchmark + parametrize for any §7 symbol that takes variable-size input, curve-fits log-log slope, compares to declared big-O. BLOCKER on mismatch. Catches the accidental quadratic that micro-benches at fixed N never expose. Backs G107-py (perf-confidence axis 4).
 model: opus
 tools: Read, Write, Glob, Grep, Bash
 ---
@@ -39,7 +39,7 @@ You are PARANOID about scaling. A bench that only sweeps N=100 has not earned it
 You **OWN**:
 - `runs/<run-id>/testing/reviews/complexity-devil-python-report.md` — verdict + per-symbol fit results.
 - `runs/<run-id>/testing/scaling-data-<symbol>.json` — raw (N, time_us) series per symbol, for downstream agents to re-fit if they want.
-- The decision-log `event` entries for G107 verdicts.
+- The decision-log `event` entries for G107-py verdicts.
 
 You **MAY WRITE** (only when missing):
 - `$SDK_TARGET_DIR/tests/perf/test_scaling_<symbol>.py` — a scaling bench with `@pytest.mark.parametrize("n", [10, 100, 1000, 10000])`. Annotate with the `[traces-to: TPRD-<section>-<id>]` marker. Commit on branch `sdk-pipeline/<run-id>`. If a hand-authored scaling bench already exists, use it; do not overwrite.
@@ -282,11 +282,11 @@ Write `runs/<run-id>/testing/reviews/complexity-devil-python-report.md`. Start w
   - N=10000: 71 000 000
 - **Best fit**: O(n²) — R² 0.999
 - **Log-log slope**: 2.04 (consistent with O(n²))
-- **Verdict**: BLOCKER (G107 FAIL — declared O(n log n), measured O(n²); 73× the predicted time at N=10k)
+- **Verdict**: BLOCKER (G107-py FAIL — declared O(n log n), measured O(n²); 73× the predicted time at N=10k)
 - **Likely cause** (hypothesis, not authoritative): `_match_buffer` in src/.../scan.py:124 has a nested loop over the same iterator. Inspect call path.
 
 ## Gates applied
-- G107 (complexity-mismatch): **FAIL** for Cache.scan; PASS for the other 6
+- G107-py (complexity-mismatch): **FAIL** for Cache.scan; PASS for the other 6
 ```
 
 **Output size limit**: ≤500 lines. If >50 symbols audited, split per package.
@@ -294,7 +294,7 @@ Write `runs/<run-id>/testing/reviews/complexity-devil-python-report.md`. Start w
 Emit one `event` entry per BLOCKER:
 
 ```json
-{"run_id":"<run_id>","type":"event","event_type":"complexity-proof","timestamp":"<ISO>","agent":"sdk-complexity-devil-python","phase":"testing","symbol":"motadatapysdk.cache.Cache.scan","gate":"G107","verdict":"BLOCKER","declared":"O(n log n)","measured":"O(n²)","r_squared":0.999,"log_log_slope":2.04,"data_points":{"10":420,"100":8200,"1000":720000,"10000":71000000}}
+{"run_id":"<run_id>","type":"event","event_type":"complexity-proof","timestamp":"<ISO>","agent":"sdk-complexity-devil-python","phase":"testing","symbol":"motadatapysdk.cache.Cache.scan","gate":"G107-py","verdict":"BLOCKER","declared":"O(n log n)","measured":"O(n²)","r_squared":0.999,"log_log_slope":2.04,"data_points":{"10":420,"100":8200,"1000":720000,"10000":71000000}}
 ```
 
 Per-symbol raw data: write `runs/<run-id>/testing/scaling-<symbol-slug>.json`:
@@ -331,7 +331,7 @@ Append to `runs/<run-id>/decision-log.jsonl`. Stamp `run_id`, `pipeline_version`
 
 Required entries:
 - ≥1 `decision` entry — verdict precedence (e.g., why R² 0.92 for one model and 0.94 for another resolved as ambiguous → worse-of-two; why an N=10000 sweep was reduced to N ≤ 1000 due to setup cost).
-- ≥1 `event` entry per BLOCKER finding (G107).
+- ≥1 `event` entry per BLOCKER finding (G107-py).
 - ≥1 `communication` entry — note dependency on `sdk-perf-architect-python` declarations and the precedence-over-`sdk-benchmark-devil-python` ordering.
 - 1 `lifecycle: started` and 1 `lifecycle: completed`.
 
@@ -392,4 +392,4 @@ These are the Python quadratic gotchas the cause-hypothesis step looks for. Even
 
 Wallclock benchmarks at fixed N catch slowdowns. They do NOT catch shape mismatches. A function that's O(n²) when it should be O(n) can pass every regression gate forever, because the bench is at a fixed N where the constant factor of the O(n²) impl happens to be small. Then a real-world consumer scales N up, the O(n²) curve takes over, and the SDK gets a "performance bug report" three months later.
 
-The complexity gate forces the shape question at design time (architect declares; G107 enforces). It's a different axis from the wallclock gate. Both axes must pass.
+The complexity gate forces the shape question at design time (architect declares; G107-py enforces). It's a different axis from the wallclock gate. Both axes must pass.

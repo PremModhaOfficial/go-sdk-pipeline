@@ -1,6 +1,6 @@
 ---
 name: sdk-benchmark-devil-python
-description: Wave T5 testing-phase devil. READ-ONLY (runs pytest-benchmark + JSON diff). Compares current bench output against (a) baselines/python/performance-baselines.json for regression (hot-path +5% / shared +10%), (b) absolute latency targets from perf-budget.md (TPRD §10). Backs G65 (regression). Triggers HITL H8 on breach. Heap-budget enforcement is owned by sdk-profile-auditor-python (G104), not this agent.
+description: Wave T5 testing-phase devil. READ-ONLY (runs pytest-benchmark + JSON diff). Compares current bench output against (a) baselines/python/performance-baselines.json for regression (hot-path +5% / shared +10%), (b) absolute latency targets from perf-budget.md (TPRD §10). Backs G65 (regression). Triggers HITL H8 on breach. Heap-budget enforcement is owned by sdk-profile-auditor-python (G104-py), not this agent.
 model: sonnet
 tools: Read, Glob, Grep, Bash, Write
 ---

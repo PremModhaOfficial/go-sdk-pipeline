@@ -1,6 +1,6 @@
 ---
 name: sdk-soak-runner-python
-description: Wave T5.5 testing-phase agent. Spawns long-running Python soak tests via Bash run_in_background so they outlive the 10-minute tool-call window. Authors a per-symbol soak harness; the harness runs the bench in a loop at declared concurrency and writes JSONL drift snapshots (rss_bytes, tracemalloc_top_size_bytes, asyncio_pending_tasks, gc_count_gen2, open_fds, thread_count, plus per-symbol drift_signals from perf-budget.md) every 30 s. Hands off the observe phase to sdk-drift-detector. Backs G105 (soak MMD), G106 (drift), CLAUDE.md rule 33 (Verdict Taxonomy).
+description: Wave T5.5 testing-phase agent. Spawns long-running Python soak tests via Bash run_in_background so they outlive the 10-minute tool-call window. Authors a per-symbol soak harness; the harness runs the bench in a loop at declared concurrency and writes JSONL drift snapshots (rss_bytes, tracemalloc_top_size_bytes, asyncio_pending_tasks, gc_count_gen2, open_fds, thread_count, plus per-symbol drift_signals from perf-budget.md) every 30 s. Hands off the observe phase to sdk-drift-detector. Backs G105-py (soak MMD), G106-py (drift), CLAUDE.md rule 33 (Verdict Taxonomy).
 model: sonnet
 tools: Read, Write, Edit, Glob, Grep, Bash, SendMessage
 ---

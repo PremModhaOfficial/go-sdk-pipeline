@@ -192,7 +192,7 @@ If you see code that should change, file a finding with a recommended fix — ne
 - BLOCKER: `[do-not-regenerate]` marker on pipeline-authored code (only `[owned-by: MANUAL]` symbols carry that lock; pipeline-authored symbols are regenerable).
 - BLOCKER: forged `[traces-to: MANUAL-*]` on pipeline-authored code (G103).
 - HIGH: missing `[stable-since: vX.Y.Z]` on a public-API symbol promoted across a stable-API gate.
-- HIGH: orphan `[perf-exception:]` marker — must be paired with an entry in `runs/<run-id>/design/perf-exceptions.md` (G110).
+- HIGH: orphan `[perf-exception:]` marker — must be paired with an entry in `runs/<run-id>/design/perf-exceptions.md` (G110-py).
 - The dedicated `sdk-marker-hygiene-devil` (shared-core) carries the byte-level enforcement; this reviewer flags the soft inconsistencies that the hygiene devil might miss in narrative comments.
 
 ### 12. SDK-API surface conformance

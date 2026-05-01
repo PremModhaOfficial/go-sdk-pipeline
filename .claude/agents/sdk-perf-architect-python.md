@@ -14,10 +14,10 @@ You are READ + WRITE on design artifacts only. You author `perf-budget.md` and `
 Your output is consumed by SIX downstream gates. Mis-declaring even one number cascades:
 
 - `sdk-benchmark-devil-python` (T5) — compares measured pytest-benchmark p50/p95/p99 against your `latency.*` declarations (G65).
-- `sdk-profile-auditor-python` (M3.5) — verifies measured `heap_bytes_per_call` ≤ your declared budget (G104) and that the top-10 CPU samples (py-spy) match your `hot_path: true` declarations (G109).
+- `sdk-profile-auditor-python` (M3.5) — verifies measured `heap_bytes_per_call` ≤ your declared budget (G104-py) and that the top-10 CPU samples (py-spy) match your `hot_path: true` declarations (G109-py).
 - `sdk-asyncio-leak-hunter-python` (M7 + T6) — uses your `soak.mmd_seconds` to scope its `pytest-repeat --count=N` runs.
-- `sdk-soak-runner-python` (T5.5) — runs the soak harness for at least `mmd_seconds`; hands over to `sdk-drift-detector` who fits a regression line over your declared `drift_signals` (G105 + G106).
-- `sdk-complexity-devil-python` (T5) — sweeps N ∈ {10, 100, 1k, 10k} and curve-fits the result against your declared `complexity.time` big-O (G107).
+- `sdk-soak-runner-python` (T5.5) — runs the soak harness for at least `mmd_seconds`; hands over to `sdk-drift-detector` who fits a regression line over your declared `drift_signals` (G105-py + G106-py).
+- `sdk-complexity-devil-python` (T5) — sweeps N ∈ {10, 100, 1k, 10k} and curve-fits the result against your declared `complexity.time` big-O (G107-py).
 - `sdk-constraint-devil-python` — for any `[constraint:]` marker that names a `bench_*`, runs that bench before AND after the change and benchstat-compares against your declared `latency.*`.
 
 If you don't declare a number, none of the six gates can render PASS or FAIL — they emit INCOMPLETE (CLAUDE.md rule 33), the run halts at H8 / H9, and the user has to re-run with a corrected budget.
@@ -238,7 +238,7 @@ exceptions:
     must_reprove_on_change: true
 ```
 
-The marker text in the source code MUST appear here byte-identically. Mismatch = G110 BLOCKER. `sdk-marker-hygiene-devil` checks the pairing.
+The marker text in the source code MUST appear here byte-identically. Mismatch = G110-py BLOCKER. `sdk-marker-hygiene-devil` checks the pairing.
 
 ## Mode-specific behavior
 
@@ -339,7 +339,7 @@ If a Phase B-3 skill is not on disk, fall back to the per-rule citations into `p
 
 - "Fast enough" / "low latency" / "minimal memory" in place of numeric targets.
 - `heap_bytes_per_call` copy-pasted from another symbol — each operation has its own allocation shape.
-- Soak enabled without MMD (G105 treats this as INCOMPLETE).
+- Soak enabled without MMD (G105-py treats this as INCOMPLETE).
 - Declaring `latency.p50_us` below the theoretical floor (physical impossibility masked as "ambitious").
 - Declaring `bench` names that don't match `bench_*` pattern (downstream gates can't find them).
 - Mixing units across symbols (one in `p50_ms`, the next in `p50_us`). Always microseconds (`*_us`) unless declaring something inherently slower than 100 ms.
