@@ -1,0 +1,129 @@
+{
+  "reviewer": "sdk-semver-devil",
+  "reviewer_mode": "sub-agent (independent, harness-spawned at H5-rev-3 D2 iter 5 REVISE-strict)",
+  "review_target": [
+    "runs/nats-py-v1/design/api.py.stub",
+    "runs/nats-py-v1/design/interfaces.md",
+    "runs/nats-py-v1/design/package-layout.md"
+  ],
+  "review_round": "rev-3 iter 5",
+  "mode": "A",
+  "initial_version": "0.1.0",
+  "verdict": "ACCEPT",
+
+  "sentinel_count_delta": {
+    "rev2_iter3_declared": 34,
+    "iter5_actual": 36,
+    "delta": "+2",
+    "explanation": "ErrCircuitOpen and ErrRateLimitExceeded were relocated from events.middleware to events.utils._errors (CONV-12 fix, D3 iter 3). They were already counted in the 34-sentinel total as middleware-owned symbols. The relocation does not add net-new sentinels to the EventsError tree — the class count within events.utils._errors rises from 34 to 36 but only because two previously-middleware-declared classes moved in. The test parametrization note in interfaces.md (line 304) reads '33 (rev-2) → 34 (D3 iter 1)' which predates the CONV-12 relocation; the sentinel parametrization test must cover 36 rows after iter 3 (34 original + ErrCircuitOpen + ErrRateLimitExceeded, which no longer come from a separate middleware module). The package-layout.md events/utils/__init__.py annotation explicitly states '34→36 — ErrCircuitOpen + ErrRateLimitExceeded RELOCATED here' confirming the count.",
+    "public_count_unchanged": true,
+    "public_count_note": "Both classes were already part of the public API surface (raised by middleware code, catchable by callers). Moving their definition site does not change the total count of public symbols — it only changes which .py file defines them."
+  },
+
+  "import_path_stability_assessment": {
+    "finding": "DUAL-PATH RE-EXPORT CONFIRMED — both import paths are live",
+    "canonical_definition": "events.utils._errors (events/utils/_errors.py) — CONV-12 fix D3 iter 3",
+    "re_export_from_utils": {
+      "path": "from motadata_py_sdk.events.utils import ErrCircuitOpen, ErrRateLimitExceeded",
+      "status": "LIVE",
+      "evidence": "package-layout.md lines 38-50: events/utils/__init__.py re-exports list explicitly includes 'ErrCircuitOpen + ErrRateLimitExceeded (re-exported here per CONV-12 fix D3 iter 3; middleware modules import them FROM utils)'. This was the primary import contract even before the relocation."
+    },
+    "re_export_from_middleware": {
+      "path": "from motadata_py_sdk.events.middleware import ErrCircuitOpen, ErrRateLimitExceeded",
+      "status": "LIVE — confirmed re-export",
+      "evidence": "package-layout.md lines 129-153: events/middleware/__init__.py re-export list includes 'ErrCircuitOpen (RE-EXPORT from events.utils per CONV-12 fix D3 iter 3)' and 'ErrRateLimitExceeded (RE-EXPORT from events.utils per CONV-12 fix D3 iter 3)'. The uppercase RE-EXPORT annotation is explicit design intent. The note '(re-exports here are pure aliases for caller convenience)' at line 151 confirms the middleware __init__ continues to expose these names."
+    },
+    "breaking_change_assessment": "NONE — both import paths remain valid. Callers importing from either motadata_py_sdk.events.utils or motadata_py_sdk.events.middleware continue to receive the same class objects. isinstance() checks are unaffected because re-export via __init__ aliases the same class object (not a copy). At v0.1.0 with no prior callers this is purely precautionary, but the dual-path design is correctly specified.",
+    "identity_invariant": "from motadata_py_sdk.events.utils import ErrCircuitOpen as A; from motadata_py_sdk.events.middleware import ErrCircuitOpen as B; assert A is B — this MUST hold. The re-export is a bare name assignment in __init__.py (not a subclass or wrapper), so the assertion holds by Python import semantics."
+  },
+
+  "post_init_validators_assessment": {
+    "classes_with_new_post_init": [
+      "StreamConfig (jetstream._stream)",
+      "ConsumerConfig (jetstream._consumer)",
+      "TenantConsumerConfig (jetstream._consumer)",
+      "RequesterConfig (jetstream._requester)",
+      "KeyValueConfig (stores._kv)",
+      "ObjectStoreConfig (stores._object)",
+      "ObjectMeta (stores._object)"
+    ],
+    "count": 7,
+    "public_new_symbols": 0,
+    "behavioral_change": "__post_init__ raises ValidationError on bad input at dataclass construction time (was previously deferred to the NATS server response or to factory functions). This is a behavioral tightening — previously invalid inputs would pass construction and fail later; now they fail immediately.",
+    "semver_impact_at_v01": "NONE — v0.1.0 has no prior callers. Early-fail validation is strictly more correct behavior and aligns with the python-class-design skill rule cited in interfaces.md §DataClass shape rules table (CONV-5 fix). Callers constructing these dataclasses with valid inputs are completely unaffected.",
+    "semver_impact_at_v1_and_beyond": "Adding __post_init__ validation to a previously-validation-free dataclass IS a behavioral breaking change under strict semver if callers were constructing instances with out-of-spec values and relying on the server to reject them. This should be documented in the Raises section of each class docstring (per interfaces.md §Docstring style) before v1.0.0, so callers have clear expectations. All seven stubs already include Raises: ValidationError entries per the CONV-5 fix annotation in interfaces.md table. PASS.",
+    "stable_since_markers": "Zero [stable-since:] markers on any of the seven dataclasses. Correct at v0.1.0.",
+    "verdict": "CLEAN"
+  },
+
+  "private_regex_constants_assessment": {
+    "new_private_constants": [
+      "_STREAM_NAME_REGEX",
+      "_CONSUMER_NAME_REGEX",
+      "_SUBJECT_REGEX",
+      "_BUCKET_NAME_REGEX",
+      "_OBJECT_NAME_REGEX",
+      "_MAX_DESCRIPTION_LEN"
+    ],
+    "count": 6,
+    "visibility": "ALL PRIVATE — leading underscore on all six. None appear in events/utils/__init__.py re-export list.",
+    "definition_site": "events/utils/_const.py — confirmed by package-layout.md lines 59-65",
+    "semver_impact": "NONE — private implementation constants carry no semver obligations. Callers importing from the public __init__ surface cannot access them. Relying on private names is explicitly unsupported.",
+    "verdict": "CLEAN"
+  },
+
+  "iter3_closed_finds_status": {
+    "SEMVER-3": "CLOSED — verified in iter 3, no regression in iter 5",
+    "SEMVER-4": "CLOSED — verified in iter 3, no regression in iter 5",
+    "SEMVER-1": "CLOSED (iter 2) — no regression",
+    "SEMVER-2": "CLOSED (iter 2) — no regression",
+    "SEMVER-5": "CLOSED (iter 2) — no regression"
+  },
+
+  "findings": [
+    {
+      "id": "SEMVER-8",
+      "severity": "WARN",
+      "area": "interfaces.md line 304; events/utils/__init__.py re-export annotation (package-layout.md line 45)",
+      "issue": "The interfaces.md sentinel-count note reads '33 (rev-2) → 34 (D3 iter 1)' and does not record the subsequent 34→36 step from CONV-12 (D3 iter 3). The package-layout.md comment does correctly state '34→36'. The sentinel parametrization test (test_sentinel_strings) must be updated to cover 36 rows — if it was written against the 34 count from interfaces.md it will under-count by 2. The test is the enforcement gate: wrong count means ErrCircuitOpen and ErrRateLimitExceeded string invariants are not verified.",
+      "recommendation": "Update interfaces.md line 304 to read '33 (rev-2) → 34 (D3 iter 1) → 36 (D3 iter 3 CONV-12 fix: +ErrCircuitOpen +ErrRateLimitExceeded relocated from middleware)'. Confirm test_sentinel_strings parametrize covers 36 rows at impl time. Not a blocker for design acceptance at v0.1.0."
+    },
+    {
+      "id": "SEMVER-9",
+      "severity": "NOTE",
+      "area": "events/utils/__init__.py (package-layout.md lines 38-50)",
+      "issue": "The re-export count in the §Public-API summary table (package-layout.md line 301) lists 'events.utils | 47 | 33 sentinels + 6 wrappers + 2 helpers + 6 constants'. After iter 3 additions: 36 sentinels (not 33) + 6 wrappers + 2 helpers + 6 constants + 5 CONTENT_TYPE_* constants = 55 symbols (not 47). The table predates the CONV-12 relocation and the CONTENT_TYPE_* additions. Upstream of this review, the table mismatch is documentation hygiene — the actual re-export list in the __init__ annotation is the authoritative source.",
+      "recommendation": "Update the §Public-API summary table in package-layout.md to reflect the correct count for events.utils after CONV-12 and CONV-5 fixes. Suggested: '55 | 36 sentinels + 6 wrappers + 2 helpers + 5 type-constants + 6 regex/cap constants (private, not counted)'. Not a blocker."
+    },
+    {
+      "id": "SEMVER-6",
+      "severity": "NOTE",
+      "area": "api.py.stub MultiCircuitBreaker.__init__ key_fn parameter; scope.md Open Questions",
+      "status": "CARRIED FORWARD from iter 3 — no change",
+      "issue": "MultiCircuitBreaker.__init__ accepts key_fn: Callable[[Context, NatsMsg], str] | None = None, a Python-only convenience not present in Go. Not catalogued in scope.md Open Questions (which lists only Q1-Q12). Post-v1.0.0 removing or changing key_fn semantics is a MAJOR bump.",
+      "recommendation": "Add a Q13 entry to scope.md Open Questions with disposition 'Python-only convenience, retained — no Go equivalent'. Not a blocker for v0.1.0."
+    },
+    {
+      "id": "SEMVER-7",
+      "severity": "NOTE",
+      "area": "Source TPRD §12 (Go team side)",
+      "status": "CARRIED FORWARD from iter 3 — no pipeline action required",
+      "issue": "Source TPRD §12 is titled 'Suggested Python project layout' which could be misread as a layout section rather than a versioning policy when the canonical overlay is refreshed in a future run.",
+      "recommendation": "Flag for the Go team at next TPRD revision. No pipeline action required."
+    }
+  ],
+
+  "convergence": true,
+  "convergence_detail": {
+    "result": true,
+    "reason": "The two iter-3 changes under scrutiny are semver-clean. (1) ErrCircuitOpen + ErrRateLimitExceeded relocation: both classes remain accessible via their original import path (events.middleware re-exports them as pure aliases per package-layout.md) AND from the new canonical path (events.utils). No breaking change. Identity invariant holds. (2) Seven __post_init__ validators: zero new public symbols; behavioral tightening appropriate at v0.1.0 with no prior callers; Raises: documentation in all seven stubs already present. (3) Six private regex constants: private by leading underscore, not in any __init__ re-export surface, zero semver obligation. Two new documentation WARNs raised (SEMVER-8: sentinel count stale in interfaces.md; SEMVER-9: §Public-API summary table count stale) — both are documentation hygiene not API surface correctness, not blockers. Carried-forward NOTEs SEMVER-6 and SEMVER-7 unchanged. No new BLOCKER-class findings. VERDICT: ACCEPT.",
+    "open_warn_count": 1,
+    "open_note_count": 3,
+    "new_findings_this_iter": ["SEMVER-8 (WARN)", "SEMVER-9 (NOTE)"],
+    "carried_forward": ["SEMVER-6 (NOTE)", "SEMVER-7 (NOTE)"],
+    "closed_all_iters": ["SEMVER-1", "SEMVER-2", "SEMVER-3", "SEMVER-4", "SEMVER-5"]
+  },
+
+  "fix_required": false,
+  "summary": "Iter 5 REVISE-strict full re-pass complete. Import-path stability: CONFIRMED — ErrCircuitOpen and ErrRateLimitExceeded are accessible from both motadata_py_sdk.events.middleware (re-export, pure alias) and motadata_py_sdk.events.utils (canonical definition). No breaking change; identity invariant holds. Sentinel-count delta: 34→36 net within events.utils after CONV-12 relocation; both classes were already public symbols. The test_sentinel_strings parametrize table must cover 36 rows (SEMVER-8 WARN raised — documentation stale in interfaces.md line 304). Seven __post_init__ validators add zero new public symbols and raise only on invalid inputs; appropriate behavioral tightening at v0.1.0. Six private regex constants carry no semver obligations. §Public-API summary table in package-layout.md is stale (SEMVER-9 NOTE — 47 should read ~55 for events.utils). No BLOCKER-class findings. CONVERGENCE: TRUE. VERDICT: ACCEPT."
+}

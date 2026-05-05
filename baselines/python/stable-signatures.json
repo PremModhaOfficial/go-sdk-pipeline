@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0.0",
+  "scope": "per-language",
+  "language": "python",
+  "first_seeded_at": "2026-04-28",
+  "first_seeded_by_run": "sdk-resourcepool-py-pilot-v1",
+  "policy": "Symbols carrying [stable-since: vX] markers commit to signature stability per G101 (semver governance). A signature change requires a major-version bump AND a TPRD §12 entry. This file records the canonical signature at the [stable-since:] declaration so future runs can diff.",
+  "packages": {
+    "motadata_py_sdk.resourcepool": {
+      "package_version_at_seed": "1.0.0",
+      "head_sha_at_seed": "bd14539",
+      "stable_since_v1_0_0": {
+        "PoolConfig": {
+          "kind": "frozen+slotted dataclass",
+          "fields": ["max_size: int", "on_create: Callable[[], T | Awaitable[T]]", "on_reset: Callable[[T], None | Awaitable[None]] | None = None", "on_destroy: Callable[[T], None | Awaitable[None]] | None = None", "name: str = 'resourcepool'"]
+        },
+        "Pool": {
+          "kind": "Generic[T] class",
+          "methods": ["__init__(self, config: PoolConfig[T]) -> None", "acquire(self, *, timeout: float | None = None) -> AcquiredResource[T]", "acquire_resource(self, *, timeout: float | None = None) -> T (async)", "try_acquire(self) -> T", "release(self, resource: T) -> None (async)", "aclose(self, *, timeout: float | None = None) -> None (async)", "stats(self) -> PoolStats", "__aenter__(self) -> Pool[T]", "__aexit__(self, *exc) -> None"]
+        },
+        "PoolStats": {
+          "kind": "frozen+slotted dataclass",
+          "fields": ["created: int", "in_use: int", "idle: int", "waiting: int", "closed: bool"]
+        },
+        "AcquiredResource": {
+          "kind": "Generic[T] async context manager class",
+          "methods": ["__aenter__(self) -> T", "__aexit__(self, *exc) -> None"]
+        },
+        "PoolError": {"kind": "Exception", "bases": ["Exception"]},
+        "PoolClosedError": {"kind": "Exception", "bases": ["PoolError"]},
+        "PoolEmptyError": {"kind": "Exception", "bases": ["PoolError"]},
+        "ConfigError": {"kind": "Exception", "bases": ["PoolError"]},
+        "ResourceCreationError": {"kind": "Exception", "bases": ["PoolError"]}
+      }
+    }
+  }
+}

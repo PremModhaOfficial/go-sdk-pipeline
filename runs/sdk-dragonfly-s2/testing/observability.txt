@@ -1,0 +1,10 @@
+=== RUN   TestObservability_InstrumentedCallInvariants
+--- PASS: TestObservability_InstrumentedCallInvariants (0.00s)
+=== RUN   TestObservability_MapErrKeepsBoundedLabels
+--- PASS: TestObservability_MapErrKeepsBoundedLabels (0.00s)
+=== RUN   TestObservability_SpanPrefix_DflyDot
+--- PASS: TestObservability_SpanPrefix_DflyDot (0.00s)
+=== RUN   TestObservability_EveryMethodRecordsDuration
+--- PASS: TestObservability_EveryMethodRecordsDuration (0.00s)
+PASS
+ok  	motadatagosdk/core/l2cache/dragonfly	0.007s

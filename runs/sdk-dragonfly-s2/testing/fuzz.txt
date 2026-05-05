@@ -1,0 +1,52 @@
+=== FuzzMapErr ===
+fuzz: elapsed: 0s, gathering baseline coverage: 0/16 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 16/16 completed, now fuzzing with 8 workers
+fuzz: elapsed: 3s, execs: 29924 (9971/sec), new interesting: 1 (total: 17)
+fuzz: elapsed: 6s, execs: 63685 (11256/sec), new interesting: 1 (total: 17)
+fuzz: elapsed: 9s, execs: 96764 (11026/sec), new interesting: 1 (total: 17)
+fuzz: elapsed: 12s, execs: 131535 (11591/sec), new interesting: 1 (total: 17)
+fuzz: elapsed: 15s, execs: 164824 (11093/sec), new interesting: 1 (total: 17)
+fuzz: elapsed: 18s, execs: 198453 (11207/sec), new interesting: 1 (total: 17)
+fuzz: elapsed: 21s, execs: 232067 (11210/sec), new interesting: 1 (total: 17)
+fuzz: elapsed: 24s, execs: 266253 (11393/sec), new interesting: 1 (total: 17)
+fuzz: elapsed: 27s, execs: 300561 (11439/sec), new interesting: 1 (total: 17)
+fuzz: elapsed: 30s, execs: 334078 (11172/sec), new interesting: 1 (total: 17)
+fuzz: elapsed: 33s, execs: 368615 (11509/sec), new interesting: 1 (total: 17)
+fuzz: elapsed: 36s, execs: 402604 (11334/sec), new interesting: 1 (total: 17)
+fuzz: elapsed: 39s, execs: 434569 (10654/sec), new interesting: 1 (total: 17)
+fuzz: elapsed: 42s, execs: 462664 (9364/sec), new interesting: 1 (total: 17)
+fuzz: elapsed: 45s, execs: 493252 (10197/sec), new interesting: 1 (total: 17)
+fuzz: elapsed: 48s, execs: 524177 (10307/sec), new interesting: 1 (total: 17)
+fuzz: elapsed: 51s, execs: 556841 (10890/sec), new interesting: 1 (total: 17)
+fuzz: elapsed: 54s, execs: 590591 (11249/sec), new interesting: 1 (total: 17)
+fuzz: elapsed: 57s, execs: 625443 (11614/sec), new interesting: 1 (total: 17)
+fuzz: elapsed: 1m0s, execs: 659850 (11471/sec), new interesting: 1 (total: 17)
+fuzz: elapsed: 1m0s, execs: 659850 (0/sec), new interesting: 1 (total: 17)
+PASS
+ok  	motadatagosdk/core/l2cache/dragonfly	60.174s
+=== FuzzKeyEncoding ===
+fuzz: elapsed: 0s, gathering baseline coverage: 0/4 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 4/4 completed, now fuzzing with 8 workers
+fuzz: elapsed: 3s, execs: 8560 (2853/sec), new interesting: 4 (total: 8)
+fuzz: elapsed: 6s, execs: 18768 (3403/sec), new interesting: 4 (total: 8)
+fuzz: elapsed: 9s, execs: 29136 (3456/sec), new interesting: 4 (total: 8)
+fuzz: elapsed: 12s, execs: 39337 (3400/sec), new interesting: 4 (total: 8)
+fuzz: elapsed: 15s, execs: 49756 (3473/sec), new interesting: 4 (total: 8)
+fuzz: elapsed: 18s, execs: 58761 (3001/sec), new interesting: 4 (total: 8)
+fuzz: elapsed: 21s, execs: 67616 (2952/sec), new interesting: 4 (total: 8)
+fuzz: elapsed: 24s, execs: 76635 (3007/sec), new interesting: 4 (total: 8)
+fuzz: elapsed: 27s, execs: 85514 (2960/sec), new interesting: 4 (total: 8)
+fuzz: elapsed: 30s, execs: 94720 (3069/sec), new interesting: 4 (total: 8)
+fuzz: elapsed: 33s, execs: 103873 (3050/sec), new interesting: 4 (total: 8)
+fuzz: elapsed: 36s, execs: 113101 (3077/sec), new interesting: 4 (total: 8)
+fuzz: elapsed: 39s, execs: 121921 (2940/sec), new interesting: 4 (total: 8)
+fuzz: elapsed: 42s, execs: 130931 (3002/sec), new interesting: 4 (total: 8)
+fuzz: elapsed: 45s, execs: 138633 (2569/sec), new interesting: 4 (total: 8)
+fuzz: elapsed: 48s, execs: 146953 (2773/sec), new interesting: 5 (total: 9)
+fuzz: elapsed: 51s, execs: 154986 (2678/sec), new interesting: 5 (total: 9)
+fuzz: elapsed: 54s, execs: 163204 (2740/sec), new interesting: 5 (total: 9)
+fuzz: elapsed: 57s, execs: 171601 (2798/sec), new interesting: 5 (total: 9)
+fuzz: elapsed: 1m0s, execs: 179820 (2740/sec), new interesting: 5 (total: 9)
+fuzz: elapsed: 1m1s, execs: 179820 (0/sec), new interesting: 5 (total: 9)
+PASS
+ok  	motadatagosdk/core/l2cache/dragonfly	61.067s

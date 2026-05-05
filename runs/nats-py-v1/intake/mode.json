@@ -1,0 +1,29 @@
+{
+  "mode": "A",
+  "mode_rationale": "New package addition. Target tree motadata-py-sdk/src/motadata_py_sdk/ contains only resourcepool/ (prior pilot). The events/ tree, codec/ tree, otel/ tree, and config/ tree are all net-new. No existing API to extend (Mode B) or update (Mode C). No [owned-by: MANUAL] markers in target.",
+  "target_package": "motadata_py_sdk.events",
+  "additional_packages_added": [
+    "motadata_py_sdk.codec",
+    "motadata_py_sdk.otel",
+    "motadata_py_sdk.config"
+  ],
+  "new_exports": [
+    "motadata_py_sdk.events.core (Publisher/Subscriber/Subscription Protocols, 15 header constants, TraceContext, Metadata, ExtractHeaders, InjectContext, contextvars helpers)",
+    "motadata_py_sdk.events.corenats (Publisher, BatchPublisher, Subscriber)",
+    "motadata_py_sdk.events.jetstream (Stream + factories, Publisher, Consumer, Requester, ConsumerConfig, TenantConsumerConfig, RequesterConfig, PubAck, Response)",
+    "motadata_py_sdk.events.stores (KVStore, ObjectStore + factories, optional TenantKVStore / TenantObjectStore overlays)",
+    "motadata_py_sdk.events.middleware (Stack, Chain, Interceptor, CircuitBreakerMiddleware, RetryMiddleware, RateLimit + SlidingWindow + PerSubject, MetricsCollector + OTELMetricsMiddleware + PerSubjectMetrics, LoggingMiddleware, TracingMiddleware)",
+    "motadata_py_sdk.events.utils (33 sentinel exceptions, MultiError, is_retryable, is_temporary, constants)",
+    "motadata_py_sdk.codec (pack_map, pack_array, unpack_map, unpack_array, Encoder enum, codec error sentinels)",
+    "motadata_py_sdk.otel.tracer (Init, Shutdown, Start, StartProducer, StartConsumer, W3C parse/format helpers)",
+    "motadata_py_sdk.otel.metrics (Init, Counter, Gauge, Histogram, Timer, Registry namespace)",
+    "motadata_py_sdk.otel.logger (Init, level helpers, structured fields, OTEL bridge)",
+    "motadata_py_sdk.otel.common (ServiceInfo, resolve_protocol, ShutdownCollector, ErrOTELUnsupportedProtocol)",
+    "motadata_py_sdk.config (Settings via pydantic-settings; ServiceConfig, TracerConfig, EventsConfig, ReconnectConfig, TLS + Stream + LoggerConfig + MetricsConfig)"
+  ],
+  "modified_exports": [],
+  "preserved_symbols": [],
+  "marker_preservation_required": false,
+  "marker_preservation_note": "Mode A run. resourcepool/ in the target tree is untouched (ownership-cache MUST NOT mark resourcepool/ symbols as in-scope for THIS run). G95/G96/G100/G101/G103 (marker preservation suite) excluded from Guardrails-Manifest per python.json::notes.marker_protocol_note pending Phase B Python marker-hash semantics decision.",
+  "scope_decomposition_recommendation": "B (split nats-py-v1 to codec + events/utils + events/core + events/corenats only; defer jetstream / stores / middleware / consolidated OTel / config to nats-py-v2/v3/v4). Surfaced as H1 Question 1; user decision recorded in decision-log.jsonl."
+}

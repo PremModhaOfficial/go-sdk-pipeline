@@ -3,19 +3,43 @@
   "pipeline_version": "sdk-pipeline@0.5.0",
   "scope": "shared-stub",
   "scope_note": "Legacy stub. Authoritative data lives in baselines/shared/skill-health-baselines.json (scope: shared). v0.5.0 may delete this file once all consumers point at skill-health-baselines.json. Moved from baselines/skill-health.json to baselines/shared/skill-health.json in v0.4.0 per Decision D1=B.",
-  "note": "Superseded by baselines/shared/skill-health-baselines.json as of run sdk-dragonfly-s2 (2026-04-18). This stub retained for backward-compatibility tools scanning the original filename. Authoritative data lives in skill-health-baselines.json.",
+  "note": "Superseded by baselines/shared/skill-health-baselines.json as of run sdk-dragonfly-s2 (2026-04-18). This stub retained for backward-compatibility tools scanning the original filename. Authoritative data lives in skill-health-baselines.json. Updated by metrics-collector sdk-resourcepool-py-pilot-v1 (2026-04-28) to reflect this run's skill invocation data.",
   "supersedes_pointer": "baselines/shared/skill-health-baselines.json",
   "deprecated_since_run": "sdk-dragonfly-s2",
+  "last_updated": "2026-04-28T13:00:00Z",
   "metrics": {
     "skill_stability": 0.105,
     "existing_skill_patch_accept_rate": 1.0,
     "learning_patches_reverted_by_user": 0,
     "mean_time_to_green_sec": null,
-    "user_intervention_rate": 2,
+    "user_intervention_rate": 1,
     "manifest_miss_rate": 0.0
   },
+  "run_delta_sdk_resourcepool_py_pilot_v1": {
+    "skills_created": 0,
+    "skills_bumped_patch": 0,
+    "skills_bumped_minor": 0,
+    "skills_bumped_major": 0,
+    "learning_patches_reverted_by_user": 0,
+    "manifest_miss_rate_blocking": 0.0,
+    "manifest_miss_rate_warn": 0.05,
+    "skill_coverage_pct_design": 0.71,
+    "skill_coverage_pct_impl": 0.80,
+    "skill_coverage_pct_testing": 1.00,
+    "user_intervention_rate": 1,
+    "note": "1 user intervention: contention-budget M11 re-baseline decision (user chose Option 1 via AskUserQuestion). G90 patch was orchestrator-applied (out_of_band:true), not a user override of pipeline logic. No learning-engine patches applied. No skill bumps."
+  },
   "per_skill": {
-    "go-error-handling-patterns": {"version": "1.0.1", "bumps_this_run": 1, "kind": "patch"},
-    "go-example-function-patterns": {"version": "0.1.1", "bumps_this_run": 1, "kind": "patch"}
+    "go-error-handling-patterns": {"version": "1.0.1", "bumps_this_run": 0, "kind": "none", "last_run": "sdk-dragonfly-s2"},
+    "go-example-function-patterns": {"version": "0.1.1", "bumps_this_run": 0, "kind": "none", "last_run": "sdk-dragonfly-s2"},
+    "feedback-analysis": {"version": "1.0.0", "bumps_this_run": 0, "kind": "none", "last_run": "sdk-resourcepool-py-pilot-v1", "warn": "SKILL.md missing version: frontmatter field; index records 1.0.0; G23 PASS"},
+    "python-asyncio-patterns": {"version": "1.0.0", "bumps_this_run": 0, "kind": "none", "last_run": "sdk-resourcepool-py-pilot-v1"},
+    "asyncio-cancellation-patterns": {"version": "1.0.0", "bumps_this_run": 0, "kind": "none", "last_run": "sdk-resourcepool-py-pilot-v1"},
+    "python-class-design": {"version": "1.0.0", "bumps_this_run": 0, "kind": "none", "last_run": "sdk-resourcepool-py-pilot-v1"},
+    "pytest-table-tests": {"version": "1.0.0", "bumps_this_run": 0, "kind": "none", "last_run": "sdk-resourcepool-py-pilot-v1"},
+    "sdk-semver-governance": {"version": "1.0.0", "bumps_this_run": 0, "kind": "none", "last_run": "sdk-resourcepool-py-pilot-v1"},
+    "tdd-patterns": {"version": "1.0.0", "bumps_this_run": 0, "kind": "none", "last_run": "sdk-resourcepool-py-pilot-v1"},
+    "review-fix-protocol": {"version": "1.1.0", "bumps_this_run": 0, "kind": "none", "last_run": "sdk-resourcepool-py-pilot-v1"},
+    "mcp-knowledge-graph": {"version": "1.0.0", "bumps_this_run": 0, "kind": "none", "last_run": "sdk-resourcepool-py-pilot-v1"}
   }
 }

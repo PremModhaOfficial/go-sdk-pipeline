@@ -5,23 +5,24 @@
   "scope_note": "v0.4.0 declares this baseline as shared (one truth across languages). Per-agent quality is intended to compare apples-to-apples across runs regardless of target language. Decision D2 (resolved 2026-04-27 post-R2): Lenient default — one shared score across languages. Progressive fallback: if Phase B Python pilot shows ≥3pp quality_score divergence on any debt-bearer, that specific agent flips to per-language partition until its D6=Split rewrite ships. See docs/LANGUAGE-AGNOSTIC-DECISIONS.md and docs/R2-DEBT-REWRITE-FEASIBILITY.md.",
   "note": "Populated after first successful run (sdk-dragonfly-s2, 2026-04-18). Per-agent quality scores from metrics-collector (F1). Never lowered except via explicit learning-engine signoff (resets every 5 runs per settings.json baseline_reset_every_n_runs=5). Raise-only policy: improvements >10% over baseline trigger raise; regressions keep baseline and flag.",
   "pipeline_level": {
-    "baseline_pipeline_quality": 0.95,
-    "baseline_run": "sdk-dragonfly-s2",
-    "runs_tracked": 1,
-    "trend": "insufficient-data",
-    "last_updated": "2026-04-18T15:30:00Z",
+    "baseline_pipeline_quality": 0.978,
+    "baseline_run": "sdk-resourcepool-py-pilot-v1",
+    "runs_tracked": 2,
+    "trend": "improvement",
+    "last_updated": "2026-04-28T13:00:00Z",
     "history": [
-      {"run_id": "sdk-dragonfly-s2", "pipeline_quality": 0.95, "coverage_pct": 90.4, "mode": "A", "target_package": "core/l2cache/dragonfly"}
+      {"run_id": "sdk-dragonfly-s2", "pipeline_quality": 0.95, "coverage_pct": 90.4, "mode": "A", "target_package": "core/l2cache/dragonfly"},
+      {"run_id": "sdk-resourcepool-py-pilot-v1", "pipeline_quality": 0.978, "coverage_pct": 92.33, "mode": "A", "target_package": "resourcepool", "target_language": "python"}
     ],
-    "computation_note": "Mean of 4 primary agent quality scores (sdk-intake 1.00, sdk-design-lead 0.85, sdk-impl-lead 0.975, sdk-testing-lead 0.975). Weighted equally per metrics-collector F1."
+    "computation_note": "Mean of 4 primary agent quality scores (sdk-intake 0.985, sdk-design-lead 0.975, sdk-impl-lead 0.925, sdk-testing-lead 1.00). Weighted equally per metrics-collector F1. Previous run (sdk-dragonfly-s2): 0.95."
   },
   "agents": {
     "sdk-intake-agent": {
       "baseline_quality_score": 1.00,
       "baseline_run": "sdk-dragonfly-s2",
-      "runs_tracked": 1,
-      "trend": "insufficient-data",
-      "last_updated": "2026-04-18T15:30:00Z",
+      "runs_tracked": 2,
+      "trend": "stable",
+      "last_updated": "2026-04-28T13:00:00Z",
       "phase": "intake",
       "reference_components": {
         "completeness": 1.0,
@@ -33,36 +34,38 @@
         "downstream_impact": 1.0
       },
       "history": [
-        {"run_id": "sdk-dragonfly-s2", "score": 1.00}
+        {"run_id": "sdk-dragonfly-s2", "score": 1.00},
+        {"run_id": "sdk-resourcepool-py-pilot-v1", "score": 0.985, "note": "G90 first-attempt fail; recovered via out-of-band patch. Baseline 1.00 retained (no regression action; isolated Python-pilot-first-run G90 oversight)."}
       ]
     },
     "sdk-design-lead": {
-      "baseline_quality_score": 0.85,
-      "baseline_run": "sdk-dragonfly-s2",
-      "runs_tracked": 1,
-      "trend": "insufficient-data",
-      "last_updated": "2026-04-18T15:30:00Z",
+      "baseline_quality_score": 0.975,
+      "baseline_run": "sdk-resourcepool-py-pilot-v1",
+      "runs_tracked": 2,
+      "trend": "improvement",
+      "last_updated": "2026-04-28T13:00:00Z",
       "phase": "design",
       "reference_components": {
         "completeness": 1.0,
         "review_severity": 1.0,
-        "guardrail_pass_rate": 0.67,
-        "rework_score": 0.5,
+        "guardrail_pass_rate": 1.0,
+        "rework_score": 1.0,
         "communication_health": 1.0,
         "failure_recovery": 1.0,
         "downstream_impact": 0.5
       },
-      "reference_notes": "Lowest-scoring agent this run. G32/G33 tool-unavail drove 0.67 guardrail pass rate; 1 rework iter (D3→D4 devil loop) drove 0.5 rework score. Anomaly A1 filed.",
+      "reference_notes": "Raised from 0.85 (sdk-dragonfly-s2) to 0.975 (+12.5% > 10% raise threshold). Improvement driven by: Python pilot had 0 D3 review-fix iterations vs 1 in dragonfly-s2; Go G32/G33 guardrail-unavailability not applicable. Downstream impact 0.5 retained due to active-packages.json gap (surrogate-review pattern). D2-lenient-fairness: cross-language comparison deferred to next Go run.",
       "history": [
-        {"run_id": "sdk-dragonfly-s2", "score": 0.85}
+        {"run_id": "sdk-dragonfly-s2", "score": 0.85},
+        {"run_id": "sdk-resourcepool-py-pilot-v1", "score": 0.975, "note": "Raised: +12.5% improvement. Go guardrail unavailability not applicable to Python run."}
       ]
     },
     "sdk-impl-lead": {
       "baseline_quality_score": 0.975,
       "baseline_run": "sdk-dragonfly-s2",
-      "runs_tracked": 1,
-      "trend": "insufficient-data",
-      "last_updated": "2026-04-18T15:30:00Z",
+      "runs_tracked": 2,
+      "trend": "regression-flag",
+      "last_updated": "2026-04-28T13:00:00Z",
       "phase": "impl",
       "reference_components": {
         "completeness": 1.0,
@@ -73,17 +76,18 @@
         "failure_recovery": 1.0,
         "downstream_impact": 0.5
       },
-      "reference_notes": "13/13 guardrails PASS, 0 rework, 6 commits, 94 exported symbols, 90.4% coverage. DEP-BUMP-UNAPPROVED escalation resolved via run-driver Option A; recovery clean.",
+      "reference_notes": "Baseline retained at 0.975 (sdk-dragonfly-s2). This-run score 0.925 (−5.1%). Regression flag recorded; G86 would fire at ≥5% delta but sample-size precondition (runs_tracked≥3) not met. Root cause: M10 rework wave (rework_score 0.5) triggered by asyncio.Lock+Condition throughput floor — hardware reality, not code quality regression. v1.1.0 TPRD drafted for throughput improvement. Next run comparison will clarify if this is a pattern or isolated.",
       "history": [
-        {"run_id": "sdk-dragonfly-s2", "score": 0.975}
+        {"run_id": "sdk-dragonfly-s2", "score": 0.975},
+        {"run_id": "sdk-resourcepool-py-pilot-v1", "score": 0.925, "note": "Regression (-5.1%); baseline held at 0.975. G86 precondition not met (runs_tracked=2 < 3). Root: M10 rework on asyncio.Lock throughput floor."}
       ]
     },
     "sdk-testing-lead": {
       "baseline_quality_score": 0.975,
       "baseline_run": "sdk-dragonfly-s2",
-      "runs_tracked": 1,
-      "trend": "insufficient-data",
-      "last_updated": "2026-04-18T15:30:00Z",
+      "runs_tracked": 2,
+      "trend": "stable",
+      "last_updated": "2026-04-28T13:00:00Z",
       "phase": "testing",
       "reference_components": {
         "completeness": 1.0,
@@ -92,11 +96,129 @@
         "rework_score": 1.0,
         "communication_health": 1.0,
         "failure_recovery": 1.0,
-        "downstream_impact": 0.5
+        "downstream_impact": 1.0
       },
-      "reference_notes": "71 unit pass / 1 skip / 0 fail; 0 leaks/races/fuzz crashes. H8 waiver applied for allocs-per-GET (32 becomes baseline vs TPRD-declared 3; waived to 35 target with 34 regression gate).",
+      "reference_notes": "This-run score 1.00 (+2.5% improvement). Below 10% raise threshold; baseline held at 0.975. Improvement factors: downstream impact improved from 0.5→1.0 (6 baselines correctly seeded vs dragonfly-s2 waiver at H8). Soak passed at exactly MMD+0.38s. CALIBRATION-WARN correctly not scored as failure.",
       "history": [
-        {"run_id": "sdk-dragonfly-s2", "score": 0.975}
+        {"run_id": "sdk-dragonfly-s2", "score": 0.975},
+        {"run_id": "sdk-resourcepool-py-pilot-v1", "score": 1.00, "note": "Improvement +2.5%; below raise threshold. Baseline held at 0.975."}
+      ]
+    },
+    "designer": {
+      "baseline_quality_score": 1.00,
+      "baseline_run": "sdk-resourcepool-py-pilot-v1",
+      "runs_tracked": 1,
+      "trend": "insufficient-data",
+      "last_updated": "2026-04-28T13:00:00Z",
+      "phase": "design",
+      "python_pilot_seed": true,
+      "history": [
+        {"run_id": "sdk-resourcepool-py-pilot-v1", "score": 1.00}
+      ]
+    },
+    "interface": {
+      "baseline_quality_score": 1.00,
+      "baseline_run": "sdk-resourcepool-py-pilot-v1",
+      "runs_tracked": 1,
+      "trend": "insufficient-data",
+      "last_updated": "2026-04-28T13:00:00Z",
+      "phase": "design",
+      "python_pilot_seed": true,
+      "history": [
+        {"run_id": "sdk-resourcepool-py-pilot-v1", "score": 1.00}
+      ]
+    },
+    "algorithm": {
+      "baseline_quality_score": 1.00,
+      "baseline_run": "sdk-resourcepool-py-pilot-v1",
+      "runs_tracked": 1,
+      "trend": "insufficient-data",
+      "last_updated": "2026-04-28T13:00:00Z",
+      "phase": "design",
+      "python_pilot_seed": true,
+      "history": [
+        {"run_id": "sdk-resourcepool-py-pilot-v1", "score": 1.00}
+      ]
+    },
+    "concurrency": {
+      "baseline_quality_score": 1.00,
+      "baseline_run": "sdk-resourcepool-py-pilot-v1",
+      "runs_tracked": 1,
+      "trend": "insufficient-data",
+      "last_updated": "2026-04-28T13:00:00Z",
+      "phase": "design",
+      "python_pilot_seed": true,
+      "history": [
+        {"run_id": "sdk-resourcepool-py-pilot-v1", "score": 1.00}
+      ]
+    },
+    "pattern-advisor": {
+      "baseline_quality_score": 1.00,
+      "baseline_run": "sdk-resourcepool-py-pilot-v1",
+      "runs_tracked": 1,
+      "trend": "insufficient-data",
+      "last_updated": "2026-04-28T13:00:00Z",
+      "phase": "design",
+      "python_pilot_seed": true,
+      "history": [
+        {"run_id": "sdk-resourcepool-py-pilot-v1", "score": 1.00}
+      ]
+    },
+    "sdk-perf-architect": {
+      "baseline_quality_score": 1.00,
+      "baseline_run": "sdk-resourcepool-py-pilot-v1",
+      "runs_tracked": 1,
+      "trend": "insufficient-data",
+      "last_updated": "2026-04-28T13:00:00Z",
+      "phase": "design",
+      "python_pilot_seed": true,
+      "history": [
+        {"run_id": "sdk-resourcepool-py-pilot-v1", "score": 1.00}
+      ]
+    },
+    "sdk-design-devil": {
+      "baseline_quality_score": 1.00,
+      "baseline_run": "sdk-resourcepool-py-pilot-v1",
+      "runs_tracked": 1,
+      "trend": "insufficient-data",
+      "last_updated": "2026-04-28T13:00:00Z",
+      "phase": "design",
+      "python_pilot_seed": true,
+      "d2_cross_language": {
+        "python_pilot_self_reported_score": 0.91,
+        "go_baseline_sdk_dragonfly_s2": 0.93,
+        "delta_pp": -2,
+        "d2_band_lenient_pp": 3,
+        "d2_verdict": "HOLD",
+        "cross_language_delta_status": "N/A-this-run — first Python run establishes Python seed; formal Go-vs-Python comparison deferred to next Go run",
+        "note": "quality_score stored as 1.00 (formula score = perfect output per formula components). self_reported_score of 0.91 is the devil's own quality assessment of the design under review — not the devil's quality_score as an agent. The formula-based quality_score for the sdk-design-devil agent is 1.00."
+      },
+      "history": [
+        {"run_id": "sdk-resourcepool-py-pilot-v1", "score": 1.00, "d2_self_report": 0.91}
+      ]
+    },
+    "sdk-security-devil": {
+      "baseline_quality_score": 1.00,
+      "baseline_run": "sdk-resourcepool-py-pilot-v1",
+      "runs_tracked": 1,
+      "trend": "insufficient-data",
+      "last_updated": "2026-04-28T13:00:00Z",
+      "phase": "design",
+      "python_pilot_seed": true,
+      "history": [
+        {"run_id": "sdk-resourcepool-py-pilot-v1", "score": 1.00}
+      ]
+    },
+    "sdk-semver-devil": {
+      "baseline_quality_score": 1.00,
+      "baseline_run": "sdk-resourcepool-py-pilot-v1",
+      "runs_tracked": 1,
+      "trend": "insufficient-data",
+      "last_updated": "2026-04-28T13:00:00Z",
+      "phase": "design",
+      "python_pilot_seed": true,
+      "history": [
+        {"run_id": "sdk-resourcepool-py-pilot-v1", "score": 1.00}
       ]
     }
   },

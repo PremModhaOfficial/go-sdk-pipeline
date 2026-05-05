@@ -1,0 +1,18 @@
+{
+  "mode": "A",
+  "rationale": "TPRD §16 declares Mode A (new package); target SDK motadata-py-sdk has scaffold commit b6c8e38 with empty src/motadata_py_sdk/resourcepool/__init__.py — pilot will populate it. No prior shipping API ⇒ sdk-breaking-change-devil N/A; sdk-semver-devil ACCEPT 1.0.0.",
+  "target_package": "motadata-py-sdk/src/motadata_py_sdk/resourcepool/",
+  "new_exports": [
+    "PoolConfig",
+    "Pool",
+    "PoolStats",
+    "AcquiredResource",
+    "PoolError",
+    "PoolClosedError",
+    "PoolEmptyError",
+    "ConfigError",
+    "ResourceCreationError"
+  ],
+  "modified_exports": [],
+  "preserved_symbols": []
+}

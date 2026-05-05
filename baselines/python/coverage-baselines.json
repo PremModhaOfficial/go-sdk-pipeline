@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0.0",
+  "scope": "per-language",
+  "language": "python",
+  "owner_package": "python",
+  "first_seeded_at": "2026-04-28",
+  "first_seeded_by_run": "sdk-resourcepool-py-pilot-v1",
+  "pipeline_version_seed": "0.5.0",
+  "policy": "Per-package per-file coverage. New packages must reach >= 90% line+branch combined; existing packages must not regress (raise-only on the package aggregate). Per-file outliers > 5pp below package aggregate trigger a WARN at metrics-collector.",
+  "packages": {
+    "motadata_py_sdk.resourcepool": {
+      "first_seeded_at": "2026-04-28",
+      "first_seeded_by_run": "sdk-resourcepool-py-pilot-v1",
+      "head_sha_at_seed": "bd14539",
+      "test_set_used_for_seed": ["tests/unit/", "tests/integration/", "tests/leak/"],
+      "tests_run": 69,
+      "tests_passed": 69,
+      "aggregate_pct_combined": 92.33,
+      "aggregate_pct_statements": 95.74,
+      "aggregate_pct_branches": 79.41,
+      "per_file": {
+        "src/motadata_py_sdk/resourcepool/__init__.py": {"stmts": 8, "miss": 0, "branch": 0, "br_part": 0, "cover_pct": 100.0},
+        "src/motadata_py_sdk/resourcepool/_acquired.py": {"stmts": 18, "miss": 0, "branch": 2, "br_part": 1, "cover_pct": 95.0},
+        "src/motadata_py_sdk/resourcepool/_config.py": {"stmts": 18, "miss": 0, "branch": 0, "br_part": 0, "cover_pct": 100.0},
+        "src/motadata_py_sdk/resourcepool/_errors.py": {"stmts": 6, "miss": 0, "branch": 0, "br_part": 0, "cover_pct": 100.0},
+        "src/motadata_py_sdk/resourcepool/_pool.py": {"stmts": 199, "miss": 11, "branch": 66, "br_part": 11, "cover_pct": 91.0},
+        "src/motadata_py_sdk/resourcepool/_stats.py": {"stmts": 9, "miss": 0, "branch": 0, "br_part": 0, "cover_pct": 100.0}
+      },
+      "example_count_per_package": 3,
+      "example_count_note": "3 runnable Example_*-style docstring examples shipped: PoolConfig docstring 'Use:' block, Pool docstring 'Use:' block, Pool acquire docstring async-with example. These are all in the impl source (per impl-phase H7 marker coverage table). Future runs adding more should raise this number; a drop with >= 2 prior runs triggers compensating-baseline WARN per CLAUDE.md rule 28."
+    }
+  }
+}

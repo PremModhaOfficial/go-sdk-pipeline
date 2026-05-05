@@ -1,0 +1,2618 @@
+"""
+api.py.stub — Phase 1 Design API surface for `nats-py-v1`
+
+PEP-484 type-annotated `class` + `def` skeletons with `...` bodies and full docstrings.
+Single file, ~8 sections (one per package). Each section is a pyi-style stub of one
+Python module. This file is the artifact every devil reviews at D2 and is the
+contract `sdk-impl-lead` slices into 10 implementation passes (TPRD §14).
+
+Markers used (G99 enforces `[traces-to:]` on every pipeline-authored symbol):
+    [traces-to: TPRD-§<sec>-<id>]    where <id> = symbol name or check number
+    [constraint: wire-exact bench/N/A]   for byte-exact wire invariants (no bench)
+    [constraint: <metric> <op> <value> | bench/<BenchmarkName>]  for measurable
+
+Authored: 2026-05-02 by sdk-design-lead.
+Last edit: 2026-05-02 D3 fix loop iter 2 (H5-rev-3): TPRD §15 FIX items 28-34 applied
+(TPRD-pre-authorized) + 8 carry-over WARNs (SEC-7, SEMVER-3, SEMVER-4, CONV-2..5, is_retryable
+perf-budget row) closed. Q1/Q5/Q8 RESTORED (revocation overcorrection reversed per H5-rev-3).
+"""
+# pyright: ignore  (this is a stub, not real impl)
+import re
+
+# ============================================================================
+# §1. motadata_py_sdk.codec  (TPRD §4.3)
+# ============================================================================
+"""Codec public surface.
+
+[traces-to: TPRD-§4.3-Codec-Wire-Format]
+[constraint: wire-exact bench/N/A]  -- byte-exact wire format; verified by
+unit tests against fixtures, not bench.
+"""
+from __future__ import annotations
+from enum import IntEnum
+from typing import Any, Final
+
+# --- 1.1 Encoder enum (header byte) ---
+class Encoder(IntEnum):
+    """Codec header byte. [traces-to: TPRD-§4.3-Header-Byte]
+
+    CUSTOM = 0x00   custom binary, see §4.3.1
+    MSGPACK = 0x01  msgpack with default options, see §4.3.2
+    Other values raise ErrUnsupportedCodec on unpack.
+    """
+    CUSTOM = 0x00
+    MSGPACK = 0x01
+
+# --- 1.2 DataType tags (custom binary) ---
+class DataType(IntEnum):
+    """Custom-binary type tags. [traces-to: TPRD-§4.3.1-DataType-Tags]"""
+    INVALID = 0
+    BOOLEAN = 1
+    INT8 = 2
+    INT16 = 3
+    INT24 = 4
+    INT32 = 5
+    INT40 = 6
+    INT48 = 7
+    INT56 = 8
+    INT64 = 9
+    FLOAT32 = 10
+    FLOAT64 = 11
+    STRING = 12
+    ARRAY = 13
+    BYTE_ARRAY = 14
+    MAP = 15
+    DATETIME = 16
+    DATETIME_DURATION = 17
+
+# --- 1.3 Sentinel exceptions (codec layer) ---
+class CodecError(Exception):
+    """Base class for codec sentinels. [traces-to: TPRD-§4.3.3]"""
+
+class ErrUnpackFailed(CodecError):
+    """[traces-to: TPRD-§4.3.3-ErrUnpackFailed]
+    str() == "unpack failed: invalid or corrupted data"
+    """
+
+class ErrUnsupportedCodec(CodecError):
+    """[traces-to: TPRD-§4.3.3-ErrUnsupportedCodec]
+    str() == "unsupported codec type" or "unsupported codec type: 0x<NN>"
+    """
+
+class ErrUnsupportedDataType(CodecError):
+    """str() == "unsupported data type" [traces-to: TPRD-§4.3.3]"""
+
+class ErrValueOutOfRange(CodecError):
+    """str() == "value out of supported range" [traces-to: TPRD-§4.3.3]"""
+
+class ErrDataTooLarge(CodecError):
+    """str() == "data too large for codec length fields" [traces-to: TPRD-§4.3.3]"""
+
+# --- 1.4 Public functions ---
+def pack_map(data: dict[str, Any], encoder: Encoder) -> bytes:
+    """Encode a map per Encoder. Returns header byte + encoded payload.
+
+    [traces-to: TPRD-§4.3.1-pack-map]
+    [constraint: wire-exact bench/N/A]
+    [constraint: p50 <= 30us | bench/bench_codec_pack_map_custom_10field]
+
+    Width selection per §4.3.1 mirrors Go getDataTypeINT64.
+    Raises ErrDataTooLarge if any string > 2^32 bytes or array > 65535 elements.
+    Raises ErrValueOutOfRange if int > 2^63-1 or < -2^63.
+    Raises ErrUnsupportedDataType if value type not in supported set.
+    """
+    ...
+
+def pack_array(data: list[Any], encoder: Encoder) -> bytes:
+    """Encode an array. Top-level length cap: 65535 per §4.3.4 quirk 1.
+
+    [traces-to: TPRD-§4.3.1-pack-array]
+    [constraint: wire-exact bench/N/A]
+    Raises ErrDataTooLarge if len(data) > 65535.
+    """
+    ...
+
+def unpack_map(buf: bytes) -> dict[str, Any]:
+    """Decode bytes back to dict. Catches `(IndexError, UnicodeDecodeError,
+    struct.error, ValueError)` and re-raises as `ErrUnpackFailed` (§4.3.3
+    defer-recover analog). NOTE: `ValueError` was added at H5-rev-3 D3 iter 2
+    (SEC-7 fix) — empirically `msgpack.unpackb` raises `ValueError` on cap
+    violations (e.g., array32 declaring 1M entries against
+    DEFAULT_MAX_ARRAY_LEN=64K), NOT `UnpackException`. We catch it at the
+    codec boundary so callers see one sentinel class. See algorithms.md §A1.3
+    + §A16.
+
+    [traces-to: TPRD-§4.3.1-unpack-map]
+    [constraint: wire-exact bench/N/A]
+    [constraint: p50 <= 35us | bench/bench_codec_unpack_map_custom_10field]
+    """
+    ...
+
+def unpack_array(buf: bytes) -> list[Any]:
+    """Decode bytes back to list. Same recover semantics as unpack_map.
+
+    [traces-to: TPRD-§4.3.1-unpack-array]
+    [constraint: wire-exact bench/N/A]
+    """
+    ...
+
+# --- 1.5 msgpack DoS-safety caps (SEC-2 D3 fix loop iter 1) ---
+# All msgpack.unpackb() calls inside this module MUST go through
+# msgpack_unpack_safe(). Calling msgpack.unpackb() directly is BANNED at
+# impl-review time (sdk-security-devil enforces). RATIONALE: without these
+# caps, attacker-controlled input claiming a 4 GiB string triggers a
+# pre-allocation OOM before the buffer-length-mismatch error fires (msgpack
+# eagerly allocates output buffers based on declared length fields). See
+# algorithms.md §A16 and security review SEC-2 for full rationale.
+DEFAULT_MAX_MSG_BYTES: Final[int] = 1024 * 1024 * 4   # 4 MiB hard cap; matches NATS default max_msg_size
+DEFAULT_MAX_ARRAY_LEN: Final[int] = 1024 * 64
+DEFAULT_MAX_MAP_LEN: Final[int] = 1024 * 64
+DEFAULT_MAX_STR_LEN: Final[int] = 1024 * 256
+DEFAULT_MAX_BIN_LEN: Final[int] = DEFAULT_MAX_MSG_BYTES
+
+def msgpack_unpack_safe(data: bytes) -> Any:
+    """DoS-safe wrapper around `msgpack.unpackb`. Use this everywhere we
+    decode msgpack bytes; NEVER call `msgpack.unpackb(data)` directly inside
+    this module. Caps enforce reasonable upper bounds on each msgpack
+    container length to prevent pre-allocation OOM on malicious payloads.
+
+    Args:
+        data: raw msgpack-encoded bytes (no codec header byte).
+
+    Returns:
+        The decoded Python value (dict / list / scalar / datetime).
+
+    Raises:
+        ValueError: a length field exceeds one of the DEFAULT_MAX_* caps
+            (msgpack-python raises `ValueError` for cap violations, NOT
+            `UnpackException` — verified empirically at H5-rev-3 D3 iter 2
+            SEC-7 review with crafted array32 declaring 1M entries).
+        msgpack.exceptions.UnpackException: other malformed payloads
+            (truncated buffer, unknown ext type, etc.).
+
+    Both are caught at the codec facade (`unpack_map`/`unpack_array` per
+    algorithms.md §A1.3) and re-raised as `ErrUnpackFailed`.
+
+    [traces-to: TPRD-§4.3.2-msgpack-DoS-safety §SEC-7]
+    """
+    ...
+
+
+# ============================================================================
+# §2. motadata_py_sdk.events.utils  (TPRD §4.6)
+# ============================================================================
+"""All 33 sentinel exceptions, MultiError, is_retryable, is_temporary, constants.
+
+[traces-to: TPRD-§4.6-Sentinel-Inventory]
+[constraint: wire-exact bench/N/A]  -- 33 byte-exact strings; verified by
+test_sentinel_strings parametrized over all 33 + 5 wrapper formats.
+"""
+from typing import Final
+
+# --- 2.1 Constants ---
+WildcardSingle: Final[str] = "*"            # [traces-to: TPRD-§4.4]
+WildcardMulti: Final[str] = ">"
+DefaultSeparator: Final[str] = "."
+MaxSubjectLength: Final[int] = 256           # declared, not enforced (mirror Go)
+MaxTenantIDLength: Final[int] = 128          # DECLARED AND ENFORCED in TenantKVStore/TenantObjectStore per TPRD §15.32 (restored at H5-rev-3 D3 iter 2)
+
+# TenantID validation regex (FIX per TPRD §15.32 — pre-authorized at H5-rev-3 D3 iter 2)
+# Pattern: starts alphanumeric, contains alphanumeric + underscore + hyphen only.
+# Used by TenantKVStore.__init__ and TenantObjectStore.__init__ at runtime.
+# Go SDK has NO enforcement; this is a Python-tightening per TPRD §15.32.
+_TENANT_ID_REGEX: Final[re.Pattern[str]] = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
+
+# --- Dataclass __post_init__ validation regexes (CONV-5 fix, D3 iter 3) ---
+# Centralized in events.utils so the 7 event-domain dataclass __post_init__
+# validators (StreamConfig / ConsumerConfig / TenantConsumerConfig /
+# RequesterConfig / KeyValueConfig / ObjectStoreConfig / ObjectMeta) can
+# import a single source of truth. All raise `ValidationError` on miss.
+# These are Python-internal hygiene; Go SDK has NO equivalent runtime checks.
+
+# NATS stream name: alphanumeric + underscore + hyphen, no separator chars
+# (no `.`, `>`, `*`, ` ` — those would collide with subject wildcards).
+_STREAM_NAME_REGEX: Final[re.Pattern[str]] = re.compile(r"^[A-Za-z0-9_-]+$")
+
+# NATS consumer name (durable name): same charset as stream name.
+_CONSUMER_NAME_REGEX: Final[re.Pattern[str]] = re.compile(r"^[A-Za-z0-9_-]+$")
+
+# JetStream subject pattern: dot-separated tokens; each token alphanumeric +
+# underscore + hyphen; trailing `>` (multi-wildcard) or interior `*`
+# (single-wildcard) permitted. Empty string rejected.
+_SUBJECT_REGEX: Final[re.Pattern[str]] = re.compile(
+    r"^([A-Za-z0-9_-]+|\*)(\.([A-Za-z0-9_-]+|\*))*(\.>)?$"
+)
+
+# KV / Object Store bucket name: same charset as stream/consumer name.
+_BUCKET_NAME_REGEX: Final[re.Pattern[str]] = re.compile(r"^[A-Za-z0-9_-]+$")
+
+# Object name: bucket charset + dot + slash (object names are path-like).
+_OBJECT_NAME_REGEX: Final[re.Pattern[str]] = re.compile(r"^[A-Za-z0-9._/-]+$")
+
+# Description / metadata cap (CONV-5): bound free-text fields so misuse
+# can't push 1MB descriptions through the wire.
+_MAX_DESCRIPTION_LEN: Final[int] = 1024
+
+# Content-Type values (events/utils/const.go)
+CONTENT_TYPE_JSON: Final[str] = "application/json"
+CONTENT_TYPE_MSGPACK: Final[str] = "application/msgpack"
+CONTENT_TYPE_OCTET_STREAM: Final[str] = "application/octet-stream"
+CONTENT_TYPE_PROTOBUF: Final[str] = "application/protobuf"
+CONTENT_TYPE_TEXT_PLAIN: Final[str] = "text/plain"
+
+# --- 2.2 Sentinel exception base + 33 sentinels ---
+class EventsError(Exception):
+    """Root of the events sentinel hierarchy. [traces-to: TPRD-§4.6]
+    Every sentinel below sets __str__ to a byte-exact string per §4.6.
+    """
+
+# 25 retryable sentinels (str() values byte-exact per §4.6 table)
+class ErrNotConnected(EventsError): pass             # "not connected"
+class ErrAlreadyConnected(EventsError): pass         # "already connected"
+class ErrConnectionTimeout(EventsError): pass        # "connection timeout"  (temporary=yes)
+class ErrReconnectFailed(EventsError): pass          # "reconnect failed"  (temporary=yes)
+class ErrPublishFailed(EventsError): pass            # "publish failed"
+class ErrPublishTimeout(EventsError): pass           # "publish timeout"  (temporary=yes)
+class ErrNoAck(EventsError): pass                    # "no acknowledgment received" (temporary=yes)
+class ErrStreamNotFound(EventsError): pass           # "stream not found"
+class ErrInvalidMessage(EventsError): pass           # "invalid message"
+class ErrMessageTooLarge(EventsError): pass          # "message too large"
+class ErrRequestTimeout(EventsError): pass           # "request timeout"
+class ErrNoReply(EventsError): pass                  # "no reply received"
+class ErrSubscriptionClosed(EventsError): pass       # "subscription closed"
+class ErrSubscriptionInvalid(EventsError): pass      # "subscription invalid"
+class ErrMaxMessagesExceeded(EventsError): pass      # "max messages exceeded"
+class ErrAuthFailed(EventsError): pass               # "authentication failed"
+class ErrAuthExpired(EventsError): pass              # "authentication expired"
+class ErrInvalidCredentials(EventsError): pass       # "invalid credentials"
+class ErrTenantNotFound(EventsError): pass           # "tenant not found"
+class ErrTenantExists(EventsError): pass             # "tenant already exists"
+class ErrTenantDisconnected(EventsError): pass       # "tenant disconnected"
+class ErrDeserializationFailed(EventsError): pass    # "deserialization failed"
+class ErrJetStreamNotEnabled(EventsError): pass      # "jetstream not enabled"
+class ErrInvalidArgument(EventsError): pass          # "invalid argument"
+class ErrNoMessages(EventsError): pass               # "no messages available"
+# ErrNoMessages: raised by Consumer.next() on empty fetch within deadline.
+# Python-idiomatic translation of Go's plain-string `errors.New("no messages
+# available")` return — Python lacks plain-string sentinels, so we expose a
+# typed exception that participates in the EventsError hierarchy and is
+# catchable via `except EventsError`. Default is_retryable behavior is True
+# (the empty-queue case is transient; a Retry wrapper retrying after the
+# next ack_wait window is the correct behavior). NOT in _NEVER_RETRY.
+
+# 8 NON-retryable sentinels (returned False by is_retryable)
+class ErrConnectionClosed(EventsError): pass         # "connection closed"
+class ErrDuplicateMsg(EventsError): pass             # "duplicate message"
+class ErrInvalidSubject(EventsError): pass           # "invalid subject"
+class ErrPermissionDenied(EventsError): pass         # "permission denied"
+class ErrInvalidConfig(EventsError): pass            # "invalid configuration"
+class ErrMissingConfig(EventsError): pass            # "missing required configuration"
+class ErrSerializationFailed(EventsError): pass      # "serialization failed"
+class ErrShutdownInProgress(EventsError): pass       # "shutdown in progress"
+class ErrClosed(EventsError): pass                   # "closed"
+
+# --- 2.3 Wrapping types ---
+class Error(EventsError):
+    """{op, kind, err, details} wrapper. [traces-to: TPRD-§4.6-Error-Wrapper]
+    str() format: '<kind>: <op>: <err>' or '<kind>: <err>' if no op.
+    """
+    op: str
+    kind: str
+    err: BaseException | None
+    details: dict[str, Any]
+
+class TenantError(EventsError):
+    """{tenant_id, op, err}. str() == 'tenant <id>: <op>: <err>' or 'tenant <id>: <err>'.
+    [traces-to: TPRD-§4.6-TenantError]
+    """
+    tenant_id: str
+    op: str
+    err: BaseException | None
+
+class SerializationError(EventsError):
+    """{operation, type, err}. str() == '<operation> <type>: <err>'.
+    is_retryable returns False on instances. [traces-to: TPRD-§4.6-SerializationError]
+    """
+
+class ConfigError(EventsError):
+    """{field, message}. str() == 'config error: <field>: <msg>'.
+    is_retryable returns False on instances. [traces-to: TPRD-§4.6-ConfigError]
+    """
+
+class ValidationError(EventsError):
+    """{field, message, value}. str() == 'validation error: <field>: <msg>'.
+    [traces-to: TPRD-§4.6-ValidationError]
+    """
+
+class MultiError(EventsError):
+    """N-error aggregate. Constructor takes Iterable[BaseException].
+    [traces-to: TPRD-§4.6-MultiError]
+    str() format:
+      n==0 → 'no errors'
+      n==1 → str(errs[0]) verbatim
+      n>1  → '<n> errors occurred: <slice repr>'
+    __cause__ / Unwrap() returns the FIRST collected error so
+    `isinstance(multi, sentinel)` matches the most significant failure.
+    """
+    errors: list[BaseException]
+
+# --- 2.4 Fail-fast wrapper sentinels (relocated from events.middleware per CONV-12 fix, D3 iter 3) ---
+#
+# Why these live in events.utils (NOT events.middleware):
+#
+# Original design (rev-1 through D3 iter 2) defined these in events.middleware
+# and mutated `_NEVER_RETRY` from middleware/__init__.py at import time. That
+# pattern was import-order-fragile (CONV-12, D3 iter 3): if a caller imported
+# `events.utils.is_retryable` BEFORE any middleware module loaded, _NEVER_RETRY
+# stayed empty and CB exceptions classified as retryable, defeating the
+# breaker. It also violated CLAUDE.md rule 6 ("No global mutable state") via
+# cross-module rebind.
+#
+# Resolution: move the two class definitions HERE (events.utils._errors), so
+# `_NEVER_RETRY` can be populated at definition time from a single module.
+# `events.middleware._circuit_breaker` and `_rate_limit` IMPORT these
+# sentinels (not own them); raising them in middleware code is unchanged.
+# The `_register_never_retry()` callback / module-init mutation pattern is
+# REMOVED.
+#
+# Inheritance from `ErrPublishFailed` is preserved so
+# `isinstance(e, ErrPublishFailed)` still matches (mirror Go error tree;
+# verified by checks 116, 152). The `_NEVER_RETRY` exclusion in
+# `is_retryable()` (below) keeps Retry middleware from retrying these
+# despite the inheritance.
+
+class ErrCircuitOpen(ErrPublishFailed):
+    """Wraps ErrPublishFailed; kind='circuit_breaker', op='allow'.
+
+    Inherits from ErrPublishFailed so `isinstance(e, ErrPublishFailed)` still
+    matches (mirrors Go error tree; verified by check 116). However, this
+    type is listed in `events.utils._NEVER_RETRY` so the Retry middleware
+    does NOT retry it — composing Retry(CircuitBreaker(...)) preserves the
+    fail-fast semantics of the open breaker. See the is_retryable() docstring
+    for the exclusion-list rationale.
+
+    Lives in events.utils (NOT events.middleware) so `_NEVER_RETRY` can be
+    populated at definition time without import-order fragility (CONV-12 fix,
+    D3 iter 3). `events.middleware._circuit_breaker` IMPORTS this sentinel.
+
+    [traces-to: TPRD-§9.2-ErrCircuitOpen]
+    """
+
+class ErrRateLimitExceeded(ErrPublishFailed):
+    """Wraps ErrPublishFailed; kind='rate_limiter', op='allow'.
+
+    Inherits from ErrPublishFailed so `isinstance(e, ErrPublishFailed)` still
+    matches (mirrors Go error tree; verified by check 152). However, this
+    type is listed in `events.utils._NEVER_RETRY` so the Retry middleware
+    does NOT retry it — composing Retry(RateLimit(...)) preserves the
+    fail-fast semantics of an exhausted limiter. See the is_retryable()
+    docstring for the exclusion-list rationale.
+
+    Lives in events.utils (NOT events.middleware) so `_NEVER_RETRY` can be
+    populated at definition time without import-order fragility (CONV-12 fix,
+    D3 iter 3). `events.middleware._rate_limit` IMPORTS this sentinel.
+
+    [traces-to: TPRD-§9.4-ErrRateLimitExceeded]
+    """
+
+# --- 2.5 Classifier helpers ---
+
+# _NEVER_RETRY: types whose inheritance chain reaches retryable bases (e.g.
+# ErrPublishFailed) but whose semantics are explicitly fail-fast. Checked
+# BEFORE the inheritance walk so isinstance(e, ErrPublishFailed) does NOT
+# auto-promote them to retryable. Defeats the composition footgun where
+# `Retry(CircuitBreaker(...))` would retry through an OPEN breaker.
+#
+# Populated AT DEFINITION TIME (CONV-12 fix, D3 iter 3): both fail-fast
+# wrapper sentinels (ErrCircuitOpen, ErrRateLimitExceeded) are defined
+# above in this same module, so we can inline them into the frozenset.
+# The previous design forward-declared this as `frozenset()` and mutated
+# it from middleware/__init__.py at import time — that pattern was
+# import-order-fragile and violated CLAUDE.md rule 6 (no global mutable
+# state). The cross-module rebind is REMOVED.
+_NEVER_RETRY: Final[frozenset[type[BaseException]]] = frozenset({
+    ErrCircuitOpen,
+    ErrRateLimitExceeded,
+})
+
+def is_retryable(err: BaseException) -> bool:
+    """Whether this error should be retried by the Retry middleware.
+
+    Returns False for:
+      1. Any type listed in `_NEVER_RETRY` (currently ErrCircuitOpen,
+         ErrRateLimitExceeded). Checked FIRST — these inherit from
+         ErrPublishFailed but their semantics are fail-fast; retrying
+         defeats the breaker / limiter.
+      2. Any of the 8 non-retryable sentinels (ErrConnectionClosed,
+         ErrDuplicateMsg, ErrInvalidSubject, ErrPermissionDenied,
+         ErrInvalidConfig, ErrMissingConfig, ErrSerializationFailed,
+         ErrShutdownInProgress, ErrClosed).
+      3. Any SerializationError / ConfigError instance.
+
+    Returns True otherwise (for retryable EventsError subtypes).
+
+    NOTE on inheritance: `ErrCircuitOpen(ErrPublishFailed)` and
+    `ErrRateLimitExceeded(ErrPublishFailed)` MUST keep that inheritance
+    so callers using `isinstance(e, ErrPublishFailed)` still match Go's
+    error-tree behavior (verified by checks 116, 152). The behavioral
+    fix is the explicit `_NEVER_RETRY` exclusion in this function — the
+    type hierarchy is unchanged.
+
+    NOTE on ownership (CONV-12 fix, D3 iter 3): both fail-fast wrappers
+    are defined in events.utils._errors (this module) so `_NEVER_RETRY`
+    is populated at definition time. Earlier designs declared them in
+    events.middleware and mutated `_NEVER_RETRY` cross-module — that
+    pattern was import-order-fragile (caller importing
+    `events.utils.is_retryable` first would see an empty set). The
+    middleware modules now IMPORT these sentinels from events.utils
+    rather than owning them.
+
+    [traces-to: TPRD-§4.6-is-retryable]
+    [constraint: p50 <= 500ns | bench/bench_is_retryable_typical]
+    [constraint: allocs_per_op == 0 | bench/bench_is_retryable_typical]
+    """
+    ...
+
+def is_temporary(err: BaseException) -> bool:
+    """Returns True only for: ErrConnectionTimeout, ErrReconnectFailed,
+    ErrPublishTimeout, ErrNoAck. False otherwise.
+    [traces-to: TPRD-§4.6-is-temporary]
+    """
+    ...
+
+
+# ============================================================================
+# §3. motadata_py_sdk.events.core  (TPRD §5 + §4.1, §4.2)
+# ============================================================================
+"""TraceContext, Metadata, 15 byte-exact header constants, ExtractHeaders,
+InjectContext, contextvars helpers. Pure-contract; no I/O.
+
+[traces-to: TPRD-§5-Module-events-core]
+[constraint: wire-exact bench/N/A]  -- 15 header constants byte-exact;
+verified by test_header_constants parametrized over all 15.
+"""
+from contextvars import ContextVar
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Awaitable, Callable, Final, Protocol
+
+# --- 3.1 The 15 byte-exact header constants ---
+HEADER_CONTENT_TYPE: Final[str] = "Content-Type"
+HEADER_MESSAGE_ID: Final[str] = "Nats-Msg-Id"
+HEADER_CORRELATION_ID: Final[str] = "Correlation-ID"
+HEADER_TENANT_ID: Final[str] = "X-Tenant-ID"
+HEADER_TRACE_ID: Final[str] = "X-Trace-ID"
+HEADER_SPAN_ID: Final[str] = "X-Span-ID"
+HEADER_TRACEPARENT: Final[str] = "traceparent"
+HEADER_TRACESTATE: Final[str] = "tracestate"
+HEADER_B3_TRACE_ID: Final[str] = "X-B3-TraceId"
+HEADER_B3_SPAN_ID: Final[str] = "X-B3-SpanId"
+HEADER_B3_SAMPLED: Final[str] = "X-B3-Sampled"
+HEADER_B3_PARENT_SPAN_ID: Final[str] = "X-B3-ParentSpanId"  # declared, never written or read
+HEADER_REPLY_TO: Final[str] = "X-Reply-To"
+HEADER_STATUS_CODE: Final[str] = "X-Status-Code"
+HEADER_MESSAGE: Final[str] = "X-Message"
+
+# --- 3.2 Public types ---
+@dataclass(frozen=True, slots=True)
+class TraceContext:
+    """W3C-shaped trace identifiers. [traces-to: TPRD-§5.1-TraceContext]
+    Note: span_id is nominally 16-hex but Go SDK emits 32-hex (Known issue).
+    Mirror Go: store as-received; do not reformat.
+    """
+    trace_id: str = ""
+    span_id: str = ""
+    parent_id: str = ""    # not populated by InjectContext
+    sampled: bool = False
+    state: str = ""
+
+@dataclass(slots=True)
+class Metadata:
+    """In-process aggregate. NOT a wire schema.
+    [traces-to: TPRD-§5.1-Metadata]
+    GAP MIRRORED: timestamp + custom NOT auto-serialized to headers.
+    """
+    tenant_id: str = ""
+    correlation_id: str = ""
+    message_id: str = ""
+    timestamp: datetime | None = None
+    custom: dict[str, str] = field(default_factory=dict)
+
+# --- 3.3 Protocols (interfaces) ---
+class NatsMsg(Protocol):
+    """Structural contract for a NATS message. Concrete impls come from
+    nats-py (`nats.aio.msg.Msg`). We type-only-import to avoid leak into runtime.
+    [traces-to: TPRD-§5.2]
+    """
+    subject: str
+    data: bytes
+    headers: dict[str, str] | None
+    reply: str
+
+MessageHandler = Callable[["Context", NatsMsg], Awaitable[None]]
+"""Async handler. Raise an exception to signal failure (Go returns `error`)."""
+
+class Context(Protocol):
+    """Opaque async context. In Python this is just the implicit asyncio context;
+    we model it as a Protocol to keep ExtractHeaders/InjectContext signatures
+    explicit. Concrete = `dict[str, Any]` or `contextvars.copy_context()` snapshot.
+    [traces-to: TPRD-§5.2]
+    """
+    ...
+
+class Publisher(Protocol):
+    """[traces-to: TPRD-§5.2-Publisher-Protocol]"""
+    async def publish(self, subject: str, msg: NatsMsg) -> None: ...
+    async def request(self, subject: str, msg: NatsMsg) -> NatsMsg: ...
+    async def close(self) -> None: ...
+
+class Subscriber(Protocol):
+    """[traces-to: TPRD-§5.2-Subscriber-Protocol]"""
+    async def subscribe(self, subject: str, handler: MessageHandler) -> "Subscription": ...
+    async def queue_subscribe(self, subject: str, queue: str, handler: MessageHandler) -> "Subscription": ...
+    async def close(self) -> None: ...
+
+class Subscription(Protocol):
+    """[traces-to: TPRD-§5.2-Subscription-Protocol]"""
+    def subject(self) -> str: ...
+    async def unsubscribe(self) -> None: ...   # immediate teardown, drops pending
+    async def drain(self) -> None: ...         # graceful: stop new deliveries, finish in-flight
+    def is_valid(self) -> bool: ...
+
+# --- 3.4 contextvars helpers ---
+# ONE ContextVar per slot; do not collapse (Go uses unexported contextKey int per slot).
+_tenant_id_var: ContextVar[str | None] = ContextVar("tenant_id", default=None)
+_trace_context_var: ContextVar[TraceContext | None] = ContextVar("trace_context", default=None)
+_message_id_var: ContextVar[str | None] = ContextVar("message_id", default=None)
+_correlation_id_var: ContextVar[str | None] = ContextVar("correlation_id", default=None)
+_reply_to_var: ContextVar[str | None] = ContextVar("reply_to", default=None)
+_metadata_var: ContextVar[Metadata | None] = ContextVar("metadata", default=None)
+
+def set_tenant_id(tenant_id: str) -> object:
+    """Set tenant_id in current contextvars context. Returns Token for reset.
+    [traces-to: TPRD-§5.1-WithTenantID]"""
+    ...
+
+def get_tenant_id() -> str | None:
+    """[traces-to: TPRD-§5.1-TenantIDFromContext]"""
+    ...
+
+# Same set/get pair for: trace_context, message_id, correlation_id, reply_to, metadata.
+def set_trace_context(tc: TraceContext) -> object: ...
+def get_trace_context() -> TraceContext | None: ...
+def set_message_id(message_id: str) -> object: ...
+def get_message_id() -> str | None: ...
+def set_correlation_id(correlation_id: str) -> object: ...
+def get_correlation_id() -> str | None: ...
+def set_reply_to(reply_to: str) -> object: ...
+def get_reply_to() -> str | None: ...
+def set_metadata(meta: Metadata) -> object: ...
+def get_metadata() -> Metadata | None: ...
+
+def extract_otel_trace_context() -> TraceContext | None:
+    """Read active OTel span via opentelemetry.trace.get_current_span().
+    Returns TraceContext{trace_id, span_id, sampled=True} when both IDs non-zero;
+    None when no active span. [traces-to: TPRD-§5.1-ExtractOTELTraceContext]
+    """
+    ...
+
+# --- 3.5 ExtractHeaders / InjectContext (byte-exact per §4.2) ---
+def extract_headers(headers: dict[str, str] | None) -> dict[str, str]:
+    """Publisher-side writer. Order of operations PER §4.2 (must reproduce):
+
+      1. headers = headers or {}
+      2. tenant_id from ctx → "X-Tenant-ID"
+      3. extract_trace_headers (OTel-active path → all 5 trace headers + traceparent;
+         else manual TraceContext path → same 5 with sampled-conditional X-B3-Sampled
+         and traceparent flag "01"/"00"; else no-op)
+      4. correlation_id → "Correlation-ID"
+      5. message_id → "Nats-Msg-Id"
+      6. reply_to → "X-Reply-To"
+
+    [traces-to: TPRD-§4.2-extract-headers]
+    [constraint: wire-exact bench/N/A]
+    [constraint: p50 <= 25us | bench/bench_extract_headers_otel_active]
+    [constraint: allocs_per_op <= 8 | bench/bench_extract_headers_otel_active]
+    """
+    ...
+
+def inject_context(headers: dict[str, str] | None) -> None:
+    """Subscriber-side reader. Order PER §4.2 (must reproduce):
+
+      1. If headers is None → return without changes.
+      2. X-Tenant-ID → set_tenant_id
+      3. Build TraceContext: trace_id = headers["X-Trace-ID"] or headers["X-B3-TraceId"];
+         span_id = headers["X-Span-ID"] or headers["X-B3-SpanId"];
+         sampled = headers["X-B3-Sampled"] in ("1", "true");
+         state = headers["tracestate"]
+         If trace_id != "" or span_id != "" → set_trace_context.
+      4. Correlation-ID → set_correlation_id
+      5. Nats-Msg-Id → set_message_id
+      6. X-Reply-To → set_reply_to
+
+    Critical asymmetry: traceparent is NOT parsed (mirror Go bug; H5-rev-2 confirms
+    MIRROR — TracingMiddleware does NOT call propagator.extract on subscribe).
+
+    [traces-to: TPRD-§4.2-inject-context]
+    [constraint: wire-exact bench/N/A]
+    """
+    ...
+
+
+# ============================================================================
+# §4. motadata_py_sdk.events.corenats  (TPRD §6)
+# ============================================================================
+"""Concrete Publisher / BatchPublisher / Subscriber over plain NATS.
+[traces-to: TPRD-§6-Module-events-corenats]
+"""
+from typing import Any, Callable, Mapping
+import asyncio
+# nats import deferred to runtime; type-only here.
+
+# --- 4.1 Constants (mirror Go file-scoped) ---
+DEFAULT_REQUEST_TIMEOUT: Final[float] = 30.0       # seconds
+DEFAULT_FLUSH_TIMEOUT: Final[float] = 5.0          # seconds
+DEFAULT_MAX_CONCURRENT_FLUSH: Final[int] = 64
+ATTR_MESSAGING_DESTINATION: Final[str] = "messaging.destination"
+
+# --- 4.2 Publisher ---
+PublishHandler = Callable[[Context, NatsMsg], Awaitable[None]]
+PublishMiddleware = Callable[[PublishHandler], PublishHandler]
+
+class Publisher:
+    """Plain-NATS publisher.
+
+    [traces-to: TPRD-§6.2-Publisher]
+    [constraint: p50 <= 350us | bench/bench_corenats_publisher_publish_1kb]
+    [constraint: allocs_per_op <= 12 | bench/bench_corenats_publisher_publish_1kb]
+    """
+    def __init__(self, nc: Any, max_payload: int) -> None:
+        """`nc` is a `nats.aio.client.Client` (caller-owned). max_payload stored
+        but NOT enforced in publish per Go behavior; pre-validation deferred
+        (see scope.md). [traces-to: TPRD-§6.2]
+        """
+        ...
+
+    def use_middleware(self, mw: PublishMiddleware) -> None:
+        """Append; new mw becomes innermost of existing chain.
+        Compose existing(mw(next)). [traces-to: TPRD-§6.2-use-middleware]
+        """
+        ...
+
+    async def publish(self, subject: str, msg: NatsMsg) -> None:
+        """Per §6.2: closed check → snapshot mw → wrap → invoke.
+        Inner: span 'nats.publish' attrs (TPRD §15.28 messaging.* applied):
+            messaging.system='nats'
+            messaging.destination=<subject>
+            messaging.operation='publish'
+        nc is None → ErrNotConnected; mutate msg.subject=subject; nc.publish_msg(msg);
+        on err: span.set_error, log, return; on ok: span.set_ok.
+        [traces-to: TPRD-§6.2-publish §15.28]
+        """
+        ...
+
+    async def request(self, subject: str, msg: NatsMsg) -> NatsMsg:
+        """Per §6.2 request semantics. Translates nats.errors.TimeoutError →
+        ErrRequestTimeout; nats.errors.NoRespondersError → ErrNoReply.
+        Middleware runs as pre-send hook only.
+        [traces-to: TPRD-§6.2-request]
+        """
+        ...
+
+    async def request_with_timeout(self, subject: str, msg: NatsMsg, timeout: float) -> NatsMsg:
+        """Thin wrapper with asyncio.wait_for. [traces-to: TPRD-§6.2-request-with-timeout]"""
+        ...
+
+    async def close(self) -> None:
+        """Idempotent. Acquires write lock; flips closed; nc.flush(timeout)
+        where timeout = DEFAULT_FLUSH_TIMEOUT (5s). [traces-to: TPRD-§6.2-close]
+        """
+        ...
+
+# --- 4.3 BatchPublisher ---
+class BatchPublisher:
+    """Buffered publisher.
+
+    [traces-to: TPRD-§6.3-BatchPublisher]
+    [constraint: p50_add <= 8us | bench/bench_corenats_batch_publisher_add]
+    [constraint: p50_flush_concurrent <= 12000us | bench/bench_corenats_batch_publisher_flush_concurrent_100]
+    """
+    def __init__(
+        self,
+        publisher: Publisher,
+        *,
+        max_batch_size: int = 0,           # 0 = no size trigger
+        flush_interval: float = 0.0,       # 0 = no auto-flush task
+        concurrent_flush: bool = False,
+        max_flush_workers: int = 64,       # ignored if <= 0; default stays 64
+        on_flush_error: Callable[[BaseException], None] | None = None,
+    ) -> None:
+        """[traces-to: TPRD-§6.3]
+        Pre-allocates buffer (Go: cap 100). Spawns auto-flush task only if
+        flush_interval > 0.
+        """
+        ...
+
+    async def add(self, subject: str, msg: NatsMsg) -> None:
+        """Lock; append; if max_batch_size > 0 and len >= max_batch_size →
+        synchronous flush() with FRESH BACKGROUND CONTEXT (mirrors Go bug;
+        see scope.md Q12). Caller's ctx is dropped on size-trigger flush.
+        [traces-to: TPRD-§6.3-add]
+        """
+        ...
+
+    async def add_multiple(self, messages: Mapping[str, NatsMsg]) -> None:
+        """Same as add but batched. Iteration order = dict insertion order
+        (Python). Go uses random map order; document divergence.
+        [traces-to: TPRD-§6.3-add-multiple]
+        """
+        ...
+
+    async def flush(self) -> None:
+        """Lock; if empty → return None. Atomically swap buffer (replace with
+        new list, preserve cap). Then flush_concurrent or flush_sequential.
+        Errors aggregated: 0 → None; 1 → that error; >1 → MultiError.
+        Concurrent: n_workers = min(max_flush_workers, len(batch)) via
+        asyncio.gather + bounded asyncio.Semaphore.
+        [traces-to: TPRD-§6.3-flush]
+        """
+        ...
+
+    def count(self) -> int:
+        """Current pending count. [traces-to: TPRD-§6.3-count]"""
+        ...
+
+    async def close(self) -> None:
+        """Cancel auto-flush task; await; final flush(). Idempotent.
+        [traces-to: TPRD-§6.3-close]
+        """
+        ...
+
+# --- 4.4 Subscriber ---
+SubscribeHandler = Callable[[Context, NatsMsg], Awaitable[None]]
+SubscribeMiddleware = Callable[[SubscribeHandler], SubscribeHandler]
+
+class _Subscription:
+    """Internal Subscription impl wrapping nats-py's Subscription.
+    [traces-to: TPRD-§6.4-Subscription-impl]
+    """
+    def subject(self) -> str: ...
+    async def unsubscribe(self) -> None: ...
+    async def drain(self) -> None: ...
+    def is_valid(self) -> bool: ...
+
+class Subscriber:
+    """Plain-NATS subscriber (callback-based).
+
+    [traces-to: TPRD-§6.4-Subscriber]
+    [constraint: p50_callback_dispatch <= 25us | bench/bench_corenats_subscriber_dispatch]
+    """
+    def __init__(
+        self,
+        nc: Any,
+        *,
+        on_error: Callable[[BaseException], Awaitable[None]] | None = None,
+    ) -> None:
+        """`nc` is caller-owned.
+
+        Args:
+            nc: caller-owned `nats.aio.client.Client`.
+            on_error: optional async callback invoked from the close/dispatch
+                paths whenever a non-fatal error is caught (e.g., a
+                subscription drain failure during `close()`). Default `None`
+                preserves Go SDK behavior (silent log + return; errors
+                NEVER propagate to caller). Set this hook to opt in to
+                error surfacing without changing the public method signatures.
+
+                The hook MUST NOT raise — if it does, the exception is
+                swallowed with a single `log.exception` (avoids recursion).
+
+        [traces-to: TPRD-§6.4]
+        """
+        ...
+
+    def use_middleware(self, mw: SubscribeMiddleware) -> None:
+        """Same chain semantics as Publisher.use_middleware.
+        [traces-to: TPRD-§6.4-use-middleware]
+        """
+        ...
+
+    def set_error_handler(
+        self,
+        cb: Callable[[BaseException], Awaitable[None]] | None,
+    ) -> None:
+        """Replace or clear the on_error hook post-construction. Pass None to
+        revert to Go-default silent behavior. Thread-safe (single asyncio task).
+        [traces-to: TPRD-§6.4-set-error-handler]
+        """
+        ...
+
+    async def subscribe(self, subject: str, handler: SubscribeHandler) -> Subscription:
+        """Per §6.4 subscribe semantics:
+        - Span 'nats.subscribe' attrs (TPRD §15.28 messaging.* applied):
+            messaging.system='nats'
+            messaging.destination=<subject>
+            messaging.operation='subscribe'
+        - check_ready (closed → ErrConnectionClosed; nc disconnected → ErrNotConnected);
+        - per-sub cancel token; wrap handler with current chain (snapshot under lock);
+        - Build NATS callback: if cancel fired → drop; else span 'nats.receive',
+          attrs={'messaging.system': 'nats', 'messaging.destination': <subject>,
+                 'messaging.operation': 'receive'} (TPRD §15.28),
+          call wrapped handler, set status, end.
+        - Handler errors NOT propagated to NATS (no NAK in core NATS).
+        - nc.subscribe; store in slice + index map keyed by underlying sub ptr.
+        - INFO log 'NATS subscription created' with subject, queue.
+        [traces-to: TPRD-§6.4-subscribe §15.28]
+        """
+        ...
+
+    async def queue_subscribe(self, subject: str, queue: str, handler: SubscribeHandler) -> Subscription:
+        """Same as subscribe; span name 'nats.queue_subscribe'; attr +messaging.queue.
+        [traces-to: TPRD-§6.4-queue-subscribe]
+        """
+        ...
+
+    async def unsubscribe(self, sub: Subscription) -> None:
+        """Named 'unsubscribe' but ACTUALLY CALLS sub.drain() (mirror Go bug;
+        see scope.md Q11). Type-check; if not internal → silent no-op.
+        Lock; remove from index + slice; unlock; sub.drain().
+        [traces-to: TPRD-§6.4-unsubscribe]
+        """
+        ...
+
+    async def close(self) -> None:
+        """Span 'nats.subscriber.close'. Write-lock; closed=True; for each sub:
+        cancel token, sub.drain(); collect errs; on any drain err: WARN
+        'errors draining subscriptions during close' with error_count.
+        ERRORS NOT RETURNED (mirrors Go behavior). If `on_error` hook was
+        registered at construction, each caught drain error is also passed
+        to `await on_error(exc)` BEFORE the WARN log; hook errors are
+        swallowed via log.exception to avoid close-time recursion.
+        INFO 'NATS subscriber closed' with subscriptions_closed.
+        Returns None unconditionally. [traces-to: TPRD-§6.4-close]
+        """
+        ...
+
+
+# ============================================================================
+# §5. motadata_py_sdk.events.jetstream  (TPRD §7)
+# ============================================================================
+"""Stream mgmt, sync + async Publisher, pull Consumer, sync-over-async Requester.
+[traces-to: TPRD-§7-Module-events-jetstream]
+"""
+from enum import Enum
+
+# --- 5.1 StreamConfig + Stream ---
+class Retention(Enum):
+    LIMITS = "limits"
+    INTEREST = "interest"
+    WORK_QUEUE = "work_queue"
+
+class StorageType(Enum):
+    FILE = "file"
+    MEMORY = "memory"
+
+@dataclass
+class StreamConfig:
+    """[traces-to: TPRD-§7.1-StreamConfig]
+    [constraint: wire-exact bench/N/A]  -- 3 hard-coded fields below.
+
+    __post_init__ validation (CONV-5 fix, D3 iter 3): runs at construction time;
+    raises `ValidationError` on bad input. Go SDK has no equivalent runtime check
+    (it would surface the error at JetStream API call time); Python tightens
+    here per `python-class-design` skill rule. See `_STREAM_NAME_REGEX`,
+    `_SUBJECT_REGEX`, `_MAX_DESCRIPTION_LEN` in events.utils.
+    """
+    name: str
+    subjects: list[str]
+    retention: Retention = Retention.LIMITS
+    max_msgs: int = 0
+    max_bytes: int = 0
+    max_age: float = 0.0
+    max_msg_size: int = 0
+    replicas: int = 1
+    storage: StorageType = StorageType.FILE
+    description: str = ""
+    max_msgs_per_subject: int = 0
+    discard_new_per_subject: bool = False
+    allow_rollup: bool = False
+    deny_delete: bool = False
+    deny_purge: bool = False
+    # Hard-coded (mirror INV-8):
+    # discard = DiscardOld, duplicates = 120.0s, allow_direct = True
+
+    def __post_init__(self) -> None:
+        if not self.name or not _STREAM_NAME_REGEX.match(self.name):
+            raise ValidationError(
+                f"StreamConfig.name must be non-empty and match {_STREAM_NAME_REGEX.pattern!r}; got {self.name!r}"
+            )
+        if not self.subjects:
+            raise ValidationError("StreamConfig.subjects must contain at least one subject")
+        for s in self.subjects:
+            if not _SUBJECT_REGEX.match(s):
+                raise ValidationError(
+                    f"StreamConfig.subjects entry {s!r} must match {_SUBJECT_REGEX.pattern!r}"
+                )
+        if self.max_msgs < 0:
+            raise ValidationError(f"StreamConfig.max_msgs must be >= 0; got {self.max_msgs}")
+        if self.max_bytes < 0:
+            raise ValidationError(f"StreamConfig.max_bytes must be >= 0; got {self.max_bytes}")
+        if self.max_age < 0:
+            raise ValidationError(f"StreamConfig.max_age must be >= 0; got {self.max_age}")
+        if self.max_msg_size < 0:
+            raise ValidationError(f"StreamConfig.max_msg_size must be >= 0; got {self.max_msg_size}")
+        if self.replicas not in (1, 3, 5):
+            raise ValidationError(f"StreamConfig.replicas must be 1, 3, or 5; got {self.replicas}")
+        if len(self.description) > _MAX_DESCRIPTION_LEN:
+            raise ValidationError(
+                f"StreamConfig.description length must be <= {_MAX_DESCRIPTION_LEN}; got {len(self.description)}"
+            )
+
+class Stream:
+    """[traces-to: TPRD-§7.1-Stream]
+    [constraint: p50_create <= 8000us | bench/bench_jetstream_stream_create]
+    """
+    def name(self) -> str: ...
+    async def info(self) -> Any: ...                                      # nats.js.api.StreamInfo
+    async def purge(self) -> None: ...                                    # span 'stream.purge'
+    async def delete(self) -> None: ...                                   # span 'stream.delete'
+    async def subjects(self) -> list[str]: ...
+    async def add_subjects(self, *subjects: str) -> None: ...             # idempotent (dedups)
+    async def remove_subjects(self, *subjects: str) -> None: ...          # rejects removal of all
+    async def set_subjects(self, subjects: list[str]) -> None: ...        # rejects empty
+
+# --- Factory functions (mirror Go free funcs) ---
+async def create_stream(js: Any, cfg: StreamConfig) -> Stream:
+    """Span 'stream.create' attr stream=<name>. INFO 'stream created' with stream.
+    Validation: empty name → ErrInvalidArgument details {'reason': 'name is required'};
+    empty subjects → details {'reason': 'at least one subject is required'};
+    js is None → ErrJetStreamNotEnabled (Python uses sentinel; Go used string err).
+    Fails on existing stream (does NOT create-or-update).
+    [traces-to: TPRD-§7.1-create-stream]
+    """
+    ...
+
+async def create_or_update_stream(js: Any, cfg: StreamConfig) -> Stream:
+    """Span 'stream.create_or_update'. Does NOT log on success (mirror Go gap).
+    [traces-to: TPRD-§7.1-create-or-update-stream]
+    """
+    ...
+
+async def get_stream(js: Any, name: str) -> Stream: ...
+async def delete_stream(js: Any, name: str) -> None:
+    """No span, no log (mirror Go asymmetry; Stream.delete does emit).
+    [traces-to: TPRD-§7.1-delete-stream]
+    """
+    ...
+async def list_streams(js: Any) -> list[str]: ...
+
+# --- 5.2 JsPublisher ---
+@dataclass(frozen=True, slots=True)
+class PubAck:
+    """[traces-to: TPRD-§7.2-PubAck]"""
+    stream: str
+    sequence: int
+    domain: str
+
+class JsPublisher:
+    """JetStream publisher.
+
+    [traces-to: TPRD-§7.2-Publisher]
+    [constraint: p50 <= 1500us | bench/bench_jetstream_publisher_publish_1kb]
+    [constraint: p50_async <= 30us | bench/bench_jetstream_publisher_publish_async_1kb]
+    """
+    def __init__(self, nc: Any, js: Any, max_payload: int) -> None: ...
+
+    def use_middleware(self, mw: PublishMiddleware) -> None: ...
+
+    async def publish(self, subject: str, msg: NatsMsg) -> PubAck:
+        """Closed check → ErrConnectionClosed. Wrap ctx with 10s if no deadline.
+        Inner: subject=='' → ErrInvalidSubject; msg is None → ErrInvalidMessage;
+        oversized → ErrMessageTooLarge with format
+          '<sentinel>: <N> bytes exceeds <limit> limit';
+        js is None → ErrJetStreamNotEnabled.
+        Set msg.subject; if Nats-Msg-Id header set → engages dedup.
+        Span 'jetstream.publish' attrs (TPRD §15.28 messaging.* applied):
+            messaging.system='nats'
+            messaging.destination=<subject>
+            messaging.operation='publish'
+        Returns PubAck{stream, sequence, domain}.
+        [traces-to: TPRD-§7.2-publish §15.28]
+        """
+        ...
+
+    def publish_async(self, subject: str, msg: NatsMsg) -> "asyncio.Future[PubAck]":
+        """Allocate Future; closed → set ErrConnectionClosed; spawn task to
+        run js.publish_msg + middleware. NO PRE-VALIDATION (mirror Go gap;
+        see scope.md). NO CALLER-SIDE CONCURRENCY LIMIT (unbounded tasks).
+        Inner span 'jetstream.publish' attrs (TPRD §15.28):
+            messaging.system='nats'
+            messaging.destination=<subject>
+            messaging.operation='publish'
+        ERROR log 'async JetStream publish failed' on err with subject, err.
+        [traces-to: TPRD-§7.2-publish-async §15.28]
+        """
+        ...
+
+    async def close(self) -> None:
+        """Idempotent. nc.flush(5s). [traces-to: TPRD-§7.2-close]"""
+        ...
+
+# --- 5.3 Consumer ---
+class DeliverPolicy(Enum):
+    ALL = "all"
+    LAST = "last"
+    NEW = "new"
+    BY_START_SEQUENCE = "by_start_sequence"
+    BY_START_TIME = "by_start_time"
+
+@dataclass
+class ConsumerConfig:
+    """[traces-to: TPRD-§7.3-ConsumerConfig]
+    Hard-coded: ack_policy=AckExplicitPolicy, durable=name (always durable).
+
+    __post_init__ validation (CONV-5 fix, D3 iter 3): non-empty stream/name,
+    durable name regex, non-negative timing knobs, filter-subject regex.
+    Defaults (ack_wait=0, max_deliver=0, max_ack_pending=0) are sentinels:
+    impl substitutes the documented defaults at consumer-creation time, so
+    `0` is permitted here. Strictly negative values are rejected.
+    """
+    stream: str
+    name: str
+    filter_subjects: list[str] = field(default_factory=list)
+    ack_wait: float = 30.0       # seconds; applied if 0
+    max_deliver: int = 5         # applied if <= 0
+    max_ack_pending: int = 1000  # applied if <= 0
+    deliver_policy: DeliverPolicy = DeliverPolicy.ALL
+    description: str = ""
+    metadata: dict[str, str] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if not self.stream or not _STREAM_NAME_REGEX.match(self.stream):
+            raise ValidationError(
+                f"ConsumerConfig.stream must be non-empty and match {_STREAM_NAME_REGEX.pattern!r}; got {self.stream!r}"
+            )
+        if not self.name or not _CONSUMER_NAME_REGEX.match(self.name):
+            raise ValidationError(
+                f"ConsumerConfig.name must be non-empty and match {_CONSUMER_NAME_REGEX.pattern!r}; got {self.name!r}"
+            )
+        for s in self.filter_subjects:
+            if not _SUBJECT_REGEX.match(s):
+                raise ValidationError(
+                    f"ConsumerConfig.filter_subjects entry {s!r} must match {_SUBJECT_REGEX.pattern!r}"
+                )
+        if self.ack_wait < 0:
+            raise ValidationError(f"ConsumerConfig.ack_wait must be >= 0; got {self.ack_wait}")
+        if self.max_deliver < -1:
+            raise ValidationError(
+                f"ConsumerConfig.max_deliver must be >= -1 (-1 = unlimited); got {self.max_deliver}"
+            )
+        if self.max_ack_pending < 0:
+            raise ValidationError(
+                f"ConsumerConfig.max_ack_pending must be >= 0; got {self.max_ack_pending}"
+            )
+        if len(self.description) > _MAX_DESCRIPTION_LEN:
+            raise ValidationError(
+                f"ConsumerConfig.description length must be <= {_MAX_DESCRIPTION_LEN}; got {len(self.description)}"
+            )
+
+@dataclass
+class TenantConsumerConfig:
+    """[traces-to: TPRD-§7.3-TenantConsumerConfig]
+    Auto-derives:
+      name = consumer_name(module, tenant_id) == f'{module}-{tenant_id}'
+      filter_subjects = [f'{stream}.{tenant_id}.>'] if empty
+
+    __post_init__ validation (CONV-5 fix, D3 iter 3): inherits ConsumerConfig
+    semantics for stream / filter_subjects / ack_wait / max_deliver /
+    max_ack_pending / description. Adds `tenant_id` regex check that REUSES
+    the same `_TENANT_ID_REGEX` enforced by `TenantKVStore` /
+    `TenantObjectStore` per TPRD §15.32 — single source of truth across the
+    tenant overlays.
+    """
+    stream: str
+    module: str
+    tenant_id: str
+    filter_subjects: list[str] = field(default_factory=list)
+    ack_wait: float = 30.0
+    max_deliver: int = 5
+    max_ack_pending: int = 1000
+    deliver_policy: DeliverPolicy = DeliverPolicy.ALL
+    description: str = ""
+    metadata: dict[str, str] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if not self.stream or not _STREAM_NAME_REGEX.match(self.stream):
+            raise ValidationError(
+                f"TenantConsumerConfig.stream must be non-empty and match {_STREAM_NAME_REGEX.pattern!r}; got {self.stream!r}"
+            )
+        if not self.module or not _CONSUMER_NAME_REGEX.match(self.module):
+            raise ValidationError(
+                f"TenantConsumerConfig.module must be non-empty and match {_CONSUMER_NAME_REGEX.pattern!r}; got {self.module!r}"
+            )
+        # Reuse the same regex enforced by TenantKVStore / TenantObjectStore
+        # per TPRD §15.32 — keep tenant_id rules consistent across overlays.
+        if not self.tenant_id or not _TENANT_ID_REGEX.match(self.tenant_id):
+            raise ValidationError(
+                f"TenantConsumerConfig.tenant_id must be non-empty and match {_TENANT_ID_REGEX.pattern!r}; got {self.tenant_id!r}"
+            )
+        if len(self.tenant_id) > MaxTenantIDLength:
+            raise ValidationError(
+                f"TenantConsumerConfig.tenant_id length must be <= {MaxTenantIDLength}; got {len(self.tenant_id)}"
+            )
+        for s in self.filter_subjects:
+            if not _SUBJECT_REGEX.match(s):
+                raise ValidationError(
+                    f"TenantConsumerConfig.filter_subjects entry {s!r} must match {_SUBJECT_REGEX.pattern!r}"
+                )
+        if self.ack_wait < 0:
+            raise ValidationError(f"TenantConsumerConfig.ack_wait must be >= 0; got {self.ack_wait}")
+        if self.max_deliver < -1:
+            raise ValidationError(
+                f"TenantConsumerConfig.max_deliver must be >= -1 (-1 = unlimited); got {self.max_deliver}"
+            )
+        if self.max_ack_pending < 0:
+            raise ValidationError(
+                f"TenantConsumerConfig.max_ack_pending must be >= 0; got {self.max_ack_pending}"
+            )
+        if len(self.description) > _MAX_DESCRIPTION_LEN:
+            raise ValidationError(
+                f"TenantConsumerConfig.description length must be <= {_MAX_DESCRIPTION_LEN}; got {len(self.description)}"
+            )
+
+JsMessageHandler = Callable[[Context, "JsMsg"], Awaitable[None]]
+
+class JsMsg(Protocol):
+    """JetStream message + ack/nak/term [traces-to: TPRD-§7.3]"""
+    subject: str
+    data: bytes
+    headers: dict[str, str] | None
+    metadata: Any  # nats.js.api.MsgMetadata
+    async def ack(self) -> None: ...
+    async def nak(self, delay: float | None = None) -> None: ...
+    async def term(self) -> None: ...
+    async def in_progress(self) -> None: ...
+
+@dataclass(frozen=True, slots=True)
+class MessageBatch:
+    """Result of fetch / fetch_no_wait. [traces-to: TPRD-§7.3]"""
+    messages: list[JsMsg]
+    consumer: str
+    stream: str
+
+class Consumer:
+    """[traces-to: TPRD-§7.3-Consumer]
+    [constraint: p50_dispatch <= 35us | bench/bench_jetstream_consumer_dispatch]
+
+    Constructor accepts an optional async `on_error` hook (see __init__).
+    Default behavior MIRRORS Go (silent log + return on dispatch errors);
+    callers who want error surfacing opt-in via the hook (no API break).
+    """
+    def __init__(
+        self,
+        *,
+        on_error: Callable[[BaseException], Awaitable[None]] | None = None,
+    ) -> None:
+        """Concrete construction is via `await create_consumer(js, cfg)` /
+        `await create_tenant_consumer(js, cfg)` / `await get_consumer(...)`.
+        Direct ctor call accepts only the optional `on_error` hook.
+
+        Args:
+            on_error: optional async callback invoked from the dispatch loop
+                when ack/nak fails or handler raises. Default `None` preserves
+                Go SDK behavior (silent WARN log + return; errors NEVER
+                propagate to caller). Set the hook (or call
+                `set_error_handler(cb)` post-construction) to opt in to
+                error surfacing without changing the public method signatures.
+
+                The hook MUST NOT raise — if it does, the exception is
+                swallowed with a single `log.exception` (avoids dispatch
+                recursion).
+
+        [traces-to: TPRD-§7.3-Consumer-init]
+        """
+        ...
+
+    def set_error_handler(
+        self,
+        cb: Callable[[BaseException], Awaitable[None]] | None,
+    ) -> None:
+        """Replace or clear the on_error hook post-construction. Pass None to
+        revert to Go-default silent behavior.
+        [traces-to: TPRD-§7.3-set-error-handler]
+        """
+        ...
+
+    def name(self) -> str: ...
+    def stream(self) -> str: ...
+    async def info(self) -> Any: ...
+    async def start(self, handler: JsMessageHandler) -> None:
+        """Dispatch loop per §7.3:
+          0. Per delivered msg: span 'jetstream.receive' attrs (TPRD §15.28):
+                messaging.system='nats'
+                messaging.destination=<msg.subject>
+                messaging.operation='receive'
+                messaging.operation.name='process'
+          1. ctx.cancelled → msg.nak; if Nak fails: WARN 'consumer: nak failed
+             on context cancellation' with consumer, err; if on_error hook is
+             set, also `await on_error(exc)` before the WARN. Return.
+          2. Call handler(ctx, msg).
+          3. On raise → msg.nak; if Nak fails: WARN 'consumer: nak failed';
+             on_error hook fired same as (1).
+          4. On ok → msg.ack; if Ack fails: WARN 'consumer: ack failed';
+             on_error hook fired same as (1).
+        Underlying NATS lib invokes callback CONCURRENTLY per delivered msg
+        (bounded by MaxAckPending=1000 default). Handler MUST be concurrent-safe.
+        Hook errors are swallowed via log.exception (no dispatch recursion).
+        [traces-to: TPRD-§7.3-start §15.28]
+        """
+        ...
+
+    def stop(self) -> None:
+        """Idempotent. start() after stop() → ErrClosed (Python sentinel,
+        not Go's plain string). [traces-to: TPRD-§7.3-stop]
+        """
+        ...
+
+    async def delete(self) -> None:
+        """stop() + js.delete_consumer. [traces-to: TPRD-§7.3-delete]"""
+        ...
+
+    async def fetch(self, batch: int, *, timeout: float = 30.0, heartbeat: float = 5.0) -> MessageBatch:
+        """[traces-to: TPRD-§7.3-fetch]"""
+        ...
+
+    async def fetch_no_wait(self, batch: int) -> MessageBatch:
+        """[traces-to: TPRD-§7.3-fetch-no-wait]"""
+        ...
+
+    async def next(self, *, timeout: float = 30.0) -> JsMsg:
+        """Fetch one message; block up to `timeout` seconds.
+
+        Raises:
+            ErrNoMessages: empty-queue case (Python-idiomatic translation of
+                Go's plain-string `errors.New("no messages available")` — see
+                ErrNoMessages docstring in events.utils). The wire-API
+                behavior matches Go (caller knows "no messages" happened);
+                the only change is the catch surface is now a typed
+                EventsError subtype instead of a ValueError.
+            EventsError: other JetStream / connection failures.
+
+        [traces-to: TPRD-§7.3-next]
+        """
+        ...
+
+# Factory functions
+async def create_consumer(js: Any, cfg: ConsumerConfig) -> Consumer:
+    """ACTUALLY DOES create_or_update (Go js.create_or_update_consumer).
+    See scope.md Q10 — not renamed for byte-API parity.
+    Validation: empty stream/name → 'consumer: stream and name are required'.
+    [traces-to: TPRD-§7.3-create-consumer]
+    """
+    ...
+
+async def create_tenant_consumer(js: Any, cfg: TenantConsumerConfig) -> Consumer:
+    """Validates stream/module/tenant_id all non-empty; auto-derives name +
+    filter_subjects per §7.3; delegates to create_consumer.
+    [traces-to: TPRD-§7.3-create-tenant-consumer]
+    """
+    ...
+
+async def get_consumer(js: Any, stream: str, name: str) -> Consumer: ...
+async def delete_consumer(js: Any, stream: str, name: str) -> None: ...
+async def list_consumers(js: Any, stream: str) -> list[str]: ...
+
+def consumer_name(module: str, tenant_id: str) -> str:
+    """Returns f'{module}-{tenant_id}'. [traces-to: TPRD-§7.3-consumer-name]"""
+    ...
+
+# --- 5.4 Requester ---
+class RequesterConfigError(ValueError):
+    """Typed wrapper around the Go plain-string validation errors.
+    [traces-to: TPRD-§7.4-RequesterConfigError]
+    """
+
+@dataclass
+class RequesterConfig:
+    """[traces-to: TPRD-§7.4-RequesterConfig]
+
+    __post_init__ validation (CONV-5 fix, D3 iter 3): non-empty reply_stream
+    + reply_subject_prefix + instance_id; positive request_timeout (capped at
+    300s — anything longer is almost certainly a misconfig); positive
+    inactive_threshold. Note: `nc` / `js` validity is NOT checked here (they
+    are runtime handles); the existing `Requester.create` factory raises
+    `RequesterConfigError` with the byte-exact 'requester: ...' message on
+    those, preserving Go-byte-exact behavior. Field-level checks here run
+    BEFORE the factory.
+    """
+    nc: Any
+    js: Any
+    reply_stream: str
+    reply_subject_prefix: str
+    instance_id: str
+    max_payload: int = 0
+    request_timeout: float = 30.0
+    inactive_threshold: float = 300.0
+
+    def __post_init__(self) -> None:
+        if not self.reply_stream or not _STREAM_NAME_REGEX.match(self.reply_stream):
+            raise ValidationError(
+                f"RequesterConfig.reply_stream must be non-empty and match {_STREAM_NAME_REGEX.pattern!r}; got {self.reply_stream!r}"
+            )
+        if not self.reply_subject_prefix or not _SUBJECT_REGEX.match(self.reply_subject_prefix):
+            raise ValidationError(
+                f"RequesterConfig.reply_subject_prefix must be non-empty and match {_SUBJECT_REGEX.pattern!r}; got {self.reply_subject_prefix!r}"
+            )
+        if not self.instance_id or not _CONSUMER_NAME_REGEX.match(self.instance_id):
+            raise ValidationError(
+                f"RequesterConfig.instance_id must be non-empty and match {_CONSUMER_NAME_REGEX.pattern!r}; got {self.instance_id!r}"
+            )
+        if self.max_payload < 0:
+            raise ValidationError(f"RequesterConfig.max_payload must be >= 0; got {self.max_payload}")
+        if self.request_timeout <= 0:
+            raise ValidationError(
+                f"RequesterConfig.request_timeout must be > 0; got {self.request_timeout}"
+            )
+        if self.request_timeout > 300.0:
+            raise ValidationError(
+                f"RequesterConfig.request_timeout must be <= 300s; got {self.request_timeout}"
+            )
+        if self.inactive_threshold <= 0:
+            raise ValidationError(
+                f"RequesterConfig.inactive_threshold must be > 0; got {self.inactive_threshold}"
+            )
+
+@dataclass
+class Response:
+    """[traces-to: TPRD-§7.4-Response]"""
+    status_code: int = 200
+    message: str = ""
+    data: JsMsg | None = None
+    err: BaseException | None = None
+
+    def ok(self) -> bool:
+        """200 <= status_code < 300. [traces-to: TPRD-§7.4]"""
+        ...
+
+class Requester:
+    """[traces-to: TPRD-§7.4-Requester]
+    [constraint: p50 <= 2500us | bench/bench_jetstream_requester_request]
+    """
+    @classmethod
+    async def create(cls, cfg: RequesterConfig) -> "Requester":
+        """Per §7.4 create:
+          1. Validate; on any required-field-empty raise RequesterConfigError
+             with the byte-exact 'requester: ...' message.
+          2. Span 'requester.init' attr stream, instance_id.
+          3. filter_subject = f'{prefix}.{instance_id}.>'
+             consumer_name = f'reply-{instance_id}'
+          4. Build hard-coded ConsumerConfig (no Durable, ephemeral; ack=Explicit;
+             max_ack_pending=1024; deliver=ALL; inactive_threshold=cfg.inactive_threshold).
+          5. js.create_or_update_consumer(reply_stream, consumer_cfg).
+          6. Construct internal JsPublisher; init pending: dict[str, asyncio.Future].
+          7. Start consume; if consume() fails → DELETE the just-created consumer
+             to avoid leak.
+          8. INFO 'requester started' with stream, filter, instance_id.
+        [traces-to: TPRD-§7.4-create]
+        """
+        ...
+
+    async def request(self, subject: str, msg: NatsMsg) -> Response:
+        """Per §7.4 request:
+          1. request_id = f'{instance_id}-{ns_unix}-{seq}' (monotonic per-instance counter).
+          2. reply_subject = f'{prefix}.{instance_id}.{request_id}'; alloc Future.
+          3. Single lock acquire: closed → ErrClosed; else pending[request_id]=future.
+          4. ctx no deadline → wrap with request_timeout (30s default).
+          5. Span 'requester.request' attr messaging.destination=<subject>.
+          6. defer del pending[request_id] under lock.
+          7. msg.headers['X-Reply-To'] = reply_subject.
+          8. self.publisher.publish(subject, msg); on err: 'requester: publish: <err>'.
+          9. await Future or ctx:
+             on reply: build_response(msg) (200 default; X-Status-Code int parse;
+                       on parse fail silently keep 200; X-Message → message;
+                       status >= 400 → err = Exception(f'status {sc}: {message or "request failed"}')).
+             on timeout: return ErrRequestTimeout (NOT ctx err — important for isinstance).
+        [traces-to: TPRD-§7.4-request]
+        """
+        ...
+
+    async def close(self) -> None:
+        """Idempotent. Flip closed under lock. Stop consume. Close internal publisher.
+        DOES NOT delete ephemeral consumer (relies on server inactive_threshold=5m
+        — mirror Go behavior; see scope.md).
+        [traces-to: TPRD-§7.4-close]
+        """
+        ...
+
+
+# ============================================================================
+# §6. motadata_py_sdk.events.stores  (TPRD §8)
+# ============================================================================
+"""KV + Object Store wrappers + optional tenant overlays.
+[traces-to: TPRD-§8-Module-events-stores]
+[constraint: wire-exact bench/N/A]  -- delegates to nats-py;
+nats-py upstream defines wire bytes.
+"""
+from typing import AsyncIterator, Iterable
+
+@dataclass
+class KeyValueConfig:
+    """[traces-to: TPRD-§8.1-KeyValueConfig]
+
+    __post_init__ validation (CONV-5 fix, D3 iter 3): bucket regex, history
+    bounded [1, 64] per nats-py upstream limit, non-negative ttl/max_bytes,
+    description length cap. `max_value_size = -1` is the documented sentinel
+    for 'inherit server default' so it is permitted; values < -1 are rejected.
+    """
+    bucket: str
+    description: str = ""
+    max_value_size: int = -1
+    history: int = 1
+    ttl: float = 0.0
+    max_bytes: int = 0
+    storage: StorageType = StorageType.FILE
+    replicas: int = 1
+    compression: bool = False
+
+    def __post_init__(self) -> None:
+        if not self.bucket or not _BUCKET_NAME_REGEX.match(self.bucket):
+            raise ValidationError(
+                f"KeyValueConfig.bucket must be non-empty and match {_BUCKET_NAME_REGEX.pattern!r}; got {self.bucket!r}"
+            )
+        if self.max_value_size < -1:
+            raise ValidationError(
+                f"KeyValueConfig.max_value_size must be >= -1 (-1 = server default); got {self.max_value_size}"
+            )
+        if not (1 <= self.history <= 64):
+            raise ValidationError(
+                f"KeyValueConfig.history must be in [1, 64]; got {self.history}"
+            )
+        if self.ttl < 0:
+            raise ValidationError(f"KeyValueConfig.ttl must be >= 0; got {self.ttl}")
+        if self.max_bytes < 0:
+            raise ValidationError(f"KeyValueConfig.max_bytes must be >= 0; got {self.max_bytes}")
+        if self.replicas not in (1, 3, 5):
+            raise ValidationError(f"KeyValueConfig.replicas must be 1, 3, or 5; got {self.replicas}")
+        if len(self.description) > _MAX_DESCRIPTION_LEN:
+            raise ValidationError(
+                f"KeyValueConfig.description length must be <= {_MAX_DESCRIPTION_LEN}; got {len(self.description)}"
+            )
+
+@dataclass(frozen=True, slots=True)
+class KeyValueEntry:
+    """[traces-to: TPRD-§8.1-KeyValueEntry]"""
+    bucket: str
+    key: str
+    value: bytes
+    revision: int
+    delta: int
+    operation: str  # 'PUT' | 'DELETE' | 'PURGE'
+    created: datetime
+
+# Sentinel exceptions (extend events.utils sentinels)
+class ErrKeyNotFound(EventsError): pass
+class ErrKeyExists(EventsError): pass
+class ErrInvalidKey(EventsError): pass
+class ErrHistoryToLarge(EventsError): pass
+
+class KVStore:
+    """[traces-to: TPRD-§8.1-KVStore]
+    [constraint: p50_put <= 1500us | bench/bench_stores_kv_put_1kb]
+    [constraint: p50_get <= 800us | bench/bench_stores_kv_get_1kb]
+
+    OTel spans: EMITTED per TPRD §15.29 (FIX — restored at H5-rev-3 D3 iter 2;
+    Q8 revocation reversed). Each method opens an INTERNAL-kind span named
+    `kv.<op>` with attributes:
+      messaging.system='nats'                   (TPRD §15.28)
+      nats.bucket=<bucket>
+      nats.key=<key>                            (where applicable)
+      nats.revision=<revision>                  (where applicable: get/put/create/update results)
+    Span overhead target: ≤1µs at p50 per the python-otel-instrumentation
+    lazy-meter pattern (cached tracer, no per-call factory). See perf-budget.md
+    Section E (rows added at H5-rev-3 D3 iter 2).
+    """
+    def bucket_name(self) -> str: ...
+    async def get(self, key: str) -> KeyValueEntry:
+        """Span 'kv.get' attrs nats.bucket, nats.key. [traces-to: TPRD-§8.1-get §15.29]"""
+        ...
+    async def put(self, key: str, value: bytes) -> int:
+        """Span 'kv.put' attrs nats.bucket, nats.key, nats.revision (post-write).
+        [traces-to: TPRD-§8.1-put §15.29]
+        """
+        ...                                   # returns revision
+    async def create(self, key: str, value: bytes) -> int:
+        """Span 'kv.create' attrs nats.bucket, nats.key, nats.revision.
+        [traces-to: TPRD-§8.1-create §15.29]
+        """
+        ...                                   # ErrKeyExists if exists
+    async def update(self, key: str, value: bytes, last_revision: int) -> int:
+        """Span 'kv.update' attrs nats.bucket, nats.key, nats.revision (CAS expected),
+        nats.revision.new (post-write). [traces-to: TPRD-§8.1-update §15.29]
+        """
+        ...   # CAS
+    async def delete(self, key: str, *, last_revision: int | None = None) -> None:
+        """Span 'kv.delete' attrs nats.bucket, nats.key. [traces-to: TPRD-§8.1-delete §15.29]"""
+        ...
+    async def keys(self) -> list[str]:
+        """Span 'kv.keys' attrs nats.bucket. [traces-to: TPRD-§8.1-keys §15.29]"""
+        ...
+    async def history(self, key: str) -> list[KeyValueEntry]:
+        """Span 'kv.history' attrs nats.bucket, nats.key. [traces-to: TPRD-§8.1-history §15.29]"""
+        ...
+    async def watch(self, keys: str) -> AsyncIterator[KeyValueEntry]:
+        """Span 'kv.watch' attrs nats.bucket, nats.key (the filter). Span ends
+        when the iterator is closed/exhausted (long-running).
+        [traces-to: TPRD-§8.1-watch §15.29]
+        """
+        ...
+    async def watch_all(self) -> AsyncIterator[KeyValueEntry]:
+        """Span 'kv.watch' attrs nats.bucket, nats.key='>' (wildcard).
+        [traces-to: TPRD-§8.1-watch_all §15.29]
+        """
+        ...
+    async def purge(self, key: str, *, last_revision: int | None = None) -> None:
+        """Span 'kv.purge' attrs nats.bucket, nats.key. [traces-to: TPRD-§8.1-purge §15.29]"""
+        ...
+    async def status(self) -> Any:
+        """Span 'kv.status' attrs nats.bucket. [traces-to: TPRD-§8.1-status §15.29]"""
+        ...
+
+async def new_kv_store(js: Any, cfg: KeyValueConfig) -> KVStore:
+    """js is None → ErrJetStreamNotEnabled with str 'jetstream not enabled'.
+    [traces-to: TPRD-§8.1-new-kv-store]
+    """
+    ...
+
+async def get_kv_store(js: Any, bucket: str) -> KVStore: ...
+async def delete_kv_store(js: Any, bucket: str) -> None: ...
+
+# --- 6.2 ObjectStore ---
+@dataclass
+class ObjectStoreConfig:
+    """[traces-to: TPRD-§8.2-ObjectStoreConfig]
+
+    __post_init__ validation (CONV-5 fix, D3 iter 3): bucket regex,
+    non-negative ttl/max_bytes, replicas ∈ {1,3,5}, description length cap.
+    """
+    bucket: str
+    description: str = ""
+    ttl: float = 0.0
+    max_bytes: int = 0
+    storage: StorageType = StorageType.FILE
+    replicas: int = 1
+    compression: bool = False
+    metadata: dict[str, str] | None = None
+
+    def __post_init__(self) -> None:
+        if not self.bucket or not _BUCKET_NAME_REGEX.match(self.bucket):
+            raise ValidationError(
+                f"ObjectStoreConfig.bucket must be non-empty and match {_BUCKET_NAME_REGEX.pattern!r}; got {self.bucket!r}"
+            )
+        if self.ttl < 0:
+            raise ValidationError(f"ObjectStoreConfig.ttl must be >= 0; got {self.ttl}")
+        if self.max_bytes < 0:
+            raise ValidationError(f"ObjectStoreConfig.max_bytes must be >= 0; got {self.max_bytes}")
+        if self.replicas not in (1, 3, 5):
+            raise ValidationError(
+                f"ObjectStoreConfig.replicas must be 1, 3, or 5; got {self.replicas}"
+            )
+        if len(self.description) > _MAX_DESCRIPTION_LEN:
+            raise ValidationError(
+                f"ObjectStoreConfig.description length must be <= {_MAX_DESCRIPTION_LEN}; got {len(self.description)}"
+            )
+
+@dataclass
+class ObjectMeta:
+    """[traces-to: TPRD-§8.2-ObjectMeta]
+
+    __post_init__ validation (CONV-5 fix, D3 iter 3): object name allows
+    `.` `/` `_` `-` (path-like, per nats-py upstream); description length cap;
+    chunk_size positive (zero would be a degenerate stream of zero-length
+    chunks).
+    """
+    name: str
+    description: str = ""
+    headers: dict[str, str] = field(default_factory=dict)
+    chunk_size: int = 128 * 1024  # 128 KiB default
+
+    def __post_init__(self) -> None:
+        if not self.name or not _OBJECT_NAME_REGEX.match(self.name):
+            raise ValidationError(
+                f"ObjectMeta.name must be non-empty and match {_OBJECT_NAME_REGEX.pattern!r}; got {self.name!r}"
+            )
+        if len(self.description) > _MAX_DESCRIPTION_LEN:
+            raise ValidationError(
+                f"ObjectMeta.description length must be <= {_MAX_DESCRIPTION_LEN}; got {len(self.description)}"
+            )
+        if self.chunk_size <= 0:
+            raise ValidationError(f"ObjectMeta.chunk_size must be > 0; got {self.chunk_size}")
+
+@dataclass(frozen=True, slots=True)
+class ObjectInfo:
+    """[traces-to: TPRD-§8.2-ObjectInfo]"""
+    bucket: str
+    name: str
+    description: str
+    size: int
+    chunks: int
+    digest: str  # 'SHA-256=<base64-url-no-pad>'
+    modified: datetime
+    metadata: dict[str, str]
+    deleted: bool
+
+class ObjectResult(Protocol):
+    """Streamable get result. [traces-to: TPRD-§8.2-ObjectResult]"""
+    info: ObjectInfo
+    async def read(self, n: int = -1) -> bytes: ...
+    async def __aiter__(self) -> AsyncIterator[bytes]: ...
+
+class ErrObjectNotFound(EventsError): pass
+class ErrBadObjectMeta(EventsError): pass
+class ErrDigestMismatch(EventsError): pass
+
+class ObjectStore:
+    """[traces-to: TPRD-§8.2-ObjectStore]
+    [constraint: p50_put_bytes_1kb <= 3000us | bench/bench_stores_object_put_bytes_1kb]
+    [constraint: p50_put_file_1mb <= 80000us | bench/bench_stores_object_put_file_1mb]
+
+    OTel spans: EMITTED per TPRD §15.29 (FIX — restored at H5-rev-3 D3 iter 2;
+    Q8 revocation reversed). Each method opens an INTERNAL-kind span named
+    `objectstore.<op>` with attributes:
+      messaging.system='nats'                   (TPRD §15.28)
+      nats.bucket=<bucket>
+      nats.object=<name>                        (where applicable)
+    Span overhead target: ≤1µs at p50 per the python-otel-instrumentation
+    lazy-meter pattern (cached tracer, no per-call factory). See perf-budget.md
+    Section E (rows added at H5-rev-3 D3 iter 2).
+    """
+    def bucket_name(self) -> str: ...
+    async def get(self, name: str) -> ObjectResult:
+        """Span 'objectstore.get' attrs nats.bucket, nats.object.
+        [traces-to: TPRD-§8.2-get §15.29]
+        """
+        ...
+    async def get_info(self, name: str, *, show_deleted: bool = False) -> ObjectInfo:
+        """Span 'objectstore.get_info' attrs nats.bucket, nats.object.
+        [traces-to: TPRD-§8.2-get_info §15.29]
+        """
+        ...
+    async def put(self, meta: ObjectMeta, data: AsyncIterator[bytes] | bytes) -> ObjectInfo:
+        """Span 'objectstore.put' attrs nats.bucket, nats.object=meta.name.
+        [traces-to: TPRD-§8.2-put §15.29]
+        """
+        ...
+    async def put_bytes(self, name: str, data: bytes) -> ObjectInfo:
+        """Span 'objectstore.put' attrs nats.bucket, nats.object.
+        [traces-to: TPRD-§8.2-put_bytes §15.29]
+        """
+        ...
+    async def put_file(self, path: str, *, name: str | None = None) -> ObjectInfo:
+        """Span 'objectstore.put_file' attrs nats.bucket, nats.object.
+        [traces-to: TPRD-§8.2-put_file §15.29]
+        """
+        ...
+    async def delete(self, name: str) -> None:
+        """Span 'objectstore.delete' attrs nats.bucket, nats.object.
+        [traces-to: TPRD-§8.2-delete §15.29]
+        """
+        ...
+    async def list(self) -> list[ObjectInfo]:
+        """Span 'objectstore.list' attrs nats.bucket.
+        [traces-to: TPRD-§8.2-list §15.29]
+        """
+        ...
+    async def watch(self) -> AsyncIterator[ObjectInfo]:
+        """Span 'objectstore.watch' attrs nats.bucket. Long-running; span ends
+        when iterator closes. [traces-to: TPRD-§8.2-watch §15.29]
+        """
+        ...
+    async def status(self) -> Any:
+        """Span 'objectstore.status' attrs nats.bucket.
+        [traces-to: TPRD-§8.2-status §15.29]
+        """
+        ...
+
+async def new_object_store(js: Any, cfg: ObjectStoreConfig) -> ObjectStore: ...
+async def get_object_store(js: Any, bucket: str) -> ObjectStore: ...
+async def delete_object_store(js: Any, bucket: str) -> None: ...
+
+# --- 6.3 Tenant overlays (Python-only convenience; scope.md Q9 + TPRD §15.32 validation) ---
+class TenantKVStore:
+    """Tenant-scoped KV wrapper. Prefixes every key with f'{tenant_id}.'.
+    Rejects cross-tenant reads (filters non-prefixed keys from watch_all).
+    [traces-to: TPRD-§8.3-TenantKVStore]
+    """
+    def __init__(self, tenant_id: str, kv: KVStore) -> None:
+        """Validates `tenant_id` per TPRD §15.32 (FIX — pre-authorized at
+        H5-rev-3 D3 iter 2; restored after the H5-rev-2 over-correction).
+
+        Raises:
+            ValidationError: if tenant_id does not match _TENANT_ID_REGEX
+                (`^[A-Za-z0-9][A-Za-z0-9_-]*$`) OR exceeds MaxTenantIDLength
+                (128 chars). Go SDK has no enforcement at this layer; Python
+                tightens to defeat tenant-ID-injection bugs at the SDK
+                boundary (preferable to silent prefix-collision bugs).
+
+        Implementation sketch:
+            if not _TENANT_ID_REGEX.match(tenant_id):
+                raise ValidationError(f"tenant_id must match {_TENANT_ID_REGEX.pattern!r}")
+            if len(tenant_id) > MaxTenantIDLength:
+                raise ValidationError(
+                    f"tenant_id length {len(tenant_id)} exceeds MaxTenantIDLength={MaxTenantIDLength}"
+                )
+
+        Typing-only `TenantID = NewType("TenantID", str)` is permissible at
+        type-check time AND the runtime check above fires regardless of
+        whether the caller used the NewType wrapper.
+        """
+        ...
+    # Mirrors KVStore methods with key prefixing.
+
+class TenantObjectStore:
+    """Tenant-scoped Object wrapper. Prefixes every name with f'{tenant_id}/'.
+
+    Validates `tenant_id` at construction per TPRD §15.32 (same regex+length
+    check as `TenantKVStore`, restored at H5-rev-3 D3 iter 2). Raises
+    `ValidationError` on bad input.
+    [traces-to: TPRD-§8.3-TenantObjectStore]
+    """
+    def __init__(self, tenant_id: str, ob: ObjectStore) -> None:
+        """See `TenantKVStore.__init__` for the validation contract — same
+        regex (`_TENANT_ID_REGEX`) and length cap (`MaxTenantIDLength`) apply
+        per TPRD §15.32 (FIX — pre-authorized at H5-rev-3 D3 iter 2).
+        """
+        ...
+    # Mirrors ObjectStore methods with name prefixing.
+
+
+# ============================================================================
+# §7. motadata_py_sdk.events.middleware  (TPRD §9)
+# ============================================================================
+"""Stack/Chain framework + 6 middlewares with composition rules.
+[traces-to: TPRD-§9-Module-events-middleware]
+"""
+from typing import Generic, TypeVar
+
+# --- 7.1 Chain framework ---
+class Interceptor(Protocol):
+    """[traces-to: TPRD-§9.1-Interceptor]"""
+    def intercept_publish(self) -> PublishMiddleware: ...
+    def intercept_subscribe(self) -> SubscribeMiddleware: ...
+
+class Stack:
+    """[traces-to: TPRD-§9.1-Stack]"""
+    def use_publish(self, mw: PublishMiddleware) -> None: ...
+    def use_subscribe(self, mw: SubscribeMiddleware) -> None: ...
+    def use_interceptor(self, ic: Interceptor) -> None: ...
+    def publish_chain(self) -> PublishMiddleware: ...
+    def subscribe_chain(self) -> SubscribeMiddleware: ...
+    def wrap_publish(self, h: PublishHandler) -> PublishHandler: ...
+    def wrap_subscribe(self, h: SubscribeHandler) -> SubscribeHandler: ...
+
+def chain(*ms: PublishMiddleware) -> PublishMiddleware:
+    """First-registered = outermost. Reduces in reverse:
+       for m in reversed(ms): next = m(next)
+    [traces-to: TPRD-§9.1-chain]
+    [constraint: p50 <= 12us | bench/bench_middleware_chain_wrap_6mw]
+    """
+    ...
+
+def chain_subscribe(*ms: SubscribeMiddleware) -> SubscribeMiddleware:
+    """Subscribe equivalent. [traces-to: TPRD-§9.1-chain-subscribe]"""
+    ...
+
+# --- 7.2 Circuit Breaker ---
+class State(Enum):
+    """str() returns 'closed'/'open'/'half-open'/'unknown'.
+    [traces-to: TPRD-§9.2-State]
+    """
+    CLOSED = 0
+    OPEN = 1
+    HALF_OPEN = 2
+
+# ErrCircuitOpen is defined in events.utils._errors (§2.4 above) per CONV-12 fix
+# (D3 iter 3) — events.middleware._circuit_breaker IMPORTS it from there:
+#
+#   from motadata_py_sdk.events.utils import ErrCircuitOpen
+#
+# Sentinel ownership is in events.utils so `_NEVER_RETRY` can be populated at
+# definition time (no import-order fragility, no global mutable state). Raising
+# the sentinel from CB code paths is unchanged.
+
+@dataclass
+class CircuitBreakerConfig:
+    """[traces-to: TPRD-§9.2-CircuitBreakerConfig]"""
+    failure_threshold: int = 5
+    success_threshold: int = 2
+    timeout: float = 30.0
+    on_state_change: Callable[[State, State], None] | None = None
+    should_trip: Callable[[BaseException], bool] | None = None
+
+class CircuitBreaker:
+    """[traces-to: TPRD-§9.2-CircuitBreaker]
+    [constraint: p50_allow_closed <= 0.5us | bench/bench_middleware_cb_allow_closed]
+
+    State machine (locked transitions; on_state_change once per transition):
+      CLOSED: pass; success → reset failures; should_trip(err) → failures++;
+              if failures >= failure_threshold → OPEN, stamp last_failure_time.
+      OPEN:   if elapsed > timeout → HALF_OPEN, allow this call;
+              else raise ErrCircuitOpen.
+      HALF_OPEN: every call allowed (HalfOpenMaxRequests NOT IMPL — mirror Go);
+                 success++; >= success_threshold → CLOSED.
+                 ANY failure → OPEN immediately.
+      reset() force-transitions to CLOSED.
+    """
+    def __init__(self, cfg: CircuitBreakerConfig) -> None: ...
+    async def allow(self) -> None: ...
+    def on_success(self) -> None: ...
+    def on_failure(self, err: BaseException) -> None: ...
+    def state(self) -> State: ...
+    def reset(self) -> None: ...
+
+class MultiCircuitBreaker:
+    """Per-subject CircuitBreaker dict (lazy create via lock-protected dict).
+    [traces-to: TPRD-§9.2-MultiCircuitBreaker]
+    [constraint: p50_get_cached <= 0.8us | bench/bench_middleware_multi_cb_get_cached]
+
+    DIVERGENCE-UP optional: accepts key_fn(ctx, msg) -> str (default msg.subject)
+    so callers can scope per-tenant: f'{tenant_id}:{msg.subject}' (scope.md §9.9).
+    """
+    def __init__(self, cfg: CircuitBreakerConfig,
+                 key_fn: Callable[[Context, NatsMsg], str] | None = None) -> None: ...
+    def get(self, subject: str) -> CircuitBreaker: ...
+
+def circuit_breaker_middleware(cb: CircuitBreaker) -> PublishMiddleware:
+    """Wrap publish handler with cb.allow() pre-check + on_success/on_failure post.
+    [traces-to: TPRD-§9.2-circuit-breaker-middleware]
+    """
+    ...
+
+# --- 7.3 Retry ---
+@dataclass
+class RetryConfig:
+    """[traces-to: TPRD-§9.3-RetryConfig]"""
+    max_attempts: int = 3
+    initial_interval: float = 0.1
+    max_interval: float = 5.0
+    multiplier: float = 2.0
+    jitter: float = 0.1
+    should_retry: Callable[[BaseException], bool] | None = None  # default: is_retryable
+
+def compute_backoff(attempt: int, cfg: RetryConfig) -> float:
+    """Backoff formula PER §9.3 (must match exactly):
+      1. backoff = initial_interval * (multiplier ** attempt)
+      2. cap: if backoff > max_interval → backoff = max_interval
+      3. jitter (only if jitter > 0):
+           jitter_range = backoff * jitter
+           jitter_val = jitter_range * (random()*2 - 1)  # uniform in [-r, +r)
+           backoff += jitter_val
+      4. floor (only if jitter enabled):
+           if backoff < initial_interval → backoff = initial_interval
+      5. return backoff
+    Negative attempt normalized to 0.
+    Jitter RNG: secrets.SystemRandom().random() (matches Go crypto/rand pattern).
+    [traces-to: TPRD-§9.3-compute-backoff]
+    [constraint: deterministic-when-jitter-zero bench/N/A]
+    """
+    ...
+
+class RetryMiddleware:
+    """[traces-to: TPRD-§9.3-RetryMiddleware]
+    [constraint: p50_intercept_no_fail <= 3us | bench/bench_middleware_retry_no_fail]
+
+    intercept_publish:
+      Outer loop: for attempt in range(max_attempts + 1):
+        - Check ctx.cancelled → return last_err or ctx.err.
+        - Call next(ctx, msg). On success → return.
+        - On error → save last_err.
+        - If not should_retry(last_err) or attempt >= max_attempts → return last_err.
+        - Otherwise wait_backoff(attempt); if ctx fires during wait →
+          return last_err (NOT ctx.err — asymmetric with pre-attempt check).
+    intercept_subscribe: pass-through (returns next as-is). Retry has no effect
+    on subscribe path; rely on JetStream nak/term for redelivery.
+    """
+    def __init__(self, cfg: RetryConfig) -> None: ...
+    def intercept_publish(self) -> PublishMiddleware: ...
+    def intercept_subscribe(self) -> SubscribeMiddleware: ...
+
+# --- 7.4 Rate limit ---
+
+# ErrRateLimitExceeded is defined in events.utils._errors (§2.4 above) per
+# CONV-12 fix (D3 iter 3) — events.middleware._rate_limit IMPORTS it from there:
+#
+#   from motadata_py_sdk.events.utils import ErrRateLimitExceeded
+#
+# Sentinel ownership is in events.utils so `_NEVER_RETRY` can be populated at
+# definition time (no import-order fragility, no global mutable state). Raising
+# the sentinel from rate-limit code paths is unchanged.
+#
+# The previous cross-module rebind pattern
+# (`_utils._NEVER_RETRY = frozenset(_utils._NEVER_RETRY | {...})`) is REMOVED.
+
+@dataclass
+class RateLimiterConfig:
+    """[traces-to: TPRD-§9.4-RateLimiterConfig]"""
+    rate: float = 100.0
+    burst: int = 50  # default config; int(rate) when constructor sees <= 0
+
+class TokenBucketLimiter:
+    """[traces-to: TPRD-§9.4-TokenBucketLimiter]
+    [constraint: p50_allow_n <= 1.5us | bench/bench_middleware_token_bucket_allow]
+
+    milliTokens internal (1 token = 1000 milliTokens) for sub-token precision
+    using atomic int64 (Python: asyncio.Lock + int — atomic CAS not native;
+    use Lock + plain int. Floor justification in perf-budget.md.)
+
+    refill on every Allow*/Tokens read:
+      elapsed = (now - last_update) / 1s
+      new_tokens = elapsed * rate * 1000
+      capped at burst*1000; on success last_update = now.
+    """
+    def __init__(self, cfg: RateLimiterConfig) -> None: ...
+    async def allow_n(self, n: int = 1) -> bool: ...
+    async def wait_n(self, n: int = 1) -> None:
+        """Spin: if allow_n return; else
+          deficit = needed - current
+          wait_time = max(deficit/rate, 0.001)  # clamp >= 1ms
+          await asyncio.wait_for(ctx_done, wait_time); retry.
+        Propagates ctx err on cancel.
+        [traces-to: TPRD-§9.4-wait-n]
+        """
+        ...
+    def tokens(self) -> int: ...
+
+class SlidingWindowLimiter:
+    """[traces-to: TPRD-§9.4-SlidingWindowLimiter]
+    [constraint: p50_allow <= 8us | bench/bench_middleware_sliding_window_allow]
+
+    State: deque[int] (ns timestamps), asyncio.Lock-guarded.
+    allow():
+      lock; prune leading expired (ts <= now - window);
+      if len >= limit → return False;
+      else append now → return True.
+    """
+    def __init__(self, limit: int, window: float) -> None: ...
+    def allow(self) -> bool: ...
+    def count(self) -> int: ...
+
+class PerSubjectRateLimiter:
+    """[traces-to: TPRD-§9.4-PerSubjectRateLimiter]
+    Lazy-creates TokenBucketLimiter per subject (independent caps).
+    """
+    def __init__(self, cfg: RateLimiterConfig) -> None: ...
+    def get(self, subject: str) -> TokenBucketLimiter: ...
+
+def rate_limit_middleware(rl: TokenBucketLimiter) -> PublishMiddleware:
+    """Reject mode: immediate ErrRateLimitExceeded if !allow_n(1).
+    [traces-to: TPRD-§9.4-rate-limit-middleware]
+    """
+    ...
+
+def rate_limit_wait_middleware(rl: TokenBucketLimiter) -> PublishMiddleware:
+    """Wait mode: blocks via wait_n; propagates ctx err.
+    NEVER returns ErrRateLimitExceeded (mirror Go).
+    [traces-to: TPRD-§9.4-rate-limit-wait-middleware]
+    """
+    ...
+
+# --- 7.5 Metrics ---
+@dataclass(slots=True)
+class Metrics:
+    """In-process collected counters. [traces-to: TPRD-§9.5-Metrics]"""
+    publish_count: int = 0
+    publish_errors: int = 0
+    publish_latency_ns: int = 0
+    receive_count: int = 0
+    receive_errors: int = 0
+    receive_latency_ns: int = 0
+    bytes_sent: int = 0
+    bytes_received: int = 0
+
+class MetricsCollector:
+    """In-process collector with optional callback.
+    [traces-to: TPRD-§9.5-MetricsCollector]
+
+    intercept_publish: timestamp start; call next; atomic-increment publish_count,
+      publish_latency, bytes_sent (len(msg.data)); on err publish_errors AND
+      invoke the callback with metric attribute `error_kind=type(exc).__name__`
+      (TPRD §15.34 FIX — bounded cardinality per the python-otel-instrumentation
+      skill; only the sentinel class name is recorded, NEVER `str(exc)`); the
+      bounded set is fixed by the 52-class hierarchy).
+    intercept_subscribe: increment receive_count + bytes_received BEFORE next runs
+      (asymmetric with publish — mirror Go). Process time + errors AFTER, with
+      the same `error_kind` attribute on receive_errors per TPRD §15.34.
+    """
+    def __init__(self) -> None: ...
+    def on_publish(self, fn: Callable[[Metrics], None]) -> None: ...
+    def on_receive(self, fn: Callable[[Metrics], None]) -> None: ...
+    def collect(self) -> Metrics: ...
+    def reset(self) -> None: ...
+    def intercept_publish(self) -> PublishMiddleware: ...
+    def intercept_subscribe(self) -> SubscribeMiddleware: ...
+
+class OTELMetricsMiddleware:
+    """OTel metric emitter. Byte-exact metric names (mirror INV-6):
+      events_publish_total            (counter,   subject)
+      events_publish_errors_total     (counter,   subject, error_kind)
+      events_publish_duration_ms      (histogram, subject, unit='ms')
+      events_receive_total            (counter,   subject)
+      events_receive_errors_total     (counter,   subject, error_kind)
+      events_receive_duration_ms      (histogram, subject, unit='ms')
+      events_bytes_sent_total         (counter,   subject)
+      events_bytes_received_total     (counter,   subject)
+
+    Resulting on-wire names prefix with <service_name>_ from registry namespace.
+    Histogram unit is "ms" NOT "s" (README claim wrong; trust code per §9.5).
+    Label dimensions:
+      `subject` — present on every metric (caller-controlled but typically
+                  drawn from a bounded subject taxonomy at the publisher).
+      `error_kind` — present ONLY on the *_errors_total counters per TPRD §15.34
+                     FIX. Bounded-cardinality sentinel: the value is
+                     `type(exc).__name__` (one of the 52-class hierarchy
+                     defined in events.utils + middleware), NEVER `str(exc)`.
+                     The python-otel-instrumentation skill enforces this
+                     bounded-cardinality discipline.
+
+    [traces-to: TPRD-§9.5-OTELMetricsMiddleware §15.34]
+    [constraint: wire-exact bench/N/A]
+    [constraint: p50_intercept_publish <= 8us | bench/bench_middleware_otel_metrics_publish]
+    """
+    def __init__(self, meter: Any, namespace: str) -> None: ...
+    def intercept_publish(self) -> PublishMiddleware: ...
+    def intercept_subscribe(self) -> SubscribeMiddleware: ...
+
+class PerSubjectMetrics:
+    """Per-subject MetricsCollector dict.
+    [traces-to: TPRD-§9.5-PerSubjectMetrics]
+    """
+    def intercept_publish(self) -> PublishMiddleware: ...
+    def intercept_subscribe(self) -> SubscribeMiddleware: ...
+
+# --- 7.6 Logging ---
+class LogLevel(Enum):
+    """[traces-to: TPRD-§9.6-LogLevel]"""
+    DEBUG = 0
+    INFO = 1
+    WARN = 2
+    ERROR = 3
+
+class LoggingMiddleware:
+    """[traces-to: TPRD-§9.6-LoggingMiddleware]
+    [constraint: p50_intercept_publish_payload_off <= 4us | bench/bench_middleware_logging_publish]
+
+    Per-call fields (byte-exact keys):
+      subject, msg_id (from headers['Nats-Msg-Id']), size (len(msg.data)),
+      latency_ms (publish only) | process_time_ms (subscribe only),
+      error (string, on failure),
+      payload (only when log_payload=True, truncated to max_payload_size with '...' suffix),
+      trace_id, span_id (from get_trace_context() if present),
+      tenant_id (from get_tenant_id() if present).
+
+    Log messages (byte-exact):
+      Publish pre:    DEBUG 'publishing message'
+      Publish ok:     INFO  'message published'
+      Publish err:    ERROR 'publish failed'
+      Subscribe pre:  DEBUG 'processing message'
+      Subscribe ok:   DEBUG 'message processed'   (NOT INFO — by design quiet)
+      Subscribe err:  ERROR 'message processing failed'
+
+    Logging never short-circuits — always calls next, returns its err verbatim.
+    """
+    def __init__(self, logger: Any) -> None: ...
+    def with_level(self, level: LogLevel) -> "LoggingMiddleware": ...
+    def with_payload(self, enabled: bool, max_size: int = 1024) -> "LoggingMiddleware": ...
+    def intercept_publish(self) -> PublishMiddleware: ...
+    def intercept_subscribe(self) -> SubscribeMiddleware: ...
+
+# --- 7.7 Tracing ---
+class TracingMiddleware:
+    """[traces-to: TPRD-§9.7-TracingMiddleware]
+    [constraint: p50_intercept_publish <= 35us | bench/bench_middleware_tracing_publish]
+
+    OTel mode publish (publish_with_otel) — TPRD §15.28 attrs applied:
+      1. Span tracer.start_producer(ctx, 'events.publish',
+         attrs={'messaging.system': 'nats', 'messaging.destination': <subject>,
+                'messaging.operation': 'publish'}).
+      2. Read active OTel SpanContext; if valid, build TraceContext{trace_id,
+         span_id, sampled} and store in ctx.
+      3. ensure_headers(msg); core.extract_headers(msg.headers).
+      4. next(ctx, msg). span.set_error(err) or span.set_ok(). span.end().
+
+    OTel mode subscribe (FIX per TPRD §15.30 — propagator.extract restored at
+    H5-rev-3 D3 iter 2; Q5 revocation reversed):
+      1. Headers carry W3C `traceparent` from the producer (set by step 4 of
+         publish above via OTel SDK's TextMapPropagator.inject inside the
+         span context manager). On the consumer side we MUST extract the
+         producer trace context BEFORE opening the consumer span so that
+         start_consumer takes the remote-parent and the consumer span is
+         linked into the producer trace.
+      2. Build a NatsHeaderGetter carrier from msg.headers (per the
+         python-otel-instrumentation skill — read-only dict-of-str-to-str
+         adapter that returns [] for missing keys).
+      3. parent_ctx = propagator.extract(carrier=NatsHeaderGetter(msg.headers))
+         — uses the global TextMapPropagator (W3C tracecontext + baggage by
+         default, configurable via TracerInitConfig.propagators).
+      4. If headers also carry the legacy non-W3C trace headers (X-Trace-ID,
+         X-B3-*), call core.inject_context(msg.headers) to restash into our
+         ContextVars (logs still want the legacy keys).
+      5. tracer.start_consumer(parent_ctx, 'events.receive',
+         attrs={'messaging.system': 'nats',
+                'messaging.destination': <subject>,
+                'messaging.operation': 'receive',
+                'messaging.operation.name': 'receive'}). Span IS linked to
+         producer trace via parent_ctx.
+      6. Read active span; re-stash into core.TraceContext for downstream logs.
+      7. next. Set status. End.
+
+    Span names (byte-exact, mirror INV-5):
+      Producer: 'events.publish'   Consumer: 'events.receive'
+
+    Span attribute keys (byte-exact, with TPRD §15.28 messaging.* additions):
+      messaging.system='nats'                 (FIX §15.28 — added on every span)
+      messaging.destination=<subject>         (mirror Go; NOT messaging.destination.name)
+      messaging.operation='publish'|'receive'|'process' (FIX §15.28 — added)
+    """
+    def __init__(self, *,
+                 tracer: Any | None = None,
+                 use_otel: bool = True,
+                 sampler: Callable[[], bool] | None = None) -> None: ...
+    def intercept_publish(self) -> PublishMiddleware: ...
+    def intercept_subscribe(self) -> SubscribeMiddleware: ...
+
+def extract_w3c_traceparent(s: str) -> TraceContext | None:
+    """Parse 'version-traceID-parentID-flags'. Returns None if len(s) < 55 OR
+    split count != 4. [traces-to: TPRD-§9.7-extract-w3c-traceparent]
+    """
+    ...
+
+def format_w3c_traceparent(tc: TraceContext | None) -> str:
+    """'00-{trace_id}-{span_id}-01' if sampled else '...-00'.
+    Returns '' if tc is None, trace_id == '', or span_id == ''.
+    [traces-to: TPRD-§9.7-format-w3c-traceparent]
+    """
+    ...
+
+
+# ============================================================================
+# §8. motadata_py_sdk.otel  (TPRD §10) — 4 submodules
+# ============================================================================
+"""TracerProvider/MeterProvider setup, propagators, span/metric inventory.
+[traces-to: TPRD-§10-Module-otel]
+
+Submodules: tracer, metrics, logger, common.
+Public API at the package level re-exports the most-used handles.
+"""
+
+# --- 8.1 motadata_py_sdk.otel.common ---
+@dataclass(frozen=True, slots=True)
+class ServiceInfo:
+    """[traces-to: TPRD-§10.1-ServiceInfo]"""
+    name: str = "app"
+    version: str = "0.0.0"
+    environment: str = "development"
+
+class ErrOTELUnsupportedProtocol(EventsError):
+    """str() == 'unsupported OTLP protocol: <s>' or similar.
+    [traces-to: TPRD-§10.7-ErrOTELUnsupportedProtocol]
+    """
+
+def resolve_protocol(s: str) -> str:
+    """Normalize 'grpc' / 'http' / 'http/protobuf' to canonical strings used by
+    OTel SDK exporter. Raises ErrOTELUnsupportedProtocol on unknown.
+    [traces-to: TPRD-§10.7-resolve-protocol]
+    """
+    ...
+
+class ShutdownCollector:
+    """Aggregates shutdown handles for all otel providers.
+    [traces-to: TPRD-§10.8-ShutdownCollector]
+
+    Shutdown ordering (CRITICAL — mirrors Go SDK rule):
+      1. Stop new spans (close clients).
+      2. Tracer FIRST (may emit metrics on shutdown).
+      3. Meter.
+      4. Logger.
+    """
+    def add(self, fn: Callable[[], Awaitable[None]]) -> None: ...
+    async def shutdown(self, timeout: float = 10.0) -> None: ...
+
+# --- 8.2 motadata_py_sdk.otel.tracer ---
+# Note: `from typing import Literal` imported in §9 (config) section; available
+# at module scope for the dataclass annotations below since this file is
+# concatenation-style stub (single namespace).
+from typing import Literal as _Literal  # alias to avoid late-§9 redefinition
+
+@dataclass(frozen=True, slots=True)
+class TracerInitConfig:
+    """[traces-to: TPRD-§10-TracerInitConfig §15.31 §SEMVER-4 §CONV-2]
+
+    Frozen+slots per CONV-2 fix (H5-rev-3 D3 iter 2): immutable after
+    construction. Mutation must use `dataclasses.replace(cfg, field=new)`.
+
+    `otel_protocol` is `Literal["grpc", "http", "http/protobuf"]` per SEMVER-4
+    fix; runtime validation in `__post_init__` per TPRD §15.31.
+    """
+    service: ServiceInfo
+    enabled: bool = False
+    otel_endpoint: str = "localhost:4317"
+    otel_insecure: bool = True
+    otel_protocol: _Literal["grpc", "http", "http/protobuf"] = "grpc"
+    otel_debug: bool = False
+    sampling_ratio: float = 1.0
+    propagators: list[str] = field(default_factory=lambda: ["tracecontext", "baggage"])
+    batch_timeout: float = 5.0
+    max_export_batch: int = 512
+    max_queue_size: int = 2048
+
+    def __post_init__(self) -> None:
+        """Runtime validation per TPRD §15.31 (FIX — pre-authorized; H5-rev-3
+        D3 iter 2). Go's `Validate()` is a stub; Python tightens here.
+
+        Raises:
+            ValidationError: if any of:
+              - service.name is blank
+              - sampling_ratio not in [0.0, 1.0]
+              - batch_timeout <= 0
+              - max_export_batch <= 0
+              - max_queue_size <= 0
+              - max_export_batch > max_queue_size (capacity inversion)
+              - otel_protocol not in {'grpc','http','http/protobuf'}  (also
+                enforced statically by the Literal annotation; defense-in-depth)
+              - otel_endpoint is blank when enabled=True
+        """
+        ...
+
+async def init_tracer(cfg: TracerInitConfig) -> ShutdownCollector:
+    """Initialize TracerProvider per cfg. Per §10.3 sampler:
+      ratio <= 0 → ALWAYS_OFF
+      ratio >= 1 → ALWAYS_ON
+      else → TraceIdRatioBased(ratio)
+    Wrap in ParentBased.
+    Per §10.2 propagators: map config strings to OTel propagators
+    (tracecontext|traceparent → W3C; baggage; b3; b3multi; jaeger).
+    Default if empty/unrecognized: composite of tracecontext + baggage.
+    Sets resource attrs from ServiceInfo (service.name, service.version,
+    deployment.environment).
+    Renamed from Go SDK's `Init` per PEP 8 (Python's exported convention is
+    snake_case for module-level functions). Behavior is identical to Go's Init.
+    [traces-to: TPRD-§10.1-tracer-Init]
+    """
+    ...
+
+def get_tracer(name: str, version: str = "") -> Any:
+    """Cached tracer per (name, version) via functools.cache. Always use this
+    over global tracer with __name__ (mirrors Go SDK rule 6 quality standard).
+    [traces-to: TPRD-§10-get-tracer]
+    """
+    ...
+
+# Span helpers (kind-bound)
+def start_producer(ctx: Context, name: str, attrs: dict[str, Any] | None = None) -> Any:
+    """Span kind = PRODUCER. Returns a context manager.
+    [traces-to: TPRD-§10.4-start-producer]
+    """
+    ...
+
+def start_consumer(ctx: Context, name: str, attrs: dict[str, Any] | None = None) -> Any:
+    """Span kind = CONSUMER. [traces-to: TPRD-§10.4-start-consumer]"""
+    ...
+
+def start_internal(ctx: Context, name: str, attrs: dict[str, Any] | None = None) -> Any:
+    """Span kind = INTERNAL. [traces-to: TPRD-§10.4-start-internal]"""
+    ...
+
+# --- 8.3 motadata_py_sdk.otel.metrics ---
+@dataclass(frozen=True, slots=True)
+class MetricsInitConfig:
+    """[traces-to: TPRD-§10-MetricsInitConfig §15.31 §SEMVER-3 §SEMVER-4 §CONV-2]
+
+    Frozen+slots per CONV-2; `otel_protocol` is Literal per SEMVER-4;
+    `export_interval` default unified at 15.0s per SEMVER-3 (matches
+    OTEL_DEFAULT_EXPORT_INTERVAL); validation in `__post_init__` per §15.31.
+    """
+    service: ServiceInfo
+    enabled: bool = True
+    otel_enabled: bool = False
+    otel_endpoint: str = "localhost:4317"
+    otel_insecure: bool = True
+    otel_protocol: _Literal["grpc", "http", "http/protobuf"] = "grpc"
+    export_interval: float = 15.0  # OTel-spec recommended; matches OTEL_DEFAULT_EXPORT_INTERVAL
+    default_labels: dict[str, str] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        """Runtime validation per TPRD §15.31 (FIX — pre-authorized; H5-rev-3
+        D3 iter 2).
+
+        Raises:
+            ValidationError: if any of:
+              - service.name is blank
+              - export_interval <= 0
+              - otel_protocol not in {'grpc','http','http/protobuf'}
+              - otel_endpoint is blank when (enabled and otel_enabled)
+              - default_labels contains keys with leading/trailing whitespace
+        """
+        ...
+
+async def init_metrics(cfg: MetricsInitConfig) -> ShutdownCollector:
+    """Initialize MeterProvider; periodic exporter at export_interval (default 15s).
+    Resource attrs from ServiceInfo. Returns ShutdownCollector.
+    Renamed from Go SDK's `MetricsInit` per PEP 8 (snake_case for module-level
+    functions). Behavior is identical to Go's MetricsInit.
+    [traces-to: TPRD-§10-MetricsInit]
+    """
+    ...
+
+class Registry:
+    """Cached metric handles. Created once per (name, namespace=service.name).
+    [traces-to: TPRD-§10-Registry]
+    [constraint: p50_counter_add <= 1.5us | bench/bench_otel_metrics_counter_add_cached]
+    """
+    def __init__(self, namespace: str) -> None: ...
+    def counter(self, name: str, unit: str = "", description: str = "") -> Any: ...
+    def gauge(self, name: str, unit: str = "", description: str = "") -> Any: ...
+    def histogram(self, name: str, unit: str = "", description: str = "") -> Any: ...
+    def timer(self, name: str, description: str = "") -> Any: ...
+
+# --- 8.4 motadata_py_sdk.otel.logger ---
+@dataclass(frozen=True, slots=True)
+class LoggerInitConfig:
+    """[traces-to: TPRD-§10-LoggerInitConfig §15.31 §SEMVER-4 §CONV-2]
+
+    Frozen+slots per CONV-2; `otel_protocol` and `console_format` are Literal
+    per SEMVER-4; validation in `__post_init__` per §15.31.
+    """
+    service: ServiceInfo
+    level: _Literal["debug", "info", "warn", "error"] = "info"
+    console_enabled: bool = True
+    console_format: _Literal["json", "console"] = "json"
+    otel_enabled: bool = False
+    otel_endpoint: str = "localhost:4317"
+    otel_insecure: bool = True
+    otel_protocol: _Literal["grpc", "http", "http/protobuf"] = "grpc"
+    otel_debug: bool = False
+    file_enabled: bool = False
+    file_path: str = "logs/app.log"
+    file_max_size_mb: int = 100
+    file_max_backups: int = 5
+    file_max_age_days: int = 7
+    file_compress: bool = True
+    add_caller: bool = True
+    caller_skip: int = 2
+    module_levels: dict[str, str] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        """Runtime validation per TPRD §15.31 (FIX — pre-authorized; H5-rev-3
+        D3 iter 2).
+
+        Raises:
+            ValidationError: if any of:
+              - service.name is blank
+              - level not in {'debug','info','warn','error'}
+              - console_format not in {'json','console'}
+              - otel_protocol not in {'grpc','http','http/protobuf'}
+              - otel_endpoint is blank when otel_enabled
+              - file_max_size_mb <= 0 OR file_max_backups < 0 OR file_max_age_days < 0
+              - module_levels values not in the allowed level set
+              - file_path existence is NOT checked at __post_init__ (deferred to
+                runtime first-write; document as deferred)
+        """
+        ...
+
+async def init_logger(cfg: LoggerInitConfig) -> ShutdownCollector:
+    """Initialize root logger. JSON format default; OTel bridge optional.
+    Auto-attach service/version/env (zap-side) per §10.6.
+    Auto-extract trace_id/span_id from active OTel span on every record.
+    Renamed from Go SDK's `LoggerInit` per PEP 8 (snake_case for module-level
+    functions). Behavior is identical to Go's LoggerInit.
+    [traces-to: TPRD-§10.6-LoggerInit]
+    """
+    ...
+
+def get_logger(name: str = "") -> Any:
+    """Get named logger (cached). Equivalent to Go's logger.L().Named(name).
+    Renamed from Go SDK's `L()` per PEP 8 (single-letter names violate PEP 8
+    naming guidance; use descriptive snake_case). Behavior is identical.
+    [traces-to: TPRD-§10.6-L]
+    """
+    ...
+
+# --- 8.5 Default batch/queue settings (§10.8) ---
+OTEL_DEFAULT_MAX_QUEUE_SIZE: Final[int] = 2048
+OTEL_DEFAULT_MAX_EXPORT_BATCH: Final[int] = 512
+# OTel-spec recommended default for production PeriodicExportingMetricReader
+# (15 seconds). Was 1.0 prior to H5-rev-3 D3 iter 2; SEMVER-3 fix unified all
+# three sites (constant + MetricsInitConfig.export_interval +
+# _MetricsConfig.export_interval_seconds) on 15.0.
+OTEL_DEFAULT_EXPORT_INTERVAL: Final[float] = 15.0
+OTEL_DEFAULT_BATCH_TIMEOUT: Final[float] = 30.0
+OTEL_DEFAULT_SHUTDOWN_TIMEOUT: Final[float] = 10.0
+
+
+# ============================================================================
+# §9. motadata_py_sdk.config  (TPRD §11)
+# ============================================================================
+"""pydantic-settings v2 unified config tree.
+
+Env-var precedence: defaults → YAML → env (env wins).
+Both Go-style flat env (LOG_LEVEL, METRICS_OTEL_ENDPOINT) AND OTel-standard
+env (OTEL_EXPORTER_OTLP_ENDPOINT, OTEL_SERVICE_NAME) accepted via
+AliasChoices on each field.
+
+[traces-to: TPRD-§11-Module-config]
+"""
+from typing import Annotated, Literal
+# pydantic + pydantic_settings imports deferred to runtime.
+
+# --- 9.1 Sub-models ---
+# CONV-3 fix (H5-rev-3 D3 iter 2): leading underscore dropped from all 9
+# pydantic sub-model names. They are PUBLIC re-exports from
+# `motadata_py_sdk.config.__init__`; the prior `_<Name>` style implied
+# private-by-convention which contradicted the public re-export. CONV-4 fix
+# applied: mutable literal defaults (`[]`, `{}`) replaced with
+# `Field(default_factory=...)` to defeat the shared-instance footgun.
+# (`pydantic.Field` import deferred to runtime; shown as `Field(...)` below.)
+
+class ServiceConfig:  # pydantic.BaseModel at impl time
+    """[traces-to: TPRD-§11.3-ServiceConfig]"""
+    name: str = "app"                  # env: SERVICE_NAME, OTEL_SERVICE_NAME
+    version: str = "0.0.0"             # env: SERVICE_VERSION
+    environment: str = "development"   # env: SERVICE_ENVIRONMENT
+
+class TracerConfig:  # pydantic.BaseModel
+    """[traces-to: TPRD-§11.3-TracerConfig]"""
+    enabled: bool = False
+    otel_endpoint: str = "localhost:4317"
+    otel_insecure: bool = True
+    otel_protocol: Literal["grpc", "http", "http/protobuf"] = "grpc"
+    otel_debug: bool = False
+    sampling_ratio: Annotated[float, "ge=0.0, le=1.0"] = 1.0
+    # CONV-4 fix: was `propagators: list[str] = ["tracecontext", "baggage"]`
+    # — mutable default = shared instance across all model instances. Now
+    # uses Field(default_factory=lambda: [...]).
+    propagators: list[str] = "Field(default_factory=lambda: ['tracecontext', 'baggage'])"  # type: ignore[assignment]
+    batch_timeout_seconds: float = 5.0
+    max_export_batch: int = 512
+    max_queue_size: int = 2048
+
+class ReconnectConfig:  # pydantic.BaseModel
+    """[traces-to: TPRD-§11.1-ReconnectConfig]"""
+    max_attempts: int = -1
+    initial_interval_seconds: Annotated[float, "gt=0"] = 0.1
+    max_interval_seconds: float = 30.0  # validator: >= initial_interval_seconds
+    multiplier: Annotated[float, "ge=1.0"] = 2.0
+    jitter: Annotated[float, "ge=0.0, le=1.0"] = 0.1
+
+class TLSConfig:  # pydantic.BaseModel
+    """[traces-to: TPRD-§11.1-TLSConfig]"""
+    enabled: bool = False
+    cert_file: str = ""
+    key_file: str = ""
+    ca_file: str = ""
+    skip_verify: bool = False
+    # @model_validator(mode='after') enforces (per TPRD §15.31 alignment):
+    #   if enabled: cert+key both empty OR both set
+    #              + if any of cert/key/ca set, file MUST exist (FileExistsError)
+
+class StreamSubConfig:  # pydantic.BaseModel
+    """[traces-to: TPRD-§11.1-Stream]"""
+    enabled: bool = True              # env: EVENTS_STREAM_DISABLED (INVERTED)
+    domain: str = ""
+    prefix: str = ""
+
+class EventsConfig:  # pydantic.BaseModel
+    """[traces-to: TPRD-§11.1-EventsConfig]"""
+    # CONV-4 fix: mutable list default replaced with Field(default_factory=...)
+    servers: list[str] = "Field(default_factory=lambda: ['nats://localhost:4222'])"  # type: ignore[assignment]
+    name: str = ""
+    connect_timeout_seconds: Annotated[float, "gt=0"] = 10.0
+    drain_timeout_seconds: Annotated[float, "gt=0"] = 30.0
+    idle_timeout_seconds: Annotated[float, "gt=0"] = 1800.0
+    cleanup_interval_seconds: Annotated[float, "gt=0"] = 60.0
+    tls: TLSConfig
+    reconnect: ReconnectConfig
+    stream: StreamSubConfig
+
+class LoggerConfig:  # pydantic.BaseModel; mirrors §11.3 logger keys
+    """[traces-to: TPRD-§11.3-LoggerConfig]"""
+    level: Literal["debug", "info", "warn", "error"] = "info"
+    console_enabled: bool = True
+    console_format: Literal["json", "console"] = "json"
+    otel_enabled: bool = False
+    otel_endpoint: str = "localhost:4317"
+    otel_insecure: bool = True
+    otel_protocol: Literal["grpc", "http", "http/protobuf"] = "grpc"
+    otel_debug: bool = False
+    file_enabled: bool = False
+    file_path: str = "logs/app.log"
+    file_max_size_mb: int = 100
+    file_max_backups: int = 5
+    file_max_age_days: int = 7
+    file_compress: bool = True
+    add_caller: bool = True
+    caller_skip: int = 2
+    # CONV-4 fix: mutable dict default replaced with Field(default_factory=dict)
+    module_levels: dict[str, str] = "Field(default_factory=dict)"  # type: ignore[assignment]
+
+class MetricsConfig:  # pydantic.BaseModel
+    """[traces-to: TPRD-§11.3-MetricsConfig]"""
+    enabled: bool = True
+    otel_enabled: bool = False
+    otel_endpoint: str = "localhost:4317"
+    otel_insecure: bool = True
+    otel_protocol: Literal["grpc", "http", "http/protobuf"] = "grpc"
+    # SEMVER-3 fix: 15.0 unified across constant + InitConfig +
+    # _MetricsConfig.export_interval_seconds (was already 15.0 here; constant
+    # was 1.0 — now 15.0).
+    export_interval_seconds: float = 15.0
+    # CONV-4 fix: mutable dict default replaced with Field(default_factory=dict)
+    default_labels: dict[str, str] = "Field(default_factory=dict)"  # type: ignore[assignment]
+
+class PublishConfig:  # mirrors §11.2
+    """[traces-to: TPRD-§11.2]"""
+    retry_max_attempts: int = 3
+    retry_initial_interval_seconds: float = 0.1
+    retry_max_interval_seconds: float = 5.0
+    retry_multiplier: float = 2.0
+    retry_jitter: float = 0.1
+    ack_timeout_seconds: float = 5.0
+    enable_deduplication: bool = True
+    deduplication_window_seconds: float = 120.0
+
+class SubscribeConfig:  # mirrors §11.2
+    """[traces-to: TPRD-§11.2]"""
+    queue_group: str = ""
+    max_concurrent: Annotated[int, "gt=0"] = 10
+    ack_wait_seconds: Annotated[float, "gt=0"] = 30.0
+    batch_size: int = 100
+    batch_wait_seconds: float = 0.1
+
+class Settings:  # pydantic_settings.BaseSettings
+    """Top-level. [traces-to: TPRD-§11.6-Settings]
+    [constraint: p50_construct_env_only <= 5000us | bench/bench_config_settings_env_cold]
+
+    model_config = SettingsConfigDict(
+        env_nested_delimiter='__',
+        env_file='.env',
+        extra='ignore',
+        env_file_encoding='utf-8',
+    )
+
+    Field aliases per §11.3 mapping (Go-style flat env names + OTel-standard):
+      service.name → AliasChoices('SERVICE_NAME', 'OTEL_SERVICE_NAME')
+      tracer.otel_endpoint → AliasChoices('TRACER_OTEL_ENDPOINT', 'OTEL_EXPORTER_OTLP_ENDPOINT')
+      logger.level → AliasChoices('LOG_LEVEL')
+      etc. Custom EnvSettingsSource may be needed for the inverted
+      EVENTS_STREAM_DISABLED → events.stream.enabled mapping.
+    """
+    service: ServiceConfig
+    tracer: TracerConfig
+    events: EventsConfig
+    logger: LoggerConfig
+    metrics: MetricsConfig
+    publish: PublishConfig
+    subscribe: SubscribeConfig
+
+# Loader functions (§11.4)
+def load(*, dir: str | None = None, env: str | None = None) -> Settings:
+    """Load with precedence: defaults → YAML → env.
+    If dir given: read <dir>/config.yaml; if env given: also <dir>/config.<env>.yaml.
+    YAML env-var expansion (os.path.expandvars-equivalent) before parsing.
+
+    SECURITY: YAML parsing uses `yaml.safe_load()` ONLY. NEVER use
+    `yaml.load`, `yaml.unsafe_load`, `yaml.full_load`, or `yaml.Loader`/
+    `FullLoader`/`UnsafeLoader` — pyyaml's full loader deserializes
+    arbitrary Python types (e.g. `!!python/object/apply:os.system [...]`),
+    so attacker-controlled config = RCE. `safe_load` restricts to the
+    standard YAML tag set. SEE security review SEC-1 (D3 fix loop iter 1)
+    and algorithms.md §A15 for rationale. DO NOT regress to `yaml.load` /
+    `full_load` at impl time. This is a HARD constraint enforced at impl
+    review by `sdk-security-devil`.
+
+    [traces-to: TPRD-§11.4-load]
+    """
+    ...
+
+
+# ============================================================================
+# END api.py.stub  (~870 lines including this trailer)
+# ============================================================================

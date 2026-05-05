@@ -1,0 +1,81 @@
+{
+  "schema": "manual_symbols (G95/G96 contract)",
+  "run_id": "sdk-dragonfly-p1-v1",
+  "generated_at": "2026-04-23T15:58:00Z",
+  "baseline_captured_after_P1_impl": true,
+  "_schema_caveat": "whole-file hashes used where per-symbol AST parsing wasn't available in this run; filed as tooling follow-up",
+  "manual_symbols": [
+    {
+      "file": "core/l2cache/dragonfly/const.go",
+      "symbol": "(whole-file)",
+      "byte_start": 0,
+      "byte_end": 2232,
+      "sha256": "f4f9f0bc1f8b46f834c857155de0204b2992d9c325d0cfaabdec6546e2341bb2",
+      "owner": "MANUAL"
+    },
+    {
+      "file": "core/l2cache/dragonfly/string.go",
+      "symbol": "(whole-file)",
+      "byte_start": 0,
+      "byte_end": 6889,
+      "sha256": "eec512d9bfd2cf5e07e0d320f08da56ddace58ceb7ff3ba55495ce95bc61fd66",
+      "owner": "MANUAL"
+    },
+    {
+      "file": "core/l2cache/dragonfly/hash.go",
+      "symbol": "(whole-file)",
+      "byte_start": 0,
+      "byte_end": 5922,
+      "sha256": "7d9bee0237bfb251907ba1b99109fc6a9600516309bf7c943c81b57523916f31",
+      "owner": "MANUAL"
+    },
+    {
+      "file": "core/l2cache/dragonfly/pipeline.go",
+      "symbol": "(whole-file)",
+      "byte_start": 0,
+      "byte_end": 2350,
+      "sha256": "98c672dece673d40c9990710a10b2e1dce6cb6d98f70909854351f4bdc50bf1a",
+      "owner": "MANUAL"
+    },
+    {
+      "file": "core/l2cache/dragonfly/pubsub.go",
+      "symbol": "(whole-file)",
+      "byte_start": 0,
+      "byte_end": 1464,
+      "sha256": "2581bf1930a091be08f275aea647d80862c21bf19119155ae84e01488f279bcf",
+      "owner": "MANUAL"
+    },
+    {
+      "file": "core/l2cache/dragonfly/script.go",
+      "symbol": "(whole-file)",
+      "byte_start": 0,
+      "byte_end": 1746,
+      "sha256": "365c77b8360de9444e200ed86d6f556ad6c580e34c6c190aff38ca35f8c7a23f",
+      "owner": "MANUAL"
+    },
+    {
+      "file": "core/l2cache/dragonfly/raw.go",
+      "symbol": "(whole-file)",
+      "byte_start": 0,
+      "byte_end": 1232,
+      "sha256": "d05b2cedd76f39655c53626c7d10e4cc9e89e8db6d4f772640e65865cba25834",
+      "owner": "MANUAL"
+    },
+    {
+      "file": "core/l2cache/dragonfly/poolstats.go",
+      "symbol": "(whole-file)",
+      "byte_start": 0,
+      "byte_end": 2209,
+      "sha256": "c018509dc604686e0eaa27f5b49955f260f0ea6a5a6fbbc8c5cb5331a7ae1975",
+      "owner": "MANUAL"
+    },
+    {
+      "file": "core/l2cache/dragonfly/tls.go",
+      "symbol": "(whole-file)",
+      "byte_start": 0,
+      "byte_end": 830,
+      "sha256": "1b9dd704e10a51a136be16c81346635e7219269d5b391b44e0dc00304cb4b440",
+      "owner": "MANUAL"
+    }
+  ]
+}

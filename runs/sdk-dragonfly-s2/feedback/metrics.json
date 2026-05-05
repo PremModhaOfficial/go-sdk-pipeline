@@ -1,0 +1,399 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "sdk-dragonfly-s2",
+  "pipeline_version": "0.1.0",
+  "collected_at": "2026-04-18T15:00:00Z",
+  "collector": "metrics-collector",
+  "wave": "F1",
+  "mode": "A",
+  "target_package": "motadatagosdk/core/l2cache/dragonfly",
+  "target_branch": "sdk-pipeline/sdk-dragonfly-s2",
+
+  "per_agent": [
+    {
+      "agent": "sdk-intake-agent",
+      "phase": "intake",
+      "waves": ["I1","I2","I3","I4","I5","I6","I7"],
+      "status": "completed",
+      "duration_seconds_est": 420,
+      "metrics": {
+        "output_files_count": 5,
+        "output_lines_total_est": 320,
+        "decisions_logged": 6,
+        "lifecycle_entries": 2,
+        "communications_logged": 0,
+        "events_logged": {"major": 0, "minor": 0, "info": 0},
+        "failures_logged": 0,
+        "refactors_logged": 0,
+        "retries": 0,
+        "status": "completed",
+        "review_findings": {"critical": 0, "high": 0, "medium": 0, "low": 0},
+        "guardrail_results": {
+          "passed": 5,
+          "failed": 0,
+          "skipped": 0,
+          "note": "G23 WARN (non-blocking, counts as pass); G24 PASS; G20/G21/G22 PASS"
+        },
+        "communication_health": {
+          "sent": 0,
+          "received": 0,
+          "unresolved_assumptions": 0,
+          "escalations": 0,
+          "avg_response_status": "n/a"
+        },
+        "failure_recovery": {"total_failures": 0, "recovered": 0, "unrecovered": 0},
+        "skill_coverage_pct": 0.70,
+        "manifest_miss_rate": 0.0,
+        "hitl_gates_owned": ["H1"],
+        "quality_score_components": {
+          "completeness": 1.0,
+          "review_severity": 1.0,
+          "guardrail_pass_rate": 1.0,
+          "rework_score": 1.0,
+          "communication_health": 1.0,
+          "failure_recovery": 1.0,
+          "downstream_impact": 1.0
+        },
+        "quality_score": 1.00
+      }
+    },
+    {
+      "agent": "sdk-design-lead",
+      "phase": "design",
+      "waves": ["D1","D2","D3","D4","D5","H6"],
+      "status": "completed",
+      "duration_seconds_est": 4500,
+      "metrics": {
+        "output_files_count": 16,
+        "output_lines_total_est": 1950,
+        "decisions_logged": 9,
+        "lifecycle_entries": 4,
+        "communications_logged": 0,
+        "events_logged": {"major": 2, "minor": 1, "info": 0},
+        "failures_logged": 0,
+        "refactors_logged": 1,
+        "retries": 0,
+        "status": "completed",
+        "review_findings": {
+          "critical": 0,
+          "high": 2,
+          "medium": 5,
+          "low": 4,
+          "note": "2 high findings (F-D3 scraper-stop timeout; S-9 credential-rotation Dialer) from D3 devil wave — both resolved in D4 iter-1. Final state: 0 high remaining."
+        },
+        "guardrail_results": {
+          "passed": 4,
+          "failed": 0,
+          "pending_tool_unavail": 2,
+          "skipped": 0,
+          "note": "G30/G31/G34/G38 PASS first try; G32/G33 PENDING (govulncheck/osv-scanner not installed) — resolved at H6. Not counted as first-try fails per missing-data default 0.5."
+        },
+        "communication_health": {
+          "sent": 0,
+          "received": 0,
+          "unresolved_assumptions": 0,
+          "escalations": 0,
+          "avg_response_status": "n/a"
+        },
+        "failure_recovery": {"total_failures": 0, "recovered": 0, "unrecovered": 0},
+        "rework_iterations": 1,
+        "devil_block_rate": 0.4,
+        "skill_coverage_pct": 0.70,
+        "quality_score_components": {
+          "completeness": 1.0,
+          "review_severity": 1.0,
+          "guardrail_pass_rate": 0.67,
+          "rework_score": 0.5,
+          "communication_health": 1.0,
+          "failure_recovery": 1.0,
+          "downstream_impact": 0.5
+        },
+        "quality_score": 0.85
+      }
+    },
+    {
+      "agent": "sdk-impl-lead",
+      "phase": "impl",
+      "waves": ["M1","M3","M5","M6","M7","M9","M10"],
+      "status": "completed",
+      "duration_seconds_est": 9000,
+      "metrics": {
+        "output_files_count": 23,
+        "output_lines_total_est": 4200,
+        "decisions_logged": 6,
+        "lifecycle_entries": 4,
+        "communications_logged": 1,
+        "events_logged": {"major": 5, "minor": 1, "info": 0},
+        "failures_logged": 1,
+        "refactors_logged": 1,
+        "retries": 0,
+        "status": "completed",
+        "review_findings": {
+          "critical": 0,
+          "high": 0,
+          "medium": 1,
+          "low": 4,
+          "note": "All 5 impl devils PASS. Medium: Watch user-error propagation observation (code-reviewer). Low: 4 ACCEPT-WITH-NOTE across ergonomics/overengineering devils."
+        },
+        "guardrail_results": {
+          "passed": 13,
+          "failed": 0,
+          "skipped": 0,
+          "note": "G07/G40/G41/G42/G43/G48/G50/G52/G63/G69/G97/G99/G103 all PASS"
+        },
+        "communication_health": {
+          "sent": 1,
+          "received": 1,
+          "unresolved_assumptions": 0,
+          "escalations": 1,
+          "avg_response_status": "resolved",
+          "note": "DEP-BUMP-UNAPPROVED escalation (seq 38) raised and resolved (seq 39)"
+        },
+        "failure_recovery": {
+          "total_failures": 1,
+          "recovered": 1,
+          "unrecovered": 0,
+          "note": "MVS dep-bump halt recovered via Option A approved by run-driver"
+        },
+        "rework_iterations": 0,
+        "commits": 6,
+        "exported_symbols": 94,
+        "exported_delta_vs_stub": 1,
+        "coverage_pct": 90.4,
+        "test_pass": 71,
+        "test_skip": 1,
+        "test_fail": 0,
+        "loc_net_change": -336,
+        "refactor_ratio": 0.043,
+        "skill_coverage_pct": 0.70,
+        "quality_score_components": {
+          "completeness": 1.0,
+          "review_severity": 1.0,
+          "guardrail_pass_rate": 1.0,
+          "rework_score": 1.0,
+          "communication_health": 1.0,
+          "failure_recovery": 1.0,
+          "downstream_impact": 0.5
+        },
+        "quality_score": 0.975
+      }
+    },
+    {
+      "agent": "sdk-testing-lead",
+      "phase": "testing",
+      "waves": ["T1","T2","T3","T4","T5","T6","T7","T8","T9","T10","T11","H8","H9"],
+      "status": "completed",
+      "duration_seconds_est": 5400,
+      "metrics": {
+        "output_files_count": 14,
+        "output_lines_total_est": 1800,
+        "decisions_logged": 14,
+        "lifecycle_entries": 2,
+        "communications_logged": 0,
+        "events_logged": {"major": 7, "minor": 1, "info": 1},
+        "failures_logged": 0,
+        "refactors_logged": 0,
+        "retries": 0,
+        "status": "completed",
+        "review_findings": {"critical": 0, "high": 0, "medium": 1, "low": 3,
+          "note": "Medium: allocs-per-GET constraint FAIL (resolved via H8 waiver). Low: 3 gaps (BenchmarkHSet absent, A/B harness absent, integration matrix partial) filed as observations."
+        },
+        "guardrail_results": {
+          "passed": 10,
+          "failed": 0,
+          "skipped": 1,
+          "note": "G60/G61/G62/G63/G64/G65/G32(exemption)/G33/G34/G97(waiver) PASS. T10 mutation SKIP (no binary installed)."
+        },
+        "communication_health": {
+          "sent": 0,
+          "received": 0,
+          "unresolved_assumptions": 0,
+          "escalations": 0,
+          "avg_response_status": "n/a"
+        },
+        "failure_recovery": {"total_failures": 0, "recovered": 0, "unrecovered": 0},
+        "rework_iterations": 0,
+        "commits": 1,
+        "test_results": {
+          "unit_pass": 71, "unit_skip": 1, "unit_fail": 0,
+          "integration_pass": 2, "integration_skip": 1, "integration_fail": 0,
+          "observability_pass": 4, "observability_fail": 0,
+          "flake_hunt_iterations": 3, "flake_hunt_total_pass": 217, "flake_hunt_fail": 0,
+          "fuzz_crashes": 0,
+          "leaks": 0,
+          "races": 0,
+          "new_vulns_dragonfly_scope": 0
+        },
+        "bench_delta_pct": null,
+        "skill_coverage_pct": 0.70,
+        "quality_score_components": {
+          "completeness": 1.0,
+          "review_severity": 1.0,
+          "guardrail_pass_rate": 1.0,
+          "rework_score": 1.0,
+          "communication_health": 1.0,
+          "failure_recovery": 1.0,
+          "downstream_impact": 0.5
+        },
+        "quality_score": 0.975
+      }
+    }
+  ],
+
+  "per_phase": {
+    "intake": {
+      "status": "completed",
+      "duration_seconds_est": 420,
+      "waves_completed": ["I1","I2","I3","I4","I5","I6","I7"],
+      "rework_iterations": 0,
+      "hitl_gates": {"H1": "approved"},
+      "devil_block_rate": 0.0,
+      "skill_coverage_pct": 0.70,
+      "manifest_miss_rate": 0.0,
+      "guardrail_verdicts": {"G20":"PASS","G21":"PASS","G22":"PASS","G23":"WARN","G24":"PASS"},
+      "agents": ["sdk-intake-agent"]
+    },
+    "design": {
+      "status": "completed",
+      "duration_seconds_est": 4500,
+      "waves_completed": ["D1","D2","D3","D4","D5","H6"],
+      "rework_iterations": 1,
+      "hitl_gates": {"H5":"approved","H6":"approved-conditional"},
+      "devil_block_rate": 0.4,
+      "skill_coverage_pct": 0.70,
+      "manifest_miss_rate": 0.0,
+      "guardrail_verdicts": {"G30":"PASS","G31":"PASS","G32":"PENDING-tool-unavail","G33":"PENDING-tool-unavail","G34":"PASS","G38":"PASS"},
+      "agents": ["sdk-design-lead","sdk-designer","interface-designer","algorithm-designer","concurrency-designer","pattern-advisor","guardrail-validator","sdk-design-devil","sdk-dep-vet-devil","sdk-semver-devil","sdk-convention-devil","sdk-security-devil"]
+    },
+    "impl": {
+      "status": "completed",
+      "duration_seconds_est": 9000,
+      "waves_completed": ["M1","M3","M5","M6","M7","M9","M10"],
+      "waves_skipped": ["M2","M4","M8"],
+      "rework_iterations": 0,
+      "hitl_gates": {"H7":"approved"},
+      "devil_block_rate": 0.0,
+      "skill_coverage_pct": 0.70,
+      "manifest_miss_rate": 0.0,
+      "dep_escalations": 1,
+      "guardrail_verdicts": {"G07":"PASS","G40":"PASS","G41":"PASS","G42":"PASS","G43":"PASS","G48":"PASS","G50":"PASS","G52":"PASS","G63":"PASS","G69":"PASS","G97":"PASS","G99":"PASS","G103":"PASS"},
+      "commits": 6,
+      "exported_symbols": 94,
+      "coverage_pct": 90.4,
+      "agents": ["sdk-impl-lead"]
+    },
+    "testing": {
+      "status": "completed",
+      "duration_seconds_est": 5400,
+      "waves_completed": ["T1","T2","T3","T4","T5","T6","T7","T8","T9","T11"],
+      "waves_skipped": ["T10"],
+      "rework_iterations": 0,
+      "hitl_gates": {"H8":"approved-option-a-waiver","H9":"approved"},
+      "devil_block_rate": 0.0,
+      "skill_coverage_pct": 0.70,
+      "manifest_miss_rate": 0.0,
+      "guardrail_verdicts": {"G60":"PASS","G61":"PASS","G62":"PASS","G63":"PASS","G64":"PASS","G65":"PASS","G32":"PASS-baseline-exempt","G33":"PASS","G34":"PASS","G97":"PASS-WITH-WAIVER"},
+      "bench_baseline_captured": true,
+      "bench_delta_pct": null,
+      "commits": 1,
+      "agents": ["sdk-testing-lead","unit-test-agent","integration-test-agent","sdk-integration-flake-hunter","performance-test-agent","sdk-benchmark-devil","sdk-leak-hunter","fuzz-agent","guardrail-validator"]
+    }
+  },
+
+  "per_run_rollup": {
+    "run_id": "sdk-dragonfly-s2",
+    "mode": "A",
+    "pipeline_quality": 0.95,
+    "pipeline_quality_note": "Mean of 4 primary agent quality scores (sdk-intake 1.00, sdk-design-lead 0.85, sdk-impl-lead 0.975, sdk-testing-lead 0.975). Weighted equally; design lower due to 1 rework iteration and G32/G33 tool-unavail penalty.",
+    "coverage_pct": 90.4,
+    "bench_delta_pct": null,
+    "vuln_count_new": 0,
+    "leak_count": 0,
+    "flake_rate": 0.0,
+    "determinism_diff": null,
+    "exported_symbols": 94,
+    "traces_to_markers": 145,
+    "total_commits": 7,
+    "total_hitl_approvals": 5,
+    "hitl_approvals": ["H1","H5","H6-conditional","H7","H8-waiver","H9"],
+    "dep_escalations_resolved": 1,
+    "defects": 0,
+    "rework_iterations_total": 1,
+    "design_rework_iterations": 1,
+    "impl_rework_iterations": 0,
+    "testing_rework_iterations": 0,
+    "skills_created": 0,
+    "skills_bumped_patch": 0,
+    "skills_bumped_minor": 0,
+    "skills_bumped_major": 0,
+    "skill_gaps_filed": 8,
+    "user_clarifications_asked": 0,
+    "devil_block_rate_design": 0.4,
+    "devil_block_rate_impl": 0.0,
+    "hitl_timeout_count": 0,
+    "open_backlog_items": 6,
+    "supply_chain": {
+      "govulncheck_reachable_total": 10,
+      "govulncheck_new_dragonfly_scope": 0,
+      "osv_findings_total": 17,
+      "osv_new_cvss_ge7_dragonfly_scope": 0
+    },
+    "bench_baselines_captured": ["core/l2cache/dragonfly"],
+    "bench_constraints": {
+      "p50_get_le_200us": "PROVISIONAL-PASS",
+      "p99_get_le_1ms": "PROVISIONAL-PASS",
+      "allocs_per_get_le_3": "WAIVED-H8",
+      "sdk_overhead_vs_raw_le_5pct": "UNMEASURED",
+      "sustained_10k_ops_sec": "UNMEASURED"
+    },
+    "anomalies": [
+      {
+        "id": "A1",
+        "severity": "medium",
+        "agent": "sdk-design-lead",
+        "description": "G32/G33 guardrail tools (govulncheck, osv-scanner) not installed at design-phase execution time. Resolved at H6 but created a 2-wave PENDING state. Recommendation: add tooling preflight check to pipeline startup (Phase 0).",
+        "backlog_item": true
+      },
+      {
+        "id": "A2",
+        "severity": "medium",
+        "agent": "sdk-impl-lead",
+        "description": "DEP-BUMP-UNAPPROVED escalation: testcontainers-go@0.42.0 forced MVS bumps to 4 additional deps. Policy (Rule #19) was correctly followed (halt before go.mod commit) but required run-driver intervention. Recommendation: dep-impact dry-run before requesting dep additions.",
+        "backlog_item": true
+      },
+      {
+        "id": "A3",
+        "severity": "medium",
+        "agent": "sdk-testing-lead",
+        "description": "TPRD §10 allocs-per-GET constraint (<= 3) is unachievable with go-redis v9.18 client baseline (~25-30 allocs). Constraint was written before client selection. Resolved via H8 waiver but signals a TPRD authoring gap. Recommendation: TPRD authors should verify performance constraints against the chosen client's known floor before declaring gates.",
+        "backlog_item": true
+      },
+      {
+        "id": "A4",
+        "severity": "low",
+        "agent": "sdk-testing-lead",
+        "description": "T10 mutation testing SKIP: gremlins/go-mutesting binaries not installed. Second tool-availability gap this run after govulncheck/osv-scanner. Recommendation: codify required tool set in pipeline preflight checklist.",
+        "backlog_item": true
+      },
+      {
+        "id": "A5",
+        "severity": "low",
+        "agent": "sdk-design-lead",
+        "description": "BenchmarkHSet declared in TPRD §11.3 but not emitted by impl. Minor gap; HExpire covers adjacent allocation profile. Filed for next slice.",
+        "backlog_item": true
+      }
+    ]
+  },
+
+  "sdk_specific": {
+    "skill_coverage_pct": 0.70,
+    "skills_invoked_present": 19,
+    "skills_declared_in_tprd": 27,
+    "skill_gaps_filed_to_proposed": 8,
+    "devil_block_rate": 0.2,
+    "hitl_timeout_count": 0,
+    "phase_token_pct_of_budget": null,
+    "phase_wall_clock_pct_of_budget": null,
+    "determinism_diff_bytes": null
+  }
+}

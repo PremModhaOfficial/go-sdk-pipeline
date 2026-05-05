@@ -201,3 +201,36 @@ Note: These are proposals only. Per CLAUDE.md Rule #23 skills are human-authored
 - **MISSING** `testcontainers-dragonfly-recipe` (≥1.0.0) — source run `sdk-dragonfly-s2`
 - **MISSING** `k8s-secret-file-credential-loader` (≥1.0.0) — source run `sdk-dragonfly-s2`
 - **MISSING** `sentinel-error-model-mapping` (≥1.0.0) — source run `sdk-dragonfly-s2`
+
+---
+
+## Auto-filed from run `sdk-resourcepool-py-pilot-v1` on 2026-04-28 (F2 improvement-planner)
+
+Source: `improvement-planner` Wave F2 of Phase 4 feedback. First Python pilot (v0.5.0 Phase B).
+Derived from python-pilot-retrospective Q5, run-retrospective H10 list, impl-retro M10 escalation,
+testing-retro soak harness v1→v2 rewrite, and python-pilot Q4 leak-fixture template confirmation.
+Status: `proposed` (awaiting human PR authorship per rule #23).
+
+| Priority | Skill | Motivation | Primary consumers | Source pattern |
+|---|---|---|---|---|
+| MUST | `python-asyncio-lock-free-patterns` (v1.0.0) | Required by `runs/sdk-resourcepool-py-pilot-v1/feedback/v1.1.0-perf-improvement-tprd-draft.md §11`. asyncio.Lock+Condition imposes ~2 µs/cycle floor structurally; v1.1.0 perf-improvement TPRD targets ≥1M acq/sec (≥2× current 458k). Skill must encode lock-free / sharded / queue-based patterns appropriate for Python asyncio (vs Go sync primitives). **MUST be authored before v1.1.0 run begins.** | `sdk-perf-architect`, `sdk-impl-lead`, `concurrency`, `algorithm` | impl-retro M10 Fix 2 escalation |
+| SHOULD | `asyncio-soak-thread-poller` (v1.0.0) | Codifies the rule: soak harnesses for asyncio workloads MUST poll from a dedicated OS thread (not the event loop) to avoid loop starvation. Soak harness v1 (pure asyncio poller) was rewritten as v2 thread-poller during testing phase. | `sdk-testing-lead`, `sdk-soak-runner` | testing-retro soak harness v1 starvation |
+| SHOULD | `python-bench-counter-mode-harness` (v1.0.0) | Codifies counter-mode / batch-mode harness patterns for sub-µs synchronous operations measured inside an async test suite. `bench_try_acquire` measured 7.2 µs because async-release overhead polluted the timed window; counter-mode BATCH=128 isolated the actual op (71 ns; 70× under budget). Pattern recurred across pilots (sdk-dragonfly-s2 + this run). | `sdk-impl-lead`, `sdk-benchmark-devil` | impl-retro M10 Fix 1; run-retrospective Top-3 Surprise #2 |
+| MAY | `python-asyncio-task-leak-fixture` (v1.0.0) | Codifies the policy-free `assert_no_leaked_tasks` fixture pattern (snap `asyncio.all_tasks()` before/after; reusable across any asyncio package). Confirmed working in this pilot (Q4 verdict: shape CONFIRMED for future Python pilots). Lifts the pattern out of resourcepool tests for inheritance. | `sdk-leak-hunter`, `sdk-testing-lead` | python-pilot Q4 verdict |
+
+---
+
+## Auto-filed PROPOSED-CONVENTIONS placeholder (`docs/PROPOSED-CONVENTIONS.md` not yet present)
+
+Source: `improvement-planner` Wave F2; python-pilot Q2 D6=Lenient verdict (single Go-flavored
+heuristic leak — `__slots__` ≤8 in `sdk-design-devil` DD-001 — does not yet justify D6=Split).
+The intermediate vehicle is a `python/conventions.yaml` companion file, which is human-authored.
+
+Pending creation of `docs/PROPOSED-CONVENTIONS.md`, the proposed entries are listed in this run's
+improvement plan body at `runs/sdk-resourcepool-py-pilot-v1/feedback/improvement-plan.md
+§"PROPOSED-CONVENTIONS additions"`. Four entries:
+
+- `sdk-overengineering-critic` — Go interface unused-abstraction → Python ABC/Protocol guidance
+- `sdk-dep-vet-devil` — govulncheck/go.sum → pip-audit/safety/pyproject.toml
+- `sdk-security-devil` — tls.Config → ssl.SSLContext / asyncio in-process N/A
+- `sdk-design-devil` — `__slots__` ≤8 → budget-by-profile (companion to A7 prompt patch)

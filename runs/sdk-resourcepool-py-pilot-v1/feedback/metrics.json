@@ -1,0 +1,178 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "sdk-resourcepool-py-pilot-v1",
+  "pipeline_version": "0.5.0",
+  "pipeline_quality_score": 0.978,
+  "sample_size": 28,
+  "agents": [
+    {
+      "name": "sdk-intake-agent",
+      "quality_score": 0.985,
+      "phase": "intake",
+      "status": "completed"
+    },
+    {
+      "name": "designer",
+      "quality_score": 1.0,
+      "phase": "design",
+      "status": "completed"
+    },
+    {
+      "name": "interface",
+      "quality_score": 1.0,
+      "phase": "design",
+      "status": "completed"
+    },
+    {
+      "name": "algorithm",
+      "quality_score": 1.0,
+      "phase": "design",
+      "status": "completed"
+    },
+    {
+      "name": "concurrency",
+      "quality_score": 1.0,
+      "phase": "design",
+      "status": "completed"
+    },
+    {
+      "name": "pattern-advisor",
+      "quality_score": 1.0,
+      "phase": "design",
+      "status": "completed"
+    },
+    {
+      "name": "sdk-perf-architect",
+      "quality_score": 1.0,
+      "phase": "design",
+      "status": "completed"
+    },
+    {
+      "name": "sdk-design-devil",
+      "quality_score": 1.0,
+      "phase": "design",
+      "status": "completed"
+    },
+    {
+      "name": "sdk-security-devil",
+      "quality_score": 1.0,
+      "phase": "design",
+      "status": "completed"
+    },
+    {
+      "name": "sdk-semver-devil",
+      "quality_score": 1.0,
+      "phase": "design",
+      "status": "completed"
+    },
+    {
+      "name": "sdk-design-lead",
+      "quality_score": 0.975,
+      "phase": "design",
+      "status": "completed"
+    },
+    {
+      "name": "sdk-impl-lead",
+      "quality_score": 0.925,
+      "phase": "implementation",
+      "status": "completed"
+    },
+    {
+      "name": "sdk-marker-scanner",
+      "quality_score": 1.0,
+      "phase": "implementation",
+      "status": "completed"
+    },
+    {
+      "name": "sdk-marker-hygiene-devil",
+      "quality_score": 1.0,
+      "phase": "implementation",
+      "status": "completed"
+    },
+    {
+      "name": "sdk-overengineering-critic",
+      "quality_score": 1.0,
+      "phase": "implementation",
+      "status": "completed"
+    },
+    {
+      "name": "code-reviewer",
+      "quality_score": 1.0,
+      "phase": "implementation",
+      "status": "completed"
+    },
+    {
+      "name": "sdk-api-ergonomics-devil",
+      "quality_score": 1.0,
+      "phase": "implementation",
+      "status": "completed"
+    },
+    {
+      "name": "sdk-testing-lead",
+      "quality_score": 1.0,
+      "phase": "testing",
+      "status": "completed"
+    },
+    {
+      "name": "sdk-integration-flake-hunter",
+      "quality_score": 1.0,
+      "phase": "testing",
+      "status": "completed"
+    },
+    {
+      "name": "sdk-benchmark-devil",
+      "quality_score": 0.95,
+      "phase": "testing",
+      "status": "completed"
+    },
+    {
+      "name": "sdk-complexity-devil",
+      "quality_score": 1.0,
+      "phase": "testing",
+      "status": "completed"
+    },
+    {
+      "name": "sdk-leak-hunter",
+      "quality_score": 1.0,
+      "phase": "testing",
+      "status": "completed"
+    },
+    {
+      "name": "metrics-collector",
+      "quality_score": 1.0,
+      "phase": "feedback",
+      "status": "completed"
+    },
+    {
+      "name": "sdk-skill-coverage-reporter",
+      "quality_score": 1.0,
+      "phase": "feedback",
+      "status": "completed"
+    },
+    {
+      "name": "sdk-skill-drift-detector",
+      "quality_score": 1.0,
+      "phase": "feedback",
+      "status": "completed"
+    },
+    {
+      "name": "phase-retrospector",
+      "quality_score": 1.0,
+      "phase": "feedback",
+      "status": "completed"
+    },
+    {
+      "name": "improvement-planner",
+      "quality_score": 1.0,
+      "phase": "feedback",
+      "status": "completed"
+    },
+    {
+      "name": "learning-engine",
+      "quality_score": 1.0,
+      "phase": "feedback",
+      "status": "completed"
+    }
+  ],
+  "note": "Authored by orchestrator F4 wave (baseline-manager continuation) extracting per-agent quality_scores from feedback/metrics-report.md per metrics-collector. Consumed by G86 to detect >=5pp regression vs baselines/shared/quality-baselines.json (G86 no-ops when prior_runs<3; this run is run #2)."
+}

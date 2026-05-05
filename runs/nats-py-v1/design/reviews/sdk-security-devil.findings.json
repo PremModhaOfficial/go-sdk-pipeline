@@ -1,0 +1,218 @@
+{
+  "agent": "sdk-security-devil",
+  "review_round": "rev-3 iter 5",
+  "phase": "design",
+  "verdict": "PASS",
+  "convergence": true,
+  "blocker_count": 0,
+  "warn_count": 0,
+  "note_count": 7,
+  "pass_count": 11,
+  "summary": "Iter-5 REVISE-strict re-pass: iter-3 added (a) defense-in-depth tenant_id validation in TenantConsumerConfig.__post_init__ reusing the same _TENANT_ID_REGEX as TenantKVStore/TenantObjectStore (single source of truth across overlays), (b) construction-time __post_init__ validators on 7 event-domain dataclasses (StreamConfig, ConsumerConfig, TenantConsumerConfig, RequesterConfig, KeyValueConfig, ObjectStoreConfig, ObjectMeta) using 6 new private regex constants (_STREAM_NAME_REGEX, _CONSUMER_NAME_REGEX, _SUBJECT_REGEX, _BUCKET_NAME_REGEX, _OBJECT_NAME_REGEX, plus _MAX_DESCRIPTION_LEN cap), (c) CONV-12 fix: ErrCircuitOpen + ErrRateLimitExceeded relocated to events.utils._errors so _NEVER_RETRY: Final[frozenset[...]] is populated AT DEFINITION TIME (no cross-module mutation, no import-order race). All three changes are SECURITY-POSITIVE: (a) closes SEC-11 narrow-scope concern from iter-3, (b) extends fail-fast input rejection across the entire event-domain config surface, (c) eliminates a TOCTOU-style import-order race that could have left the breaker silently bypassed. ReDoS scan on all 6 new regexes: 5 are bounded character classes (provably linear, no alternation or nested quantifier); _SUBJECT_REGEX has alternation `([A-Za-z0-9_-]+|\\*)` inside a `(...)*` group but empirical timing across N in {100..32000} confirms LINEAR scaling (~40-56 ns/byte) — NOT catastrophic backtracking. Error-message PII scan: every echoed value (`got {self.name!r}`, `got {self.tenant_id!r}`, `got {self.bucket!r}`) is a config IDENTIFIER, never a credential/token/secret/payload; description is checked by len() only (no value echo). CONV-12 verification: zero remaining mutation of _NEVER_RETRY anywhere in api.py.stub / algorithms.md / interfaces.md / dependencies.md (grep clean). ALL prior PASS items reconfirmed: SEC-1 yaml.safe_load (3 sites), SEC-2 msgpack DEFAULT_MAX_* caps (5 constants), SEC-7 ValueError mapping at codec boundary, §15.32 TenantID regex excludes all NATS subject special chars, §15.30 propagator.extract has no DoS surface, §15.34 error_kind label uses type(exc).__name__ only. CONVERGENCE.",
+  "iter5_changes_audit": [
+    {
+      "id": "AUDIT-CONV-5-postinit-validators",
+      "title": "7 dataclass __post_init__ validators (StreamConfig + ConsumerConfig + TenantConsumerConfig + RequesterConfig + KeyValueConfig + ObjectStoreConfig + ObjectMeta)",
+      "verdict": "PASS",
+      "evidence": [
+        "api.py.stub:924-949 — StreamConfig.__post_init__: name regex+non-empty, subjects non-empty + per-element subject regex, max_msgs/max_bytes/max_age/max_msg_size>=0, replicas in {1,3,5}, description length cap.",
+        "api.py.stub:1070-1097 — ConsumerConfig.__post_init__: stream regex, name (durable) regex, filter_subjects per-element regex, ack_wait/max_deliver/max_ack_pending bounds (with -1 sentinel allowance for max_deliver = unlimited).",
+        "api.py.stub:1124-1161 — TenantConsumerConfig.__post_init__: stream + module regex, tenant_id validated via SAME _TENANT_ID_REGEX as TenantKVStore/TenantObjectStore (single source of truth, closes SEC-11 from iter-3) + length cap at MaxTenantIDLength=128, filter_subjects regex, ack_wait/max_deliver/max_ack_pending bounds, description length cap.",
+        "api.py.stub:1337-1363 — RequesterConfig.__post_init__: reply_stream regex, reply_subject_prefix regex, instance_id regex, max_payload>=0, request_timeout in (0, 300] (cap defends against misconfig blocking the requester for hours), inactive_threshold>0.",
+        "api.py.stub:1457-1479 — KeyValueConfig.__post_init__: bucket regex, max_value_size>=-1 (sentinel allowance), history in [1, 64] (matches nats-py upstream cap), ttl/max_bytes>=0, replicas in {1,3,5}, description length cap.",
+        "api.py.stub:1586-1602 — ObjectStoreConfig.__post_init__: bucket regex, ttl/max_bytes>=0, replicas in {1,3,5}, description length cap.",
+        "api.py.stub:1618-1628 — ObjectMeta.__post_init__: name regex (allows path-like '.', '/', '_', '-'), description length cap, chunk_size>0.",
+        "Error-message PII scan (paranoid): every `got {self.X!r}` echo is a config IDENTIFIER (stream/consumer/bucket/object name, tenant_id, numeric limit). NONE echo a credential, token, secret, payload, or PII field. The description field is checked by len() only — the value itself is never echoed. Length-bounded by MaxTenantIDLength=128 / _MAX_DESCRIPTION_LEN=1024 caps so even malicious-overflow input doesn't blow up exception-message memory. Verdict: SAFE TO ECHO.",
+        "Threat-model alignment: ValidationError messages flow back to the application's caller (the SDK consumer's error handler) — same trust boundary that supplied the value in the first place. The caller already knows what they passed in; no privilege escalation across the leak."
+      ]
+    },
+    {
+      "id": "AUDIT-ReDoS-6-new-regexes",
+      "title": "ReDoS scan: 6 new regex constants in events.utils",
+      "verdict": "PASS",
+      "evidence": [
+        "_TENANT_ID_REGEX `^[A-Za-z0-9][A-Za-z0-9_-]*$` — single character class with bounded quantifier; provably linear time. No alternation, no nested quantifier. Empirical: 14us/match at 10K input, drops to <1us on instant-fail mismatch.",
+        "_STREAM_NAME_REGEX `^[A-Za-z0-9_-]+$` — single character class, bounded quantifier; linear. Empirical: 13us at 10K-byte input, microsecond on short fail.",
+        "_CONSUMER_NAME_REGEX `^[A-Za-z0-9_-]+$` — IDENTICAL pattern to _STREAM_NAME_REGEX; same linear-time guarantee.",
+        "_SUBJECT_REGEX `^([A-Za-z0-9_-]+|\\*)(\\.([A-Za-z0-9_-]+|\\*))*(\\.>)?$` — has alternation `([A-Za-z0-9_-]+|\\*)` inside a `(...)*` group, theoretical ReDoS suspect. EMPIRICAL VERIFICATION: tested with N in {100, 500, 1k, 2k, 4k, 8k, 16k, 32k} on adversarial patterns 'a.a.a.X', 'aa.aa.X', '*.*.*.*.X' — timing scales LINEARLY at ~40-56 ns/byte (1133us at 24KB; 5407us at 96KB). Python's `re` engine optimizes the alternation since the two branches `[A-Za-z0-9_-]+` and `\\*` are disjoint at the first character (no overlap). NOT catastrophic backtracking.",
+        "_BUCKET_NAME_REGEX `^[A-Za-z0-9_-]+$` — IDENTICAL pattern to _STREAM_NAME_REGEX; linear.",
+        "_OBJECT_NAME_REGEX `^[A-Za-z0-9._/-]+$` — single character class with `.`, `/`, `_`, `-` added; bounded quantifier, linear. Empirical: 50us at 10K-byte input.",
+        "Catastrophic-backtracking pattern absence proof: NONE of the 6 regexes contain (a) overlapping alternation branches at the same starting char position, (b) nested quantifiers like `(a+)+` or `(a*)*`, (c) lookahead/lookbehind. The Python regex engine's NFA execution on these patterns is provably O(N) per match.",
+        "Defense-in-depth NOTE (SEC-13 below): _SUBJECT_REGEX runs at ~50 ns/byte. A 1MB malicious subject would take ~50ms. Subjects are caller-supplied at config-build time (not wire-attacker-controlled), AND nats-py / NATS server enforce a 256-byte subject limit so practical exposure is near zero. Defense-in-depth recommendation: add MAX_SUBJECT_LENGTH = 256 precheck before regex match. NOT a blocker."
+      ]
+    },
+    {
+      "id": "AUDIT-CONV-12-NEVER_RETRY-relocation",
+      "title": "ErrCircuitOpen + ErrRateLimitExceeded relocated to events.utils._errors; _NEVER_RETRY now Final[frozenset] populated at definition time",
+      "verdict": "PASS",
+      "evidence": [
+        "api.py.stub:339-396 — §2.4 documents the rationale: previous design (rev-1 through D3 iter 2) defined these in events.middleware and mutated _NEVER_RETRY from middleware/__init__.py at import time. That pattern was import-order-fragile: caller importing events.utils.is_retryable BEFORE any middleware module loaded would see an empty set, defeating the breaker. CONV-12 fix moves both class definitions HERE (events.utils._errors); _NEVER_RETRY is populated at definition time from a single module.",
+        "api.py.stub:413-416 — `_NEVER_RETRY: Final[frozenset[type[BaseException]]] = frozenset({ErrCircuitOpen, ErrRateLimitExceeded})`. Final + frozenset = doubly-immutable: mypy rejects rebind, frozenset rejects add/remove. No TOCTOU window.",
+        "api.py.stub:1813-1820 + 1920-1930 — events.middleware._circuit_breaker and events.middleware._rate_limit IMPORT the sentinels from events.utils (do not own them). Raising the sentinel from middleware code is unchanged; only ownership/declaration site moved.",
+        "Grep verification: zero remaining mutation of _NEVER_RETRY anywhere in api.py.stub / algorithms.md / interfaces.md / dependencies.md (only references are the documentation explaining what was REMOVED).",
+        "Security implication: the prior design had a SAFE-BY-LUCK security-relevant race — if the import order ever changed (refactor, lazy-import, test isolation, plugin loader), `is_retryable(ErrCircuitOpen)` could have returned True (since ErrCircuitOpen inherits from ErrPublishFailed which is retryable). That would have meant Retry middleware would silently retry through an OPEN breaker, defeating the fail-fast contract and amplifying load on a struggling backend. The CONV-12 fix CLOSES this latent vulnerability. No new security holes introduced.",
+        "Inheritance preserved: both classes still inherit from ErrPublishFailed so `isinstance(e, ErrPublishFailed)` still matches Go's error tree (verified by checks 116, 152). The behavioral fail-fast guarantee comes from the explicit _NEVER_RETRY check in is_retryable() (api.py.stub:418-453) BEFORE the inheritance walk. Type hierarchy unchanged."
+      ]
+    }
+  ],
+  "carry_over_passes_reconfirmed": [
+    {
+      "id": "PASS-1",
+      "title": "TLS verification (NATS via nats-py): defaults to verify=True",
+      "still_pass": true
+    },
+    {
+      "id": "PASS-2",
+      "title": "No hardcoded credentials in any design doc",
+      "still_pass": true,
+      "evidence": "Iter-5 grep across api.py.stub for password|secret|token|credential|api_key returns only legitimate references (sentinel class names ErrAuthFailed/ErrInvalidCredentials, secrets.SystemRandom for jitter, tenant/trace identifiers); no hardcoded credential values."
+    },
+    {
+      "id": "PASS-3",
+      "title": "No subtle.ConstantTimeCompare equivalent needed (no token compares)",
+      "still_pass": true
+    },
+    {
+      "id": "PASS-4",
+      "title": "No roll-your-own crypto (transport client only); jitter uses secrets.SystemRandom",
+      "still_pass": true
+    },
+    {
+      "id": "PASS-5",
+      "title": "Env var namespacing OK (MOTADATA_ prefix per §11.6)",
+      "still_pass": true
+    },
+    {
+      "id": "PASS-6",
+      "title": "Input validation present on every exported function with user input — expanded in iter-3 to construction-time __post_init__ on 7 event-domain dataclasses",
+      "still_pass": true,
+      "evidence": "Construction-time validation now covers StreamConfig, ConsumerConfig, TenantConsumerConfig, RequesterConfig, KeyValueConfig, ObjectStoreConfig, ObjectMeta. Strictly stronger than iter-2 baseline."
+    },
+    {
+      "id": "PASS-7",
+      "title": "SEC-1 (yaml.safe_load) policy still in effect",
+      "still_pass": true,
+      "evidence": "Verified across api.py.stub:2285, algorithms.md §A15, dependencies.md row 12. No regression."
+    },
+    {
+      "id": "PASS-8",
+      "title": "SEC-2 (msgpack DoS caps) policy still in effect",
+      "still_pass": true,
+      "evidence": "All 5 DEFAULT_MAX_* Final constants present at api.py.stub:147-151; msgpack_unpack_safe wrapper unchanged from iter-3-confirmed shape; iter-2 ValueError fix unchanged."
+    },
+    {
+      "id": "PASS-9",
+      "title": "SEC-7 closed (codec ValueError mapping intact across iter-5)",
+      "still_pass": true,
+      "evidence": "api.py.stub:115-128 unpack_map docstring + algorithms.md §A1.3 + §A16 still document the (IndexError, UnicodeDecodeError, struct.error, ValueError) catch tuple at the codec boundary. Cap-violation → ErrUnpackFailed contract intact end-to-end."
+    },
+    {
+      "id": "PASS-10",
+      "title": "§15.32 TenantID regex excludes all NATS subject special chars (re-verified iter-5)",
+      "still_pass": true,
+      "evidence": "_TENANT_ID_REGEX `^[A-Za-z0-9][A-Za-z0-9_-]*$` (api.py.stub:203) excludes `.` `*` `>` whitespace `'\"\\\\;|<>&$/` null-byte and all Unicode. Iter-5 expansion: SAME regex now also enforced in TenantConsumerConfig.__post_init__ (api.py.stub:1135) — single source of truth across the three tenant overlays. SEC-11 narrow-scope concern from iter-3 PARTIALLY CLOSED (TenantConsumerConfig is no longer in the un-validated set; set_tenant_id ContextVar and consumer_name() formatter remain Go-mirror per documented user choice)."
+    },
+    {
+      "id": "PASS-11",
+      "title": "§15.30 propagator.extract has no DoS surface; §15.34 error_kind label is bounded-cardinality",
+      "still_pass": true,
+      "evidence": "Iter-5 grep across api.py.stub + algorithms.md for `str(exc)|repr(exc)` in metric-emit context: zero hits in metrics paths. NatsHeaderGetter unchanged. Both contracts intact."
+    }
+  ],
+  "carry_over_notes_status": {
+    "SEC-4_TenantID_isolation_other_surfaces": {
+      "still_open": true,
+      "severity": "NOTE",
+      "reassessment": "FURTHER NARROWED in iter-5. The TenantConsumerConfig.__post_init__ tenant_id check (iter-3 added) closes one of the three remaining surfaces flagged in iter-3's SEC-11. The two remaining un-validated surfaces are set_tenant_id(tenant_id) ContextVar setter (api.py.stub:571) and consumer_name(module, tenant_id) formatter (api.py.stub:1305). Both remain Go-mirror per documented user choice. Impl-time follow-up only — not a blocker."
+    },
+    "SEC-5_otel_insecure_default": {
+      "still_open": true,
+      "severity": "NOTE",
+      "reassessment": "Unchanged. Iter-5 changes did not touch the otel_insecure: bool = True default across TracerInitConfig (api.py.stub:2238), MetricsInitConfig (line 2317), LoggerInitConfig (line 2370). Mirror-Go; standing user-acceptance rule applies. H10 reviewer should surface for explicit acceptance."
+    },
+    "SEC-6_publish_async_unbounded": {
+      "still_open": true,
+      "severity": "NOTE",
+      "reassessment": "Unchanged. Iter-5 did not touch JsPublisher.publish_async backpressure (api.py.stub:1024-1035). Mirror-Go gap remains documented."
+    },
+    "SEC-8_max_ext_len_defense_in_depth": {
+      "still_open": true,
+      "severity": "NOTE",
+      "reassessment": "Unchanged. Iter-5 did not add DEFAULT_MAX_EXT_LEN to msgpack_unpack_safe. Still not currently exploitable per iter-2 empirical check; defense-in-depth recommendation persists for impl-time."
+    },
+    "SEC-9_on_error_PII_doc_gap": {
+      "still_open": true,
+      "severity": "NOTE",
+      "reassessment": "Unchanged. Iter-5 did not add caller-responsibility scrubbing sentence to Subscriber/Consumer __init__ docstrings."
+    },
+    "SEC-10_NEVER_RETRY_invariant_comment": {
+      "still_open": false,
+      "severity": "CLOSED",
+      "reassessment": "CLOSED in iter-5. The CONV-12 fix moved both ErrCircuitOpen + ErrRateLimitExceeded to events.utils._errors and populated _NEVER_RETRY at definition time. The original concern was a missing NOTE-level invariant comment to pre-empt future contributors from breaking the safe-by-luck pattern — the iter-5 design FIXES the underlying race (no longer 'safe by luck', now 'safe by construction') AND adds extensive inline rationale at api.py.stub:339-396 + 400-416 + 434-448 explaining the ownership pattern. The latent failure mode the NOTE was tracking no longer exists."
+    },
+    "SEC-12_baggage_propagator_default": {
+      "still_open": true,
+      "severity": "NOTE",
+      "reassessment": "Unchanged. TracerInitConfig.propagators default still ['tracecontext', 'baggage'] (api.py.stub:2242). Current design does not copy baggage to span attrs/log fields; impl-default leak surface = 0. Future-contributor doc-gap only."
+    }
+  },
+  "new_findings_iter5": [
+    {
+      "id": "SEC-13",
+      "severity": "NOTE",
+      "title": "_SUBJECT_REGEX is linear-time but unbounded-input — add MAX_SUBJECT_LENGTH precheck for defense-in-depth",
+      "location": "api.py.stub:222-224 (regex def); api.py.stub:931-934, 1079-1082, 1143-1146, 1342-1344 (call sites)",
+      "description": "_SUBJECT_REGEX `^([A-Za-z0-9_-]+|\\*)(\\.([A-Za-z0-9_-]+|\\*))*(\\.>)?$` was empirically verified iter-5 to scale LINEARLY at ~50 ns/byte across N in {100..32000}. NOT catastrophic backtracking (the alternation branches `[A-Za-z0-9_-]+` and `\\*` are disjoint at first-char position; Python's re engine takes the linear path). HOWEVER: the regex is applied with NO upstream length cap. A maliciously-large subject (say 1MB) would take ~50ms per validation. Subjects/filter_subjects come from caller code at config-build time (not wire-attacker-controlled), AND nats-py / NATS server enforce a 256-byte subject limit per protocol spec, so the practical attacker exposure is near zero. Defense-in-depth recommendation: add a MAX_SUBJECT_LENGTH = 256 precheck before each _SUBJECT_REGEX.match() in the four __post_init__ call sites. Single-line cost; eliminates the entire amplification surface. NOT a blocker; impl-time follow-up."
+    }
+  ],
+  "owasp_top10_mapping": {
+    "A01_broken_access_control": {
+      "found": 0,
+      "severity": "—",
+      "note": "SEC-4 narrow tenant-isolation NOTE further narrowed in iter-5 (TenantConsumerConfig now validates); two surfaces remain Go-mirror per user choice."
+    },
+    "A02_cryptographic_failures": {
+      "found": 1,
+      "severity": "NOTE",
+      "ref": "SEC-5 (otel_insecure=True default; mirror-Go acceptance pending H10)"
+    },
+    "A03_injection": {
+      "found": 0,
+      "severity": "—",
+      "note": "TenantID regex now enforced at TenantKVStore + TenantObjectStore + TenantConsumerConfig (iter-5 added the third site, single-source-of-truth)."
+    },
+    "A04_insecure_design": {
+      "found": 0,
+      "severity": "—",
+      "note": "CONV-12 fix STRENGTHENS the design by closing a latent import-order race that could have silently bypassed the circuit breaker."
+    },
+    "A05_security_misconfiguration": {
+      "found": 0,
+      "severity": "—",
+      "note": "SEC-1 yaml RCE closed iter 1; remains closed iter 5. CONV-5 dataclass __post_init__ validators add construction-time fail-fast across 7 dataclasses."
+    },
+    "A06_vulnerable_components": {
+      "found": 0,
+      "severity": "—",
+      "note": "Iter-3 SEC-3 otel pin closed; iter-5 changes touch no deps."
+    },
+    "A07_id_auth_failures": {
+      "found": 0,
+      "severity": "—"
+    },
+    "A08_software_integrity": {
+      "found": 0,
+      "severity": "—"
+    },
+    "A09_logging_monitoring": {
+      "found": 1,
+      "severity": "NOTE",
+      "ref": "SEC-9 on_error PII passthrough doc gap (unchanged); SEC-12 baggage doc gap (unchanged)"
+    },
+    "A10_ssrf": {
+      "found": 0,
+      "severity": "—"
+    }
+  },
+  "convergence_evidence": "Zero new BLOCKERs. Zero new WARNs. Iter-5 introduces ONE new NOTE-level finding (SEC-13: _SUBJECT_REGEX linear but unbounded-input; defense-in-depth recommendation, not exploitable in practice). The three iter-5 design changes are SECURITY-POSITIVE: (1) TenantConsumerConfig.__post_init__ tenant_id validation closes the iter-3 SEC-11 narrow-scope concern (single source of truth across all three tenant overlays); (2) 7 dataclass __post_init__ validators extend construction-time fail-fast across the entire event-domain config surface, with SAFE error-message echoing (only config identifiers, never credentials/tokens/secrets/payloads, length-bounded by description cap); (3) CONV-12 _NEVER_RETRY relocation eliminates a latent import-order race that could have silently bypassed the circuit breaker (closes SEC-10). Post-iter-5 NOTE inventory: 5 active (SEC-4, SEC-5, SEC-6, SEC-8, SEC-9, SEC-12, SEC-13 — actually 7 active; SEC-10 closed; SEC-11 partially-closed-but-tracked-under-SEC-4). All remain documented user choices or impl-time follow-ups; none block H5-rev-3 design sign-off. CONVERGED at design phase."
+}

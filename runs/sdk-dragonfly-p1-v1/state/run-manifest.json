@@ -1,0 +1,102 @@
+{
+  "run_id": "sdk-dragonfly-p1-v1",
+  "pipeline_version": "0.2.0",
+  "started_at": "2026-04-22T18:16:00Z",
+  "completed_at": "2026-04-23T15:38:00Z",
+  "exit_code": 0,
+  "verdict": "PASS",
+  "spec_path": "runs/sdk-dragonfly-p1-tprd.md",
+  "target_dir": "/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk",
+  "target_package": "core/l2cache/dragonfly",
+  "mode_declared": "B",
+  "mode_stamped": "B",
+  "target_branch_planned": "sdk-pipeline/sdk-dragonfly-p1-v1",
+  "target_branch_created": true,
+  "target_branch_committed": false,
+  "phases": {
+    "intake": {
+      "status": "complete",
+      "verdict": "PASS",
+      "guardrail_verdicts": { "G20": "PASS", "G21": "PASS", "G23": "WARN", "G24": "PASS" }
+    },
+    "extension_analyze": {
+      "status": "complete",
+      "verdict": "PASS",
+      "artifacts": ["extension/ownership-map.json", "extension/context/extension-summary.md"],
+      "files_scanned": 27,
+      "exports_enumerated": 93,
+      "tprd_discrepancies_logged": 3
+    },
+    "design": {
+      "status": "complete",
+      "verdict": "PASS",
+      "artifacts": ["design/perf-budget.md", "design/perf-exceptions.md", "design/dep-vetting.md", "design/security-review.md"],
+      "devil_verdicts": { "dep-vet": "ACCEPT", "semver": "ACCEPT minor", "breaking-change": "ACCEPT", "security": "ACCEPT" }
+    },
+    "implementation": {
+      "status": "complete",
+      "verdict": "PASS",
+      "prod_files_new": ["circuit_classify.go", "keyprefix.go", "json.go", "scan.go", "set.go", "sortedset.go"],
+      "prod_files_modified": ["cache.go", "config.go", "errors.go", "metrics.go", "options.go"],
+      "test_files_new": ["keyprefix_test.go", "circuit_classify_test.go", "json_test.go", "scan_test.go", "set_test.go", "sortedset_test.go", "fuzz_test.go", "keyprefix_coverage_test.go"],
+      "bench_files_new": ["bench_keyprefix_test.go", "bench_json_test.go", "bench_cb_test.go", "bench_scan_test.go", "bench_set_test.go", "bench_sortedset_test.go", "bench_complexity_test.go", "bench_integration_test.go"],
+      "integration_files_new": ["cache_integration_p1_test.go"],
+      "p0_footer_extensions": ["hash_test.go", "pipeline_test.go", "pubsub_test.go", "script_test.go", "raw_test.go", "cache_test.go", "coverage_test.go", "errors_test.go", "example_test.go"],
+      "loc_new_total_approx": 2400,
+      "build": "clean", "vet": "clean", "gofmt": "applied",
+      "review_fix_iterations": 1,
+      "impl_phase_feedback_file": "impl/impl-phase-feedback.md"
+    },
+    "testing": {
+      "status": "complete",
+      "verdict": "PASS",
+      "unit_tests": 114,
+      "integration_tests": 7,
+      "benches_captured": 72,
+      "fuzz_targets": 2,
+      "fuzz_execs": "~33k in 10s total",
+      "failures": 0,
+      "race": "clean",
+      "leaks": "clean",
+      "coverage_pkg": 0.903,
+      "perf_gates": { "G104": "PASS", "G105": "PASS (no-op)", "G106": "PASS (no-op)", "G107": "PASS", "G108": "PASS", "G109": "PASS", "G110": "PASS" },
+      "targeted_guardrails": { "G20": "PASS", "G21": "PASS", "G23": "WARN", "G24": "PASS", "G41": "PASS", "G42": "PASS", "G43": "PASS (after gofmt)", "G60-scoped-dragonfly": "PASS", "G61": "PASS (90.3% ≥ 90%)", "G63-scoped-dragonfly": "PASS", "G95": "PASS", "G96": "PASS", "G97": "PASS", "G104": "PASS", "G107": "PASS", "G108": "PASS", "G109": "PASS", "G110": "PASS" },
+      "target_wide_findings_out_of_scope": ["G40 (events/ missing godoc)", "G43 (pre-existing gofmt in events/config)", "G48 (otel/metrics + otel/logger init functions)", "G98 (target-wide traces-to)", "G99 (988 target-wide missing markers)"],
+      "tooling_findings": "testing/tooling-findings.md"
+    },
+    "feedback": {
+      "status": "complete",
+      "verdict": "PASS",
+      "artifacts": ["feedback/learning-notifications.md"],
+      "patches_applied": 0,
+      "baselines_updated": false,
+      "baselines_skip_reason": "single-session; G86 requires ≥3 prior runs"
+    }
+  },
+  "budgets": {
+    "intake":         { "tokens": 150000,  "wall_clock_sec": 1200, "used_sec": 120 },
+    "design":         { "tokens": 500000,  "wall_clock_sec": 3600, "used_sec": 180 },
+    "implementation": { "tokens": 1000000, "wall_clock_sec": 7200, "used_sec": 1800 },
+    "testing":        { "tokens": 500000,  "wall_clock_sec": 3600, "used_sec": 900 },
+    "feedback":       { "tokens": 200000,  "wall_clock_sec": 1800, "used_sec": 60 }
+  },
+  "hitl_gates": {
+    "H0_target_dir": "PASS",
+    "H1_tprd":       "APPROVED (user continuation after G24 BLOCKER resolved by human authoring G81/G83/G84/G104-G110 scripts)",
+    "H5_design":     "APPROVED (auto-mode; devils ACCEPT)",
+    "H7_impl":       "APPROVED (auto-mode; build/vet clean; tests pass)",
+    "H8_bench":      "APPROVED (2 margin updates with written rationale per Rule 20 #2)",
+    "H9_testing":    "APPROVED (all perf-confidence gates PASS with real data)",
+    "H10_merge":     "PENDING (user decides: merge / keep branch / delete branch)"
+  },
+  "manifests": {
+    "skills":     { "declared": 32, "ok": 28, "missing": 4,  "filed_to": "docs/PROPOSED-SKILLS.md" },
+    "guardrails": { "declared": 50, "ok": 50, "missing": 0 }
+  },
+  "flags": {
+    "dry_run":             false,
+    "auto_approve_tprd":   false,
+    "skip_design_gate":    false,
+    "skip_impl_gate":      false
+  }
+}

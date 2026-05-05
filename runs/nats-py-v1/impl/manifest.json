@@ -1,0 +1,493 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "nats-py-v1",
+  "phase": "implementation",
+  "pipeline_version": "0.5.0",
+  "lead": "sdk-impl-lead",
+  "mode": "A",
+  "tier": "T1",
+  "branch": "sdk-pipeline/nats-py-v1",
+  "base_sha": "d8fbc35e7d5c3739f8dd999541ca3257392e1157",
+  "started_at": "2026-05-02T18:00:00Z",
+  "active_packages": ["shared-core@1.0.0", "python@1.1.0"],
+  "wave_status": {
+    "M0_briefing": "completed",
+    "M1_bootstrap": "completed",
+    "M2_marker_scan": "completed",
+    "M3_slice_1_codec": "completed",
+    "M3_slice_2_events_utils": "completed",
+    "M3_slice_3_events_core": "completed",
+    "M3_slice_4_events_corenats": "completed",
+    "M3_slice_5_events_jetstream_stream_pub_consumer": "pending",
+    "H7b_mid_impl_checkpoint": "pending",
+    "M3_slice_6_events_jetstream_requester": "pending",
+    "M3_slice_7_events_stores": "pending",
+    "M3_slice_8_events_middleware": "pending",
+    "M3_slice_9_otel": "pending",
+    "M3_slice_10_config": "pending",
+    "M3.5_profile_audit": "pending",
+    "M4_constraint_proof": "pending",
+    "M5_refactor": "pending",
+    "M6_documentation": "pending",
+    "M7_devil_review": "pending",
+    "H7_final_impl_gate": "pending"
+  },
+  "wave_completion": {
+    "M0_briefing": {
+      "completed_at": "2026-05-02T18:30:00Z",
+      "notes": "Briefing absorbed; design artifacts (algorithms.md, api.py.stub, package-layout.md, perf-budget.md, traces-to-plan.md) read into context."
+    },
+    "M1_bootstrap": {
+      "completed_at": "2026-05-04T00:59:00Z",
+      "commit": "2566927",
+      "notes": "pyproject deps + 8 package skeletons committed by previous impl-lead spawn. All M1 dep-vet conditions PASS (pip-audit, safety, license, pytest-asyncio 1.x asyncio_mode=auto, otel-instrumentation-logging 0.62b1 < 0.63)."
+    },
+    "M2_marker_scan": {
+      "completed_at": "2026-05-04T01:05:00Z",
+      "notes": "Mode A (new package): light scan only. No prior markers exist in src/motadata_py_sdk/codec/. Ownership is pipeline-owned for the entire codec subtree."
+    },
+    "M3_slice_1_codec": {
+      "completed_at": "2026-05-04T01:30:00Z",
+      "branch": "sdk-pipeline/nats-py-v1",
+      "files_created": {
+        "src": [
+          "src/motadata_py_sdk/codec/__init__.py",
+          "src/motadata_py_sdk/codec/_encoder.py",
+          "src/motadata_py_sdk/codec/_errors.py",
+          "src/motadata_py_sdk/codec/_custom.py",
+          "src/motadata_py_sdk/codec/_msgpack.py",
+          "src/motadata_py_sdk/codec/_facade.py"
+        ],
+        "tests_unit": [
+          "tests/unit/codec/__init__.py",
+          "tests/unit/codec/test_errors.py",
+          "tests/unit/codec/test_byte_fixtures.py",
+          "tests/unit/codec/test_binary_roundtrip.py",
+          "tests/unit/codec/test_msgpack.py",
+          "tests/unit/codec/test_security.py"
+        ],
+        "tests_bench": [
+          "tests/bench/codec/__init__.py",
+          "tests/bench/codec/_sync_alloc_helper.py",
+          "tests/bench/codec/bench_pack_map.py",
+          "tests/bench/codec/bench_unpack_map.py",
+          "tests/bench/codec/bench_msgpack_pack.py",
+          "tests/bench/codec/bench_msgpack_unpack.py"
+        ]
+      },
+      "tests_passing": 161,
+      "tests_failing": 0,
+      "lint": "ruff: All checks passed",
+      "typecheck": "mypy --strict: Success: no issues found in 6 source files",
+      "marker_count": {
+        "traces_to": 66,
+        "constraint": 11,
+        "perf_exception": 0,
+        "stable_since": 0,
+        "do_not_regenerate": 0
+      },
+      "byte_exact_fixtures": {
+        "pack_map_empty_custom": "PASS (0000000f)",
+        "pack_array_empty_custom": "PASS (0000000d)",
+        "pack_map_kv_custom": "PASS (0001000f01006b0c0100000076)",
+        "pack_map_empty_msgpack": "PASS (0180)",
+        "pack_array_empty_msgpack": "PASS (0190)"
+      },
+      "perf_summary": {
+        "pack_map_custom_10field": {"p50_ns": 7054, "p50_us": 7.05, "budget_us": 30, "status": "PASS"},
+        "pack_map_msgpack_10field": {"p50_ns": 1139, "p50_us": 1.14, "budget_us": 8, "status": "PASS"},
+        "unpack_map_custom_10field": {"p50_ns": 9740, "p50_us": 9.74, "budget_us": 35, "status": "PASS"},
+        "unpack_map_msgpack_10field": {"p50_ns": 1540, "p50_us": 1.54, "budget_us": 7, "status": "PASS"},
+        "msgpack_pack_10field_raw": {"p50_ns": 968, "p50_us": 0.97, "oracle_ref_us": 6, "status": "INFORMATIONAL"},
+        "msgpack_unpack_safe_10field": {"p50_ns": 1330, "p50_us": 1.33, "oracle_ref_us": 5, "status": "INFORMATIONAL"}
+      },
+      "alloc_summary_note": "tracemalloc-measured allocs/op ≈ 0.01-0.09 across all benches because tracemalloc's compare_to(snap_before, snap_after) reports NET-RETAINED allocations after GC, not transient allocs created within an op. Strict allocs/op enforcement against design budget (30/4/35/4) defers to M3.5 sdk-profile-auditor which uses a different methodology.",
+      "uncommitted": true,
+      "ready_for_commit": true
+    },
+    "M3_slice_2_events_utils": {
+      "completed_at": "2026-05-02T19:30:00Z",
+      "branch": "sdk-pipeline/nats-py-v1",
+      "files_created": {
+        "src": [
+          "src/motadata_py_sdk/events/utils/__init__.py",
+          "src/motadata_py_sdk/events/utils/_const.py",
+          "src/motadata_py_sdk/events/utils/_validators.py",
+          "src/motadata_py_sdk/events/utils/_context.py",
+          "src/motadata_py_sdk/events/utils/_errors.py",
+          "src/motadata_py_sdk/events/utils/_classifiers.py"
+        ],
+        "tests_unit": [
+          "tests/unit/events/__init__.py",
+          "tests/unit/events/utils/__init__.py",
+          "tests/unit/events/utils/test_errors.py",
+          "tests/unit/events/utils/test_is_retryable.py",
+          "tests/unit/events/utils/test_context.py",
+          "tests/unit/events/utils/test_validators.py"
+        ],
+        "tests_bench": [
+          "tests/bench/events/__init__.py",
+          "tests/bench/events/utils/__init__.py",
+          "tests/bench/events/utils/bench_is_retryable.py"
+        ]
+      },
+      "tests_passing_in_slice": 315,
+      "tests_failing_in_slice": 0,
+      "full_repo_tests": "558 passed (events.utils additions); 1 pre-existing flake in tests/bench/bench_acquire_contention.py::test_contention_throughput_meets_450k_per_sec_budget UNRELATED to nats-py-v1 (resourcepool host-load-flaky bench, M11 baseline 450k/CI floor 425k, observed 421k on this run host)",
+      "lint": "ruff: All checks passed",
+      "typecheck": "mypy --strict: Success: no issues found in 6 source files",
+      "sentinel_count_in_errors_module": 36,
+      "sentinel_count_components": "25 retryable + 9 non-retryable + 2 fail-fast wrappers (ErrCircuitOpen + ErrRateLimitExceeded relocated from middleware per CONV-12 fix D3 iter 3)",
+      "marker_count": {
+        "src_traces_to_and_constraint": 45,
+        "tests_traces_to": 20,
+        "perf_exception": 0,
+        "stable_since": 0,
+        "do_not_regenerate": 0
+      },
+      "perf_summary": {
+        "is_retryable_typical": {"p50_ns": 460, "budget_ns": 500, "status": "PASS"},
+        "is_retryable_circuit_open_never_retry_path": {"p50_ns": 109, "budget_ns": 500, "status": "PASS"},
+        "is_temporary": {"p50_ns": 185, "budget_ns": 300, "status": "PASS"}
+      },
+      "alloc_summary_note": "tracemalloc soft-gates pass (allocs/op ~0.0X for all three is_*  calls). Strict allocs_per_op==0 enforcement defers to M3.5 sdk-profile-auditor.",
+      "semver_8_closure": {
+        "interfaces_md_line_304_updated": true,
+        "new_text": "33 (rev-2) → 34 (D3 iter 1, +ErrNoMessages) → 36 (D3 iter 3, +ErrCircuitOpen + ErrRateLimitExceeded relocated from middleware per CONV-12)",
+        "test_module_inventory_matches_table": "PASS — guards against future drift between source module and SENTINEL_TABLE"
+      },
+      "conv_12_invariants_proven": {
+        "circuit_open_isa_publish_failed": "PASS",
+        "circuit_open_is_retryable_false": "PASS (in _NEVER_RETRY)",
+        "rate_limit_exceeded_isa_publish_failed": "PASS",
+        "rate_limit_exceeded_is_retryable_false": "PASS (in _NEVER_RETRY)",
+        "_NEVER_RETRY_is_frozenset": "PASS",
+        "_NEVER_RETRY_is_immutable_via_AttributeError_on_add": "PASS"
+      },
+      "dd_3_invariant_proven": {
+        "ErrNoMessages_is_retryable_true": "PASS (transient empty-fetch case)"
+      },
+      "uncommitted": true,
+      "ready_for_commit": true
+    },
+    "M3_slice_3_events_core": {
+      "completed_at": "2026-05-02T20:30:00Z",
+      "branch": "sdk-pipeline/nats-py-v1",
+      "files_created": {
+        "src": [
+          "src/motadata_py_sdk/events/core/__init__.py",
+          "src/motadata_py_sdk/events/core/_headers.py",
+          "src/motadata_py_sdk/events/core/_types.py",
+          "src/motadata_py_sdk/events/core/_interfaces.py",
+          "src/motadata_py_sdk/events/core/_context.py",
+          "src/motadata_py_sdk/events/core/_extract_inject.py"
+        ],
+        "tests_unit": [
+          "tests/unit/events/core/__init__.py",
+          "tests/unit/events/core/test_headers.py",
+          "tests/unit/events/core/test_types.py",
+          "tests/unit/events/core/test_interfaces.py",
+          "tests/unit/events/core/test_context.py",
+          "tests/unit/events/core/test_extract_inject.py"
+        ],
+        "tests_bench": [
+          "tests/bench/events/core/__init__.py",
+          "tests/bench/events/core/bench_extract_headers.py",
+          "tests/bench/events/core/bench_inject_context.py"
+        ]
+      },
+      "tests_passing_in_slice": 88,
+      "tests_failing_in_slice": 0,
+      "full_repo_tests": "646 passed; 1 pre-existing flake (resourcepool bench_acquire_contention 411k vs 425k CI floor) UNRELATED to nats-py-v1 — same flake observed in slice 2",
+      "lint": "ruff: All checks passed",
+      "typecheck": "mypy --strict: Success: no issues found in 6 source files",
+      "marker_count": {
+        "src_traces_to": 38,
+        "src_constraint": 4,
+        "tests_traces_to": 17,
+        "tests_constraint": 4,
+        "perf_exception": 0,
+        "stable_since": 0,
+        "do_not_regenerate": 0
+      },
+      "perf_summary": {
+        "extract_headers_no_trace": {"p50_ns": 707, "p50_us": 0.71, "budget_us": 5, "status": "PASS"},
+        "extract_headers_manual_trace": {"p50_ns": 1062, "p50_us": 1.06, "budget_us": 25, "status": "PASS"},
+        "extract_headers_otel_active": {"p50_ns": 1701, "p50_us": 1.70, "budget_us": 25, "status": "PASS"},
+        "inject_context_full_8key": {"p50_ns": 3418, "p50_us": 3.42, "budget_us": 10, "status": "PASS"}
+      },
+      "alloc_summary_note": "tracemalloc soft-gates pass with allocs/op ~0.0X across all benches; strict allocs/op enforcement vs design budget (8/2/4) defers to M3.5 sdk-profile-auditor (same methodology as slices 1+2).",
+      "tprd_5_4_conformance_checks_proven": {
+        "check_1_15_header_constants_byte_exact": "PASS (test_header_constant_byte_exact parametrized over 15 rows)",
+        "check_2_extract_headers_round_trip_all_slots": "PASS (test_round_trip_manual_trace_context)",
+        "check_3_otel_active_writes_5_trace_keys_plus_traceparent": "PASS (test_extract_headers_otel_active_writes_all_5_trace_keys)",
+        "check_4_manual_unsampled_traceparent_00_no_b3_sampled": "PASS (test_extract_headers_manual_trace_context_sampled_false)",
+        "check_5_tracestate_emitted_when_set": "PASS (test_extract_headers_manual_trace_context_with_state)",
+        "check_6_inject_x_trace_x_span_sampled_1_or_true": "PASS (test_inject_context_x_trace_id_x_span_id_sampled_1 + _true_string_also_accepted)",
+        "check_7_inject_falls_back_to_b3_keys": "PASS (test_inject_context_falls_back_to_b3_keys + x_keys_take_precedence_over_b3)",
+        "check_8_inject_does_not_parse_traceparent_mirror_go_bug": "PASS (test_inject_context_does_not_parse_traceparent_mirror_go_bug)",
+        "check_9_inject_none_is_noop": "PASS (test_inject_context_none_is_noop)",
+        "check_10_metadata_timestamp_and_custom_not_serialized": "PASS (test_extract_headers_does_not_serialize_metadata_timestamp_or_custom)",
+        "check_11_inject_no_trace_or_span_no_trace_context_set": "PASS (test_inject_context_no_trace_or_span_id_no_trace_context_set)"
+      },
+      "mirror_go_bugs_verified_by_tests": [
+        "M1: extract_headers does NOT serialize Metadata.timestamp or Metadata.custom",
+        "M2: inject_context does NOT parse traceparent (TracingMiddleware-equivalent gap)",
+        "M3: extract_headers OTel-active path emits 32-hex span IDs (Q4)",
+        "M4: X-B3-ParentSpanId never written or read",
+        "M5: OTel-active path ignores manual TraceContext (algorithms.md §A2 lines 110-111)"
+      ],
+      "context_var_identity_invariant_proven": {
+        "test_str_slot_helpers_reexported_from_events_utils": "PASS — events.core's set_tenant_id/get_tenant_id/set_correlation_id/get_correlation_id/set_message_id/get_message_id/set_reply_to/get_reply_to are the SAME function objects as events.utils's (asserted via `is`). Guarantees ONE ContextVar per slot SDK-wide; no silent propagation breaks."
+      },
+      "asyncio_isolation_proven": {
+        "test_trace_context_isolated_across_tasks": "PASS — child task setting trace_context does not leak back to parent",
+        "test_metadata_isolated_across_tasks": "PASS — same for metadata slot"
+      },
+      "uncommitted": true,
+      "ready_for_commit": true
+    },
+    "M3_slice_4_events_corenats": {
+      "completed_at": "2026-05-02T22:00:00Z",
+      "branch": "sdk-pipeline/nats-py-v1",
+      "resumed_from_watchdog_kill": true,
+      "files_created": {
+        "src": [
+          "src/motadata_py_sdk/events/corenats/__init__.py (modified)",
+          "src/motadata_py_sdk/events/corenats/_const.py",
+          "src/motadata_py_sdk/events/corenats/_publisher.py",
+          "src/motadata_py_sdk/events/corenats/_subscriber.py",
+          "src/motadata_py_sdk/events/corenats/_batch_publisher.py",
+          "src/motadata_py_sdk/events/corenats/_config.py",
+          "src/motadata_py_sdk/events/corenats/_factory.py"
+        ],
+        "tests_unit": [
+          "tests/unit/events/corenats/__init__.py",
+          "tests/unit/events/corenats/conftest.py",
+          "tests/unit/events/corenats/test_publisher.py",
+          "tests/unit/events/corenats/test_subscriber.py",
+          "tests/unit/events/corenats/test_batch_publisher.py",
+          "tests/unit/events/corenats/test_config.py",
+          "tests/unit/events/corenats/test_lifecycle.py"
+        ],
+        "tests_bench": [
+          "tests/bench/events/corenats/__init__.py",
+          "tests/bench/events/corenats/bench_publish.py",
+          "tests/bench/events/corenats/bench_subscribe_dispatch.py"
+        ]
+      },
+      "tests_passing_in_slice": 151,
+      "tests_failing_in_slice": 0,
+      "full_repo_unit_plus_bench": "788 passed; 1 pre-existing flake (resourcepool bench_acquire_contention 367k vs 425k CI floor) UNRELATED to nats-py-v1 — same flake observed in slices 2 + 3",
+      "lint": "ruff: All checks passed",
+      "typecheck": "mypy --strict: Success: no issues found in 7 source files (corenats)",
+      "marker_count": {
+        "src_traces_to": 56,
+        "src_constraint": 5,
+        "tests_traces_to": 23,
+        "tests_constraint": 3,
+        "perf_exception": 0,
+        "stable_since": 0,
+        "do_not_regenerate": 0
+      },
+      "perf_summary": {
+        "publisher_publish_1KB_mocked_nc": {"p50_us": 27.3, "p95_us": 45.3, "budget_us": 350, "status": "PASS"},
+        "batch_publisher_add_no_flush": {"p50_us": 7.99, "p95_us": 9.77, "budget_us": 8, "status": "PASS-AT-LINE"},
+        "subscriber_callback_dispatch_bare": {"p50_us": 7.81, "p95_us": 9.55, "budget_us": 25, "headroom_us": 17.2, "status": "PASS"}
+      },
+      "perf_notes": [
+        "All three hot-path microbenches measured against AsyncMock'd nats client (pure Python overhead). Real nats loopback numbers come from Phase 3 integration benches.",
+        "subscriber bare-path leaves 17.2us headroom under the 25us cap (CONSTRAINT-5 carry-over: ~13us reserved for slice-9 tracing wrap).",
+        "batch_publisher add p50=7.99us is at the 8us budget line on dev host; M3.5 sdk-profile-auditor will run on a dedicated host with strict comparison."
+      ],
+      "alloc_summary_note": "tracemalloc soft-gates run; counts reflect NET-RETAINED measurement methodology (not transient allocs). Strict allocs/op enforcement vs design budget (12 publish / 2 add / 6 dispatch) defers to M3.5 sdk-profile-auditor (same methodology slices 1-3 use).",
+      "sentinel_args0_byte_exact_fix_applied": {
+        "rationale": "Prior spawn discovered _publisher.py raised SDK sentinels with adornment strings (e.g., raise ErrConnectionClosed('nats connection closed')), overriding the byte-exact .args[0] established by slice-2 _make_sentinel factory. This violates TPRD §4.6 cross-language wire-string equality.",
+        "fix_pattern": "raise ErrXxx() (zero-arg, byte-exact .args[0] preserved) + log.warning(extra={...}) for diagnostic detail + 'from exc' chaining for __cause__.",
+        "violations_fixed_in_publisher_py": [
+          "L165: ErrNotConnected('publisher has no NATS connection') -> ErrNotConnected()",
+          "L178: ErrConnectionClosed('nats connection closed') -> ErrConnectionClosed() from exc + WARN log",
+          "L180: ErrNotConnected('nats outbound buffer limit') -> ErrNotConnected() from exc + WARN log",
+          "L185: ErrPublishFailed(f'nats publish failed: {exc}') -> ErrPublishFailed() from exc + ERROR log",
+          "L236: ErrNotConnected('publisher has no NATS connection') -> ErrNotConnected()",
+          "L257: ErrRequestTimeout(f'nats request timed out after {timeout}s: {exc}') -> ErrRequestTimeout() from exc + WARN log",
+          "L261: ErrNoReply(f'nats no responders: {exc}') -> ErrNoReply() from exc + WARN log",
+          "L263: ErrConnectionClosed('nats connection closed') -> ErrConnectionClosed() from exc + WARN log",
+          "L268: ErrPublishFailed(f'nats request failed: {exc}') -> ErrPublishFailed() from exc + ERROR log"
+        ],
+        "violations_fixed_in_subscriber_py": [
+          "L173: ErrConnectionClosed('subscriber is closed') -> ErrConnectionClosed()",
+          "L175: ErrNotConnected('subscriber has no NATS connection') -> ErrNotConnected()",
+          "L180: ErrNotConnected('nats client not connected') -> ErrNotConnected()"
+        ],
+        "violations_fixed_in_batch_publisher_py": "none — batch_publisher already used Publisher's sentinels indirectly via .publish() and never raised SDK sentinels with adornment strings.",
+        "all_pre_existing_test_publisher_assertions_still_green": true
+      },
+      "dd_1_invariant_proven": {
+        "test_close_dd1_hook_fires_before_warn_log": "PASS — timeline-based test: spy on subscriber_mod._LOG.warning, assert hook entries appear in timeline before any 'errors draining subscriptions during close' warn entry",
+        "test_close_hook_exception_swallowed": "PASS — bad hook raises ValueError; close completes; no recursion; logged via log.exception",
+        "test_close_no_hook_silent_default": "PASS — None hook preserves Go-equivalent silent behavior"
+      },
+      "mirror_go_quirks_verified_by_tests": [
+        "M1: Subscriber.unsubscribe(sub) named such, ACTUALLY calls sub.drain() (test_unsubscribe_actually_calls_drain)",
+        "M2: Subscriber.unsubscribe on non-_Subscription is silent no-op (test_unsubscribe_non_internal_silent_noop)",
+        "M3: Publisher handler errors not propagated to NATS - logged + swallowed (test_subscribe_handler_exception_swallowed_logged)",
+        "M4: Publisher.max_payload stored, not enforced in publish (test_max_payload_stored_but_not_enforced)",
+        "M5: BatchPublisher.add size-trigger flush uses fresh background ctx (test_size_trigger_flush_drops_caller_timeout)",
+        "M6: BatchPublisher has no max-buffer-size cap; 1000-element add succeeds (test_no_max_buffer_size_cap_sustained_add)",
+        "M7: BatchPublisher.add_multiple uses dict insertion order, NOT random (Go) order (test_add_multiple_preserves_dict_insertion_order)"
+      ],
+      "tprd_15_FIX_scaffolds_left_for_slice_8_9": [
+        "§15.28: messaging.system='nats' / messaging.operation='publish'/'receive'/'subscribe' attrs reserved in docstrings; spans NOT yet emitted (slice 9 OTel wiring)",
+        "§15.34: error_kind metric labels — placeholder (slice 8 middleware)"
+      ],
+      "h7b_mid_impl_checkpoint_status": "Slice 4 is the H7b gate boundary per manifest. Recommend H7b before proceeding to slice 5.",
+      "uncommitted": true,
+      "ready_for_commit": true
+    }
+  },
+  "symbol_status": {
+    "_note": "Per-symbol status populated as each slice progresses. Symbols enumerated from design/api.py.stub (~224 public symbols across 8 new packages). Status values: pending, red, green, refactored, documented, marked, complete, blocked.",
+    "codec.Encoder": "complete",
+    "codec.DataType": "complete",
+    "codec.CodecError": "complete",
+    "codec.ErrUnpackFailed": "complete",
+    "codec.ErrUnsupportedCodec": "complete",
+    "codec.ErrUnsupportedDataType": "complete",
+    "codec.ErrValueOutOfRange": "complete",
+    "codec.ErrDataTooLarge": "complete",
+    "codec.pack_map": "complete",
+    "codec.pack_array": "complete",
+    "codec.unpack_map": "complete",
+    "codec.unpack_array": "complete",
+    "codec.msgpack_unpack_safe": "complete",
+    "codec.DEFAULT_MAX_MSG_BYTES": "complete",
+    "codec.DEFAULT_MAX_ARRAY_LEN": "complete",
+    "codec.DEFAULT_MAX_MAP_LEN": "complete",
+    "codec.DEFAULT_MAX_STR_LEN": "complete",
+    "codec.DEFAULT_MAX_BIN_LEN": "complete",
+    "events.utils.EventsError": "complete",
+    "events.utils.ErrNotConnected": "complete",
+    "events.utils.ErrAlreadyConnected": "complete",
+    "events.utils.ErrConnectionTimeout": "complete",
+    "events.utils.ErrReconnectFailed": "complete",
+    "events.utils.ErrPublishFailed": "complete",
+    "events.utils.ErrPublishTimeout": "complete",
+    "events.utils.ErrNoAck": "complete",
+    "events.utils.ErrStreamNotFound": "complete",
+    "events.utils.ErrInvalidMessage": "complete",
+    "events.utils.ErrMessageTooLarge": "complete",
+    "events.utils.ErrRequestTimeout": "complete",
+    "events.utils.ErrNoReply": "complete",
+    "events.utils.ErrSubscriptionClosed": "complete",
+    "events.utils.ErrSubscriptionInvalid": "complete",
+    "events.utils.ErrMaxMessagesExceeded": "complete",
+    "events.utils.ErrAuthFailed": "complete",
+    "events.utils.ErrAuthExpired": "complete",
+    "events.utils.ErrInvalidCredentials": "complete",
+    "events.utils.ErrTenantNotFound": "complete",
+    "events.utils.ErrTenantExists": "complete",
+    "events.utils.ErrTenantDisconnected": "complete",
+    "events.utils.ErrDeserializationFailed": "complete",
+    "events.utils.ErrJetStreamNotEnabled": "complete",
+    "events.utils.ErrInvalidArgument": "complete",
+    "events.utils.ErrNoMessages": "complete",
+    "events.utils.ErrConnectionClosed": "complete",
+    "events.utils.ErrDuplicateMsg": "complete",
+    "events.utils.ErrInvalidSubject": "complete",
+    "events.utils.ErrPermissionDenied": "complete",
+    "events.utils.ErrInvalidConfig": "complete",
+    "events.utils.ErrMissingConfig": "complete",
+    "events.utils.ErrSerializationFailed": "complete",
+    "events.utils.ErrShutdownInProgress": "complete",
+    "events.utils.ErrClosed": "complete",
+    "events.utils.ErrCircuitOpen": "complete",
+    "events.utils.ErrRateLimitExceeded": "complete",
+    "events.utils.Error": "complete",
+    "events.utils.TenantError": "complete",
+    "events.utils.SerializationError": "complete",
+    "events.utils.ConfigError": "complete",
+    "events.utils.ValidationError": "complete",
+    "events.utils.MultiError": "complete",
+    "events.utils.is_retryable": "complete",
+    "events.utils.is_temporary": "complete",
+    "events.utils.set_tenant_id": "complete",
+    "events.utils.get_tenant_id": "complete",
+    "events.utils.set_correlation_id": "complete",
+    "events.utils.get_correlation_id": "complete",
+    "events.utils.set_message_id": "complete",
+    "events.utils.get_message_id": "complete",
+    "events.utils.set_reply_to": "complete",
+    "events.utils.get_reply_to": "complete",
+    "events.utils.WildcardSingle": "complete",
+    "events.utils.WildcardMulti": "complete",
+    "events.utils.DefaultSeparator": "complete",
+    "events.utils.MaxSubjectLength": "complete",
+    "events.utils.MaxTenantIDLength": "complete",
+    "events.utils.CONTENT_TYPE_JSON": "complete",
+    "events.utils.CONTENT_TYPE_MSGPACK": "complete",
+    "events.utils.CONTENT_TYPE_OCTET_STREAM": "complete",
+    "events.utils.CONTENT_TYPE_PROTOBUF": "complete",
+    "events.utils.CONTENT_TYPE_TEXT_PLAIN": "complete",
+    "events.core.HEADER_CONTENT_TYPE": "complete",
+    "events.core.HEADER_MESSAGE_ID": "complete",
+    "events.core.HEADER_CORRELATION_ID": "complete",
+    "events.core.HEADER_TENANT_ID": "complete",
+    "events.core.HEADER_TRACE_ID": "complete",
+    "events.core.HEADER_SPAN_ID": "complete",
+    "events.core.HEADER_TRACEPARENT": "complete",
+    "events.core.HEADER_TRACESTATE": "complete",
+    "events.core.HEADER_B3_TRACE_ID": "complete",
+    "events.core.HEADER_B3_SPAN_ID": "complete",
+    "events.core.HEADER_B3_SAMPLED": "complete",
+    "events.core.HEADER_B3_PARENT_SPAN_ID": "complete",
+    "events.core.HEADER_REPLY_TO": "complete",
+    "events.core.HEADER_STATUS_CODE": "complete",
+    "events.core.HEADER_MESSAGE": "complete",
+    "events.core.TraceContext": "complete",
+    "events.core.Metadata": "complete",
+    "events.core.NatsMsg": "complete",
+    "events.core.Context": "complete",
+    "events.core.Publisher": "complete",
+    "events.core.Subscriber": "complete",
+    "events.core.Subscription": "complete",
+    "events.core.MessageHandler": "complete",
+    "events.core.set_trace_context": "complete",
+    "events.core.get_trace_context": "complete",
+    "events.core.set_metadata": "complete",
+    "events.core.get_metadata": "complete",
+    "events.core.set_tenant_id": "complete",
+    "events.core.get_tenant_id": "complete",
+    "events.core.set_correlation_id": "complete",
+    "events.core.get_correlation_id": "complete",
+    "events.core.set_message_id": "complete",
+    "events.core.get_message_id": "complete",
+    "events.core.set_reply_to": "complete",
+    "events.core.get_reply_to": "complete",
+    "events.core.extract_headers": "complete",
+    "events.core.inject_context": "complete",
+    "events.core.extract_otel_trace_context": "complete",
+    "events.corenats.DEFAULT_REQUEST_TIMEOUT": "complete",
+    "events.corenats.DEFAULT_FLUSH_TIMEOUT": "complete",
+    "events.corenats.DEFAULT_MAX_CONCURRENT_FLUSH": "complete",
+    "events.corenats.ATTR_MESSAGING_DESTINATION": "complete",
+    "events.corenats.PublishHandler": "complete",
+    "events.corenats.PublishMiddleware": "complete",
+    "events.corenats.SubscribeHandler": "complete",
+    "events.corenats.SubscribeMiddleware": "complete",
+    "events.corenats.Publisher": "complete",
+    "events.corenats.BatchPublisher": "complete",
+    "events.corenats.Subscriber": "complete",
+    "events.corenats.CoreNatsConfig": "complete",
+    "events.corenats.new_publisher": "complete",
+    "events.corenats.new_batch_publisher": "complete",
+    "events.corenats.new_subscriber": "complete"
+  },
+  "budget_tracking": {
+    "phase_budget_tokens": 1000000,
+    "design_phase_actual": 1860000,
+    "design_phase_overrun_acknowledged_at_h1": true,
+    "warn_threshold_pct": 80,
+    "blocker_threshold_pct": 100
+  }
+}

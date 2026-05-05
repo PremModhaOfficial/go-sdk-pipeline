@@ -15,11 +15,11 @@ if not idx_path.is_file():
 
 idx = json.loads(idx_path.read_text())
 declared = set()
-for section in ("ported_verbatim","ported_with_delta","sdk_native"):
-    for e in idx.get("skills",{}).get(section,[]):
+for section, entries in idx.get("skills", {}).items():
+    for e in entries:
         declared.add(e["name"])
 
-fs = {p.name for p in root.iterdir() if p.is_dir()}
+fs = {p.name for p in root.iterdir() if p.is_dir() and not p.name.startswith(".")}
 
 missing_on_fs = declared - fs
 missing_in_idx = fs - declared

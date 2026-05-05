@@ -1,0 +1,15 @@
+d8fbc35e7d5c3739f8dd999541ca3257392e1157
+# Base SHA for sdk-pipeline/nats-py-v1
+# Branched from: sdk-pipeline/sdk-resourcepool-py-pilot-v1 (tip)
+# Branched at: 2026-05-02
+# Branched by: sdk-impl-lead (Phase 2 M1 wave)
+#
+# RATIONALE FOR BRANCH-OFF-PILOT (deviation from prompt's "branch off main"):
+# Local `main` is a scaffold-only commit (b6c8e38) that LACKS the
+# motadata_py_sdk.resourcepool implementation. The design phase's
+# design/scope.md, design/package-layout.md, and tprd.md all assume the
+# resourcepool/ subtree already exists ("prior pilot — DO NOT TOUCH").
+# Branching from main would erase resourcepool, contradicting the design's
+# documented baseline. Branching from the pilot tip preserves resourcepool
+# verbatim (Mode A baseline as documented) and adds the new packages on top.
+# This is logged as a decision in decision-log.jsonl.

@@ -1,0 +1,163 @@
+{
+  "reviewer": "sdk-convention-devil",
+  "reviewer_mode": "sub-agent — REVISE-strict full re-pass (independent; iter-5)",
+  "review_target": "runs/nats-py-v1/design/api.py.stub, runs/nats-py-v1/design/interfaces.md, runs/nats-py-v1/design/package-layout.md, runs/nats-py-v1/design/convention-deviations.md",
+  "review_round": "rev-3 iter 5",
+  "pass_type": "full re-read of all four design artifacts from scratch; no reliance on iter-4 summaries for correctness verdicts",
+
+  "convention_table": {
+    "Config+New primary": {
+      "status": "PASS",
+      "evidence": "Primary pattern is Config-struct-then-factory throughout: Publisher(nc, max_payload), StreamConfig+create_stream, ConsumerConfig+create_consumer, KeyValueConfig+new_kv_store, etc. BatchPublisher uses 5 KW-only optional knobs (≤6 threshold, deviation 6). No functional-options-as-default anywhere."
+    },
+    "Directory layout": {
+      "status": "PASS",
+      "evidence": "Python adapter layout is src/motadata_py_sdk/{codec,events/{utils,core,corenats,jetstream,stores,middleware},otel,config}/. No new top-level dirs without precedent. resourcepool pre-existing and untouched. Layout is internally consistent with the Python adapter's own established conventions."
+    },
+    "OTel wiring": {
+      "status": "PASS",
+      "evidence": "SDK exposes its own motadata_py_sdk.otel package with init_tracer, get_tracer, start_producer/consumer/internal, init_metrics, Registry, init_logger, get_logger. TracingMiddleware accepts tracer obtained via get_tracer(). No raw opentelemetry.* imports bypassing the SDK's otel layer appear in the design surface. OTELMetricsMiddleware accepts a meter from Registry. Consistent with Go SDK rule (motadatagosdk/otel is the only import point)."
+    },
+    "Pool reuse": {
+      "status": "PASS",
+      "evidence": "Python SDK; Go core/pool constructs not applicable. BatchPublisher concurrent flush uses asyncio.Semaphore + asyncio.gather — correct asyncio-native approach. No ants or gobreaker re-imports."
+    },
+    "Error sentinels": {
+      "status": "PASS",
+      "evidence": "36 EventsError sentinels + 5 CodecError sentinels. _NEVER_RETRY is Final[frozenset[type[BaseException]]] = frozenset({ErrCircuitOpen, ErrRateLimitExceeded}) populated at definition time (CONV-12 fix, iter-3). No custom error struct where a sentinel would suffice. ValidationError raised by __post_init__ validators (existing sentinel, correct). ErrOTELUnsupportedProtocol(EventsError) retryable-by-default concern persists as CONV-9 NOTE (carry-over)."
+    },
+    "Test style": {
+      "status": "PASS",
+      "evidence": "package-layout.md shows 110 conformance checks spread across per-feature test files, bench files in bench/, leak files in leak/. Python parametrize pattern (pytest.mark.parametrize) is the table-driven equivalent. No evidence of non-parametrized tests in the design surface (stubs do not contain test bodies). Bench files named bench_*.py — consistent with Python convention (not Go's *_benchmark_test.go, but the Python adapter's own naming rule)."
+    },
+    "Package godoc": {
+      "status": "PASS",
+      "evidence": "Every __init__.py has a documented re-export list and/or a module-level docstring in the stub. Python has no doc.go convention; __init__.py module docstrings serve the same role. api.py.stub file-level docstring present. Section-level docstrings present on all 9 sections."
+    },
+    "Import ordering": {
+      "status": "PASS",
+      "evidence": "api.py.stub shows stdlib imports (re, typing, dataclasses, enum, asyncio) before deferred runtime imports (nats, pydantic). No mixed stdlib/external groups within a section. CONV-10 (from __future__ import annotations not repeated at each section boundary) remains a NOTE — implementation files must each carry it; the stub is a single-namespace concatenation."
+    }
+  },
+
+  "per_finding_full_verification": {
+    "CONV-5": {
+      "status": "CLOSED — verified from scratch",
+      "spot_checks": {
+        "StreamConfig.__post_init__": "api.py.stub lines 924-949: name via _STREAM_NAME_REGEX; subjects non-empty + each via _SUBJECT_REGEX; max_msgs/max_bytes/max_age/max_msg_size >= 0; replicas in {1,3,5}; description len <= _MAX_DESCRIPTION_LEN. Raises ValidationError on all violations.",
+        "ConsumerConfig.__post_init__": "lines 1070-1097: stream + _STREAM_NAME_REGEX; name + _CONSUMER_NAME_REGEX; filter_subjects via _SUBJECT_REGEX; ack_wait >= 0; max_deliver >= -1; max_ack_pending >= 0; description cap.",
+        "TenantConsumerConfig.__post_init__": "lines 1124-1161: adds tenant_id via _TENANT_ID_REGEX + MaxTenantIDLength — single source of truth with TenantKVStore/TenantObjectStore per TPRD §15.32.",
+        "RequesterConfig.__post_init__": "lines 1337-1363: reply_stream + _STREAM_NAME_REGEX; reply_subject_prefix + _SUBJECT_REGEX; instance_id + _CONSUMER_NAME_REGEX; max_payload >= 0; request_timeout in (0, 300.0]; inactive_threshold > 0.",
+        "KeyValueConfig.__post_init__": "lines 1457-1479: bucket + _BUCKET_NAME_REGEX; max_value_size >= -1; history in [1,64]; ttl >= 0; max_bytes >= 0; replicas in {1,3,5}; description cap.",
+        "ObjectStoreConfig.__post_init__": "lines 1586-1602: bucket + _BUCKET_NAME_REGEX; ttl >= 0; max_bytes >= 0; replicas in {1,3,5}; description cap.",
+        "ObjectMeta.__post_init__": "lines 1618-1628: name + _OBJECT_NAME_REGEX; description len cap; chunk_size > 0.",
+        "regex_constants": "6 Final[re.Pattern[str]] constants (_STREAM_NAME_REGEX, _CONSUMER_NAME_REGEX, _SUBJECT_REGEX, _BUCKET_NAME_REGEX, _OBJECT_NAME_REGEX) + _MAX_DESCRIPTION_LEN: Final[int] = 1024 declared at api.py.stub lines 213-233 in events.utils §2.1."
+      }
+    },
+    "CONV-12": {
+      "status": "CLOSED — verified from scratch",
+      "spot_checks": {
+        "ErrCircuitOpen": "api.py.stub line 364 — class ErrCircuitOpen(ErrPublishFailed): in events.utils §2.4. 23-line rationale block at lines 339-362.",
+        "ErrRateLimitExceeded": "api.py.stub line 381 — class ErrRateLimitExceeded(ErrPublishFailed): in events.utils §2.4.",
+        "_NEVER_RETRY": "api.py.stub lines 412-415 — _NEVER_RETRY: Final[frozenset[type[BaseException]]] = frozenset({ErrCircuitOpen, ErrRateLimitExceeded}). Immutable. Populated at definition time. No forward-declare-then-mutate.",
+        "middleware_import_form": "api.py.stub lines 1813-1820 (CB section) and 1920-1930 (rate-limit section) both carry explicit comments showing import form 'from motadata_py_sdk.events.utils import ErrCircuitOpen/ErrRateLimitExceeded' and confirming the prior cross-module rebind is REMOVED.",
+        "no_global_mutable_state": "frozenset is immutable; Final prevents rebind. CLAUDE.md rule 6 satisfied."
+      }
+    },
+    "CONV-2_CONV-3_CONV-4": {
+      "status": "CLOSED — re-verified from scratch",
+      "spot_checks": {
+        "TracerInitConfig": "api.py.stub line 2225: @dataclass(frozen=True, slots=True). __post_init__ present (line 2247). otel_protocol: Literal[...]. propagators uses field(default_factory=...) at line 2242.",
+        "MetricsInitConfig": "line 2305: @dataclass(frozen=True, slots=True). __post_init__ present. export_interval default 15.0 (SEMVER-3 unified). default_labels: field(default_factory=dict).",
+        "LoggerInitConfig": "line 2357: @dataclass(frozen=True, slots=True). __post_init__ present. level + console_format + otel_protocol are Literal. module_levels: field(default_factory=dict).",
+        "pydantic_sub_models": "ServiceConfig, TracerConfig, ReconnectConfig, TLSConfig, StreamSubConfig, EventsConfig, LoggerConfig, MetricsConfig, PublishConfig, SubscribeConfig — all public names (no leading underscore). Mutable list/dict defaults use Field(default_factory=...) form (CONV-4). Confirmed at api.py.stub lines 2455-2593."
+      }
+    },
+    "new_scan_scope": "Full re-read of all 2618 lines of api.py.stub + all 3 supporting docs. No new convention violations found beyond the 6 carry-over NOTEs established in iter-4."
+  },
+
+  "new_findings_this_iter": {
+    "count": 0,
+    "detail": "No new convention violations introduced. The CONV-5 and CONV-12 fixes from iter-3 remain intact and correct. No regressions detected. SlidingWindowLimiter(limit, window) uses 2 required positional args without a Config struct — within the spirit of deviation 6 (both are required, not optional, so the deviation threshold is about optionality, not arg count); design already documents the pattern; not a blocking deviation."
+  },
+
+  "findings": [
+    {
+      "id": "CONV-6",
+      "severity": "NOTE",
+      "still_open": true,
+      "area": "api.py.stub §5.4 — Requester.create() @classmethod",
+      "issue": "Requester.create(cls, cfg: RequesterConfig) is the only complex type using @classmethod async constructor. All peer types (Stream, Consumer, KVStore, ObjectStore) use module-level factory functions (create_stream, create_consumer, new_kv_store, new_object_store). The inconsistency will be visible to callers (Requester.create(...) vs await create_consumer(...)).",
+      "recommendation": "Convert to module-level async def create_requester(cfg: RequesterConfig) -> Requester for symmetry with every other factory.",
+      "convention_source": "python-class-design skill (new_client factory pattern); consistency with api.py.stub §5.3 and §6.1 factories",
+      "blocking": false,
+      "disposition": "ACCEPT-AS-IS carry-over — iter-4 standing decision"
+    },
+    {
+      "id": "CONV-8",
+      "severity": "NOTE",
+      "still_open": true,
+      "area": "package-layout.md lines 184-186 — otel/ submodule naming",
+      "issue": "otel/ submodules are tracer.py, metrics.py, logger.py (no leading underscore), while every other impl module in the SDK uses _<name>.py convention. This implies these are directly importable public surfaces (otel.tracer, otel.metrics, otel.logger) in addition to what otel/__init__.py re-exports.",
+      "recommendation": "Either (a) rename to _tracer.py etc. and restrict public access to otel/__init__.py re-exports, or (b) explicitly document that direct submodule imports are a supported and stable public surface for callers who need sub-handle granularity.",
+      "convention_source": "package-layout.md own _<name>.py convention; sibling packages (events/corenats/_publisher.py, events/middleware/_tracing.py etc.)",
+      "blocking": false,
+      "disposition": "ACCEPT-AS-IS carry-over — iter-4 standing decision"
+    },
+    {
+      "id": "CONV-9",
+      "severity": "NOTE",
+      "still_open": true,
+      "area": "api.py.stub line 2194 — ErrOTELUnsupportedProtocol inheritance",
+      "issue": "ErrOTELUnsupportedProtocol(EventsError) is retryable by default (not in _NEVER_RETRY, not in the non-retryable sentinel list). An unsupported OTel protocol string is a config-validation error raised at init time (resolve_protocol(), TracerInitConfig.__post_init__), not a retryable runtime transport failure. Retry middleware would re-attempt initialization on an unrecognized string, which cannot succeed.",
+      "recommendation": "Either add ErrOTELUnsupportedProtocol to the non-retryable sentinel list in is_retryable(), or change its base to ValueError (keeps it outside EventsError and therefore outside is_retryable's domain).",
+      "convention_source": "events.utils is_retryable classification rules; consistency with ErrInvalidConfig (NON-retryable) and ErrMissingConfig (NON-retryable)",
+      "blocking": false,
+      "disposition": "ACCEPT-AS-IS carry-over — iter-4 standing decision"
+    },
+    {
+      "id": "CONV-10",
+      "severity": "NOTE",
+      "still_open": true,
+      "area": "api.py.stub line 27 — from __future__ import annotations coverage",
+      "issue": "from __future__ import annotations appears once (codec section, line 27). The stub is a single-namespace concatenation, but each section maps to an independent implementation file. Without this import in each file, forward-reference annotations (e.g., 'Subscription' in Subscriber.subscribe, 'JsMsg' in JsPublisher) require string-quoted form at Python 3.10 and will break mypy strict if omitted.",
+      "recommendation": "Add an explicit note in interfaces.md or a comment at each section boundary: 'Every implementation file must begin with from __future__ import annotations (required for forward references and mypy strict compatibility).'",
+      "convention_source": "python-class-design skill (mandatory PEP 563 import on every SDK module)",
+      "blocking": false,
+      "disposition": "ACCEPT-AS-IS carry-over — iter-4 standing decision"
+    },
+    {
+      "id": "CONV-11",
+      "severity": "NOTE",
+      "still_open": true,
+      "area": "api.py.stub lines 2155-2158 — TracingMiddleware constructor",
+      "issue": "TracingMiddleware.__init__(self, *, tracer, use_otel, sampler) uses all-KW-only args with no Config struct, while every other middleware (RetryMiddleware, CircuitBreaker, LoggingMiddleware, MetricsCollector, OTELMetricsMiddleware, TokenBucketLimiter) follows Cls(cfg: XConfig). The KW-only-no-config form also conflicts with deviation 6 which explicitly applies to classes with '≤6 optional construction-time knobs' — all three TracingMiddleware knobs are optional, so deviation 6 covers it, but the pattern is still inconsistent with the sibling middlewares.",
+      "recommendation": "Define @dataclass class TracingConfig and change constructor to TracingMiddleware(cfg: TracingConfig) for symmetry with all sibling middlewares.",
+      "convention_source": "python-class-design skill (Config+New primary); api.py.stub sibling middleware pattern",
+      "blocking": false,
+      "disposition": "ACCEPT-AS-IS carry-over — iter-4 standing decision"
+    },
+    {
+      "id": "CONV-13",
+      "severity": "NOTE",
+      "still_open": true,
+      "area": "api.py.stub lines 14-15 — file header 'Last edit' comment",
+      "issue": "File header reads 'Last edit: 2026-05-02 D3 fix loop iter 2 (H5-rev-3)'. The iter-3 changes (CONV-5: ~180 lines of __post_init__ bodies), iter-4 changes (CONV-12: §2.4 relocation block, _NEVER_RETRY Final[frozenset] rewrite), and the iter-5 re-pass cycle are not reflected. Cosmetic documentation gap; does not affect correctness.",
+      "recommendation": "Update to 'Last edit: 2026-05-02 D3 fix loop iter 5 (H5-rev-3): CONV-5 + CONV-12 verified; 6 open NOTEs' before impl handoff.",
+      "convention_source": "Pipeline Rule 16 (provenance markers on pipeline-authored symbols); sdk-impl-lead reads this header for handoff context",
+      "blocking": false,
+      "disposition": "ACCEPT-AS-IS — cosmetic only; update before handoff"
+    }
+  ],
+
+  "blocker_count": 0,
+  "warn_count": 0,
+  "open_warn_ids": [],
+  "note_count": 6,
+  "open_note_ids": ["CONV-6", "CONV-8", "CONV-9", "CONV-10", "CONV-11", "CONV-13"],
+
+  "convergence": true,
+  "convergence_rationale": "Independent full re-pass (all four design artifacts read from scratch) confirms the iter-4 PASS verdict. Both iter-3 WARNs (CONV-5, CONV-12) remain closed and their fixes are intact. No new convention violations introduced in or after the fix loop. All 8 checked convention rules are PASS. The 6 carry-over NOTEs are unchanged from iter-4 — no NOTE has escalated to WARN. REVISE-strict re-pass finds no delta from iter-4.",
+
+  "verdict": "PASS — 0 BLOCKERs, 0 WARNs, 6 open NOTEs (all carry-over; none new; none escalated)"
+}

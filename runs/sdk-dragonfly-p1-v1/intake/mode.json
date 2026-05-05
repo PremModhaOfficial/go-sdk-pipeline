@@ -1,0 +1,19 @@
+{
+  "mode": "B",
+  "mode_source": "TPRD §1 Request Mode",
+  "target_package": "core/l2cache/dragonfly",
+  "target_module": "motadatagosdk",
+  "extension_of_run": "sdk-dragonfly-s2",
+  "new_exports_planned": [
+    "WithKeyPrefix", "WithCircuitBreaker",
+    "GetJSON", "SetJSON", "MGetJSON",
+    "ErrCodec",
+    "Scan", "HScan", "HScanEntry",
+    "SAdd", "SRem", "SMembers", "SIsMember", "SCard", "SInter", "SUnion", "SDiff", "SInterStore", "SRandMember", "SPop",
+    "Z", "ZAdd", "ZAddNX", "ZAddXX", "ZIncrBy",
+    "ZRange", "ZRangeWithScores", "ZRevRange", "ZRangeByScore",
+    "ZRank", "ZRevRank", "ZScore", "ZRem", "ZCard", "ZCount", "ZPopMin", "ZPopMax"
+  ],
+  "promoted_sentinels": ["ErrCircuitOpen"],
+  "phase_0_5_gated": true
+}

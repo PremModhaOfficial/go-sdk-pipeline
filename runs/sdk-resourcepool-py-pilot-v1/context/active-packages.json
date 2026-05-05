@@ -1,0 +1,109 @@
+{
+  "run_id": "sdk-resourcepool-py-pilot-v1",
+  "resolved_at": "2026-04-27T00:00:00Z",
+  "target_language": "python",
+  "target_tier": "T1",
+  "packages": [
+    {
+      "name": "shared-core",
+      "version": "1.0.0",
+      "agents": [
+        "baseline-manager",
+        "defect-analyzer",
+        "guardrail-validator",
+        "improvement-planner",
+        "learning-engine",
+        "metrics-collector",
+        "phase-retrospector",
+        "root-cause-tracer",
+        "sdk-design-devil",
+        "sdk-design-lead",
+        "sdk-drift-detector",
+        "sdk-impl-lead",
+        "sdk-intake-agent",
+        "sdk-marker-hygiene-devil",
+        "sdk-marker-scanner",
+        "sdk-merge-planner",
+        "sdk-overengineering-critic",
+        "sdk-security-devil",
+        "sdk-semver-devil",
+        "sdk-skill-coverage-reporter",
+        "sdk-skill-drift-detector",
+        "sdk-testing-lead"
+      ],
+      "skills": [
+        "api-ergonomics-audit",
+        "conflict-resolution",
+        "context-summary-writing",
+        "decision-logging",
+        "environment-prerequisites-check",
+        "feedback-analysis",
+        "guardrail-validation",
+        "idempotent-retry-safety",
+        "lifecycle-events",
+        "mcp-knowledge-graph",
+        "network-error-classification",
+        "review-fix-protocol",
+        "sdk-marker-protocol",
+        "sdk-semver-governance",
+        "spec-driven-development",
+        "tdd-patterns"
+      ],
+      "guardrails": [
+        "G01",
+        "G02",
+        "G03",
+        "G04",
+        "G05",
+        "G06",
+        "G07",
+        "G20",
+        "G21",
+        "G22",
+        "G23",
+        "G24",
+        "G69",
+        "G80",
+        "G81",
+        "G83",
+        "G84",
+        "G85",
+        "G86",
+        "G90",
+        "G93",
+        "G116"
+      ]
+    },
+    {
+      "name": "python",
+      "version": "1.0.0",
+      "agents": [],
+      "skills": [
+        "asyncio-cancellation-patterns",
+        "pytest-table-tests",
+        "python-asyncio-patterns",
+        "python-class-design"
+      ],
+      "guardrails": [],
+      "toolchain": {
+        "build": "python -m build",
+        "test": "pytest -x --no-header",
+        "lint": "ruff check .",
+        "vet": "mypy --strict .",
+        "fmt": "ruff format --check .",
+        "coverage": "pytest --cov=src --cov-report=json --cov-report=term",
+        "coverage_min_pct": 90,
+        "bench": "pytest --benchmark-only --benchmark-json=bench.json",
+        "supply_chain": ["pip-audit", "safety check --full-report"],
+        "leak_check": "pytest tests/leak --asyncio-mode=auto"
+      },
+      "file_extensions": [".py"],
+      "marker_comment_syntax": {
+        "line": "#",
+        "block_open": "\"\"\"",
+        "block_close": "\"\"\""
+      },
+      "module_file": "pyproject.toml"
+    }
+  ]
+}

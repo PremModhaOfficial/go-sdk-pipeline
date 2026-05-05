@@ -1,0 +1,146 @@
+=== Symbol Results ===
+
+Vulnerability #1: GO-2026-4947
+    Unexpected work during chain building in crypto/x509
+  More info: https://pkg.go.dev/vuln/GO-2026-4947
+  Standard library
+    Found in: crypto/x509@go1.26
+    Fixed in: crypto/x509@go1.26.2
+    Example traces found:
+      #1: core/l2cache/dragonfly/cache.go:121:24: dragonfly.New calls redis.NewClient, which eventually calls x509.Certificate.Verify
+
+Vulnerability #2: GO-2026-4946
+    Inefficient policy validation in crypto/x509
+  More info: https://pkg.go.dev/vuln/GO-2026-4946
+  Standard library
+    Found in: crypto/x509@go1.26
+    Fixed in: crypto/x509@go1.26.2
+    Example traces found:
+      #1: core/l2cache/dragonfly/cache.go:121:24: dragonfly.New calls redis.NewClient, which eventually calls x509.Certificate.Verify
+
+Vulnerability #3: GO-2026-4870
+    Unauthenticated TLS 1.3 KeyUpdate record can cause persistent connection
+    retention and DoS in crypto/tls
+  More info: https://pkg.go.dev/vuln/GO-2026-4870
+  Standard library
+    Found in: crypto/tls@go1.26
+    Fixed in: crypto/tls@go1.26.2
+    Example traces found:
+      #1: core/l2cache/dragonfly/poolstats.go:79:15: dragonfly.poolStatsScraper.stop calls sync.Once.Do, which eventually calls tls.Conn.Handshake
+      #2: otel/logger/provider.go:91:58: logger.newOTELProvider calls log.NewBatchProcessor, which eventually calls tls.Conn.HandshakeContext
+      #3: core/l2cache/dragonfly/cache.go:121:24: dragonfly.New calls redis.NewClient, which eventually calls tls.Conn.Read
+      #4: otel/logger/log.go:453:17: logger.Logger.Warn calls zap.Logger.Warn, which eventually calls tls.Conn.Write
+      #5: core/l2cache/dragonfly/cache.go:118:28: dragonfly.New calls tls.DialWithDialer
+      #6: otel/logger/provider.go:91:58: logger.newOTELProvider calls log.NewBatchProcessor, which eventually calls tls.Dialer.DialContext
+
+Vulnerability #4: GO-2026-4866
+    Case-sensitive excludedSubtrees name constraints cause Auth Bypass in
+    crypto/x509
+  More info: https://pkg.go.dev/vuln/GO-2026-4866
+  Standard library
+    Found in: crypto/x509@go1.26
+    Fixed in: crypto/x509@go1.26.2
+    Example traces found:
+      #1: core/l2cache/dragonfly/cache.go:121:24: dragonfly.New calls redis.NewClient, which eventually calls x509.Certificate.Verify
+
+Vulnerability #5: GO-2026-4865
+    JsBraceDepth Context Tracking Bugs (XSS) in html/template
+  More info: https://pkg.go.dev/vuln/GO-2026-4865
+  Standard library
+    Found in: html/template@go1.26
+    Fixed in: html/template@go1.26.2
+    Example traces found:
+      #1: core/l2cache/dragonfly/errors.go:150:18: dragonfly.mapErr calls template.Error.Error
+      #2: core/l2cache/dragonfly/poolstats.go:79:15: dragonfly.poolStatsScraper.stop calls sync.Once.Do, which eventually calls template.Template.Funcs
+      #3: core/l2cache/dragonfly/poolstats.go:79:15: dragonfly.poolStatsScraper.stop calls sync.Once.Do, which eventually calls template.Template.Parse
+      #4: core/l2cache/dragonfly/sortedset.go:217:25: dragonfly.Cache.ZPopMax calls fmt.Errorf, which eventually calls template.context.String
+
+Vulnerability #6: GO-2026-4602
+    FileInfo can escape from a Root in os
+  More info: https://pkg.go.dev/vuln/GO-2026-4602
+  Standard library
+    Found in: os@go1.26
+    Fixed in: os@go1.26.1
+    Example traces found:
+      #1: core/l2cache/dragonfly/poolstats.go:79:15: dragonfly.poolStatsScraper.stop calls sync.Once.Do, which eventually calls os.File.Readdir
+      #2: core/l2cache/dragonfly/tls.go:21:34: dragonfly.systemCertPoolWithExtra calls x509.SystemCertPool, which eventually calls os.ReadDir
+
+Vulnerability #7: GO-2026-4601
+    Incorrect parsing of IPv6 host literals in net/url
+  More info: https://pkg.go.dev/vuln/GO-2026-4601
+  Standard library
+    Found in: net/url@go1.26
+    Fixed in: net/url@go1.26.1
+    Example traces found:
+      #1: core/l2cache/dragonfly/poolstats.go:79:15: dragonfly.poolStatsScraper.stop calls sync.Once.Do, which eventually calls url.Parse
+      #2: otel/logger/provider.go:91:58: logger.newOTELProvider calls log.NewBatchProcessor, which eventually calls url.URL.Parse
+
+Vulnerability #8: GO-2026-4600
+    Panic in name constraint checking for malformed certificates in crypto/x509
+  More info: https://pkg.go.dev/vuln/GO-2026-4600
+  Standard library
+    Found in: crypto/x509@go1.26
+    Fixed in: crypto/x509@go1.26.1
+    Example traces found:
+      #1: core/l2cache/dragonfly/cache.go:121:24: dragonfly.New calls redis.NewClient, which eventually calls x509.Certificate.Verify
+
+Vulnerability #9: GO-2026-4599
+    Incorrect enforcement of email constraints in crypto/x509
+  More info: https://pkg.go.dev/vuln/GO-2026-4599
+  Standard library
+    Found in: crypto/x509@go1.26
+    Fixed in: crypto/x509@go1.26.1
+    Example traces found:
+      #1: core/l2cache/dragonfly/cache.go:121:24: dragonfly.New calls redis.NewClient, which eventually calls x509.Certificate.Verify
+
+Vulnerability #10: GO-2026-4394
+    OpenTelemetry Go SDK Vulnerable to Arbitrary Code Execution via PATH
+    Hijacking in go.opentelemetry.io/otel/sdk
+  More info: https://pkg.go.dev/vuln/GO-2026-4394
+  Module: go.opentelemetry.io/otel/sdk
+    Found in: go.opentelemetry.io/otel/sdk@v1.39.0
+    Fixed in: go.opentelemetry.io/otel/sdk@v1.40.0
+    Example traces found:
+      #1: otel/tracer/provider.go:14:2: tracer.init calls trace.init, which calls env.init
+      #2: otel/tracer/provider.go:14:2: tracer.init calls trace.init, which calls instrumentation.init
+      #3: otel/tracer/types.go:187:23: tracer.spanWrapper.End calls trace.recordingSpan.End, which calls observ.Tracer.Enabled
+      #4: otel/tracer/types.go:187:23: tracer.spanWrapper.End calls trace.recordingSpan.End, which calls observ.Tracer.SpanEnded
+      #5: otel/tracer/provider.go:14:2: tracer.init calls trace.init, which calls observ.init
+      #6: core/l2cache/dragonfly/json.go:137:24: dragonfly.SetJSON calls json.Marshal, which eventually calls observ.init
+      #7: otel/logger/provider.go:140:44: logger.newOTELProvider calls log.NewLoggerProvider, which eventually calls resource.Default
+      #8: core/l2cache/dragonfly/poolstats.go:79:15: dragonfly.poolStatsScraper.stop calls sync.Once.Do, which eventually calls resource.Default
+      #9: otel/logger/provider.go:140:44: logger.newOTELProvider calls log.NewLoggerProvider, which eventually calls resource.Environment
+      #10: otel/logger/provider.go:140:44: logger.newOTELProvider calls log.NewLoggerProvider, which eventually calls resource.Merge
+      #11: otel/common/resource.go:90:45: common.NewOTELResource calls resource.New
+      #12: otel/tracer/provider.go:14:2: tracer.init calls trace.init, which eventually calls resource.NewSchemaless
+      #13: otel/logger/provider.go:91:58: logger.newOTELProvider calls log.NewBatchProcessor, which eventually calls resource.Resource.Equivalent
+      #14: otel/logger/provider.go:91:58: logger.newOTELProvider calls log.NewBatchProcessor, which eventually calls resource.Resource.Iter
+      #15: otel/logger/provider.go:91:58: logger.newOTELProvider calls log.NewBatchProcessor, which eventually calls resource.Resource.Len
+      #16: otel/logger/provider.go:91:58: logger.newOTELProvider calls log.NewBatchProcessor, which eventually calls resource.Resource.SchemaURL
+      #17: otel/common/resource.go:91:26: common.NewOTELResource calls resource.WithAttributes
+      #18: otel/tracer/provider.go:14:2: tracer.init calls trace.init, which calls resource.init
+      #19: otel/tracer/provider.go:14:2: tracer.init calls trace.init, which eventually calls sdk.Version
+      #20: otel/logger/log.go:46:2: logger.init calls log.init, which calls sdk.init
+      #21: otel/tracer/provider.go:14:2: tracer.init calls trace.init
+      #22: core/l2cache/dragonfly/poolstats.go:79:15: dragonfly.poolStatsScraper.stop calls sync.Once.Do, which eventually calls trace.init
+      #23: core/l2cache/dragonfly/poolstats.go:79:15: dragonfly.poolStatsScraper.stop calls sync.Once.Do, which eventually calls trace.logDropped[go.opentelemetry.io/otel/sdk/trace.Event]
+      #24: core/l2cache/dragonfly/poolstats.go:79:15: dragonfly.poolStatsScraper.stop calls sync.Once.Do, which eventually calls trace.logDropped[go.opentelemetry.io/otel/sdk/trace.Link]
+      #25: otel/tracer/types.go:187:23: tracer.spanWrapper.End calls trace.nonRecordingSpan.End
+      #26: otel/tracer/types.go:212:32: tracer.spanWrapper.SetError calls trace.nonRecordingSpan.RecordError
+      #27: otel/tracer/types.go:225:33: tracer.spanWrapper.SetAttributes calls trace.nonRecordingSpan.SetAttributes
+      #28: otel/tracer/types.go:211:30: tracer.spanWrapper.SetError calls trace.nonRecordingSpan.SetStatus
+      #29: otel/logger/context.go:248:41: logger.extractFieldsPooled calls trace.SpanContextFromContext, which calls trace.nonRecordingSpan.SpanContext
+      #30: otel/tracer/types.go:187:23: tracer.spanWrapper.End calls trace.recordingSpan.End
+      #31: otel/tracer/types.go:212:32: tracer.spanWrapper.SetError calls trace.recordingSpan.RecordError
+      #32: otel/tracer/types.go:225:33: tracer.spanWrapper.SetAttributes calls trace.recordingSpan.SetAttributes
+      #33: otel/tracer/types.go:211:30: tracer.spanWrapper.SetError calls trace.recordingSpan.SetStatus
+      #34: otel/logger/context.go:248:41: logger.extractFieldsPooled calls trace.SpanContextFromContext, which calls trace.recordingSpan.SpanContext
+      #35: otel/tracer/provider.go:13:2: tracer.init calls stdouttrace.init, which calls tracetest.init
+      #36: core/l2cache/dragonfly/poolstats.go:79:15: dragonfly.poolStatsScraper.stop calls sync.Once.Do, which eventually calls x.Feature[string].Enabled[string]
+      #37: otel/tracer/provider.go:14:2: tracer.init calls trace.init, which eventually calls x.init
+
+Your code is affected by 10 vulnerabilities from 1 module and the Go standard library.
+This scan also found 3 vulnerabilities in packages you import and 1
+vulnerability in modules you require, but your code doesn't appear to call these
+vulnerabilities.
+Use '-show verbose' for more details.

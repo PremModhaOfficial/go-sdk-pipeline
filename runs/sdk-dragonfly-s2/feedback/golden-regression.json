@@ -1,0 +1,71 @@
+{
+  "run_id": "sdk-dragonfly-s2",
+  "pipeline_version": "0.2.0",
+  "agent": "sdk-golden-regression-runner",
+  "wave": "F5",
+  "timestamp": "2026-04-18T14:50:00Z",
+  "corpus_root": "golden-corpus/",
+  "corpus_refresh_cadence_runs": 25,
+  "runs_since_last_refresh": 0,
+  "refresh_due_this_run": false,
+  "corpus_state": {
+    "readme_present": true,
+    "fixture_directories": [],
+    "seed_fixtures_declared": ["dragonfly-v1", "s3-v1", "kafka-consumer-v1"],
+    "seed_fixtures_materialized": [],
+    "retired_manifest_present": false
+  },
+  "fixtures_tested": 0,
+  "fixtures_pass": 0,
+  "fixtures_fail": 0,
+  "verdict": "N/A-empty-corpus",
+  "escalation": null,
+  "learning_engine_auto_apply": "NOT-BLOCKED-BY-GOLDEN",
+  "rationale": "golden-corpus/ contains only README.md at this point in the pipeline's lifecycle — no materialized fixture subdirectories exist (dragonfly-v1/, s3-v1/, kafka-consumer-v1/ are declared as seed intent in README but not yet populated). Per Wave F5 spec: 'If empty (first-ever pipeline run on this target), note: N/A for regression — this run's output may seed the corpus but is not compared.' This is the first completed pipeline run on the target SDK; no prior canonical output exists to diff against. No divergence can be asserted or refuted. Therefore this run does NOT produce a FAIL signal that would force learning-engine (F7) to halt auto-apply on grounds of golden regression. learning-engine remains subject to OTHER gates (skill drift, metrics, improvement-planner) but is free from a golden-corpus block.",
+  "seed_candidacy": {
+    "candidate_for_seeding": true,
+    "candidate_fixture_name": "dragonfly-v1",
+    "source_commit": "a4d5d7f",
+    "source_branch": "sdk-pipeline/sdk-dragonfly-s2",
+    "prerequisites_for_seeding": [
+      "H10 merge verdict APPROVED",
+      "User explicitly tags this run as canonical",
+      "Capture tprd.md + gate-answers.yaml + expected/ + metadata.json per README.md layout"
+    ],
+    "note": "Seeding itself is a HUMAN-gated post-merge action, not performed by this agent. This agent only records candidacy."
+  },
+  "details": [
+    {
+      "check": "corpus enumeration",
+      "verdict": "EMPTY",
+      "observed": "golden-corpus/ contains README.md only; no fixture subdirectories"
+    },
+    {
+      "check": "refresh cadence",
+      "verdict": "NOT-DUE",
+      "observed": "settings golden_corpus_refresh_every_n_runs=25; this is run #1; 24 runs until refresh wave"
+    },
+    {
+      "check": "regression diff",
+      "verdict": "SKIPPED",
+      "observed": "No fixtures to diff against; nothing to compare"
+    },
+    {
+      "check": "tolerance application",
+      "verdict": "N/A",
+      "observed": "Pipeline-owned vs MANUAL-preserved region classification skipped — no prior expected/ tree"
+    },
+    {
+      "check": "learning-engine coordination",
+      "verdict": "NO-HALT",
+      "observed": "Absent a FAIL, F5 does not emit the ESCALATION that would force learning-engine HALT in F7"
+    }
+  ],
+  "artifacts_produced": [
+    "runs/sdk-dragonfly-s2/feedback/golden-regression.json",
+    "runs/sdk-dragonfly-s2/feedback/context/sdk-golden-regression-runner-summary.md"
+  ],
+  "artifacts_skipped": [
+    "runs/sdk-dragonfly-s2/feedback/golden-diffs/*.patch — N/A, no fixtures"
+  ]
+}

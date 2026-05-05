@@ -1,0 +1,455 @@
+// [traces-to: TPRD-§5 TPRD-§6 TPRD-§7 TPRD-§8 TPRD-§9]
+// Package dragonfly is a thin, opinionated wrap of github.com/redis/go-redis/v9
+// targeting Dragonfly as the server. See TPRD.md §1-§3 for goals / non-goals.
+//
+// This file is the DESIGN STUB. It contains the exact exported API surface and
+// compiles against target go.mod (github.com/redis/go-redis/v9 v9.18.0, go 1.26).
+// The Phase 2 Impl phase replaces each `return` stub with the real body; signatures
+// are frozen here.
+package dragonfly
+
+import (
+	"context"
+	"crypto/tls"
+	"errors"
+	"fmt"
+	"time"
+
+	"github.com/redis/go-redis/v9"
+)
+
+// ---------------------------------------------------------------------------
+// Constants (all defaults) — const.go
+// ---------------------------------------------------------------------------
+
+const (
+	// defaultDialTimeout is the TCP dial timeout. [traces-to: TPRD-§6-const]
+	defaultDialTimeout = 5 * time.Second
+	// defaultReadTimeout is the per-op read timeout. [traces-to: TPRD-§6-const]
+	defaultReadTimeout = 3 * time.Second
+	// defaultWriteTimeout is the per-op write timeout. [traces-to: TPRD-§6-const]
+	defaultWriteTimeout = 3 * time.Second
+	// defaultPoolSize is the go-redis connection pool size. [traces-to: TPRD-§6-const]
+	defaultPoolSize = 10
+	// defaultPoolTimeout is the max wait for a pooled conn. [traces-to: TPRD-§6-const]
+	defaultPoolTimeout = 1 * time.Second
+	// defaultConnMaxLifetime forces re-dial to pick up rotated K8s secrets. [traces-to: TPRD-§9-rotation]
+	defaultConnMaxLifetime = 10 * time.Minute
+	// defaultPoolStatsInterval governs poolstats.go scrape cadence. [traces-to: TPRD-§8.2-poolstats TPRD-§15.Q2]
+	defaultPoolStatsInterval = 10 * time.Second
+	// minPoolStatsInterval prevents tight-loop scraping. [traces-to: TPRD-§8.2-poolstats]
+	minPoolStatsInterval = 1 * time.Second
+	// defaultProtocol selects RESP3 by default. [traces-to: TPRD-§4]
+	defaultProtocol = 3
+)
+
+// ---------------------------------------------------------------------------
+// Config + TLSConfig — config.go
+// ---------------------------------------------------------------------------
+
+// TLSConfig holds transport security settings. [traces-to: TPRD-§9-TLS]
+type TLSConfig struct {
+	// CertFile is a path to the client cert PEM (optional mTLS).
+	CertFile string
+	// KeyFile is a path to the client private key PEM (optional mTLS).
+	KeyFile string
+	// CAFile is a path to the CA bundle PEM.
+	CAFile string
+	// ServerName sets the SNI server name. REQUIRED unless SkipVerify.
+	ServerName string
+	// SkipVerify disables server cert verification. Validator warns in prod.
+	SkipVerify bool
+	// MinVersion defaults to tls.VersionTLS12. Prefer tls.VersionTLS13.
+	MinVersion uint16
+}
+
+// Config is the primary user-facing configuration for the Cache.
+// Fields populated via New(opts ...Option). [traces-to: TPRD-§6-Config]
+type Config struct {
+	Addr             string
+	Username         string
+	Password         string
+	DB               int
+	ClientName       string
+	Protocol         int
+	TLS              *TLSConfig
+	DialTimeout      time.Duration
+	ReadTimeout      time.Duration
+	WriteTimeout     time.Duration
+	PoolSize         int
+	PoolTimeout      time.Duration
+	ConnMaxLifetime  time.Duration
+	MaxRetries       int
+	PoolStatsInterval time.Duration
+}
+
+// applyDefaults fills zero-valued fields with const.go defaults. [traces-to: TPRD-§6-Config]
+func (c *Config) applyDefaults() { /* impl Phase 2 */ }
+
+// validate enforces non-negotiable invariants (Addr set, TLS.ServerName unless SkipVerify,
+// PoolStatsInterval ≥ minPoolStatsInterval). [traces-to: TPRD-§6-Config TPRD-§9-TLS]
+func (c *Config) validate() error { return nil }
+
+// ---------------------------------------------------------------------------
+// Options — options.go
+// ---------------------------------------------------------------------------
+
+// Option mutates a Config during New. [traces-to: TPRD-§6-Option]
+type Option func(*Config)
+
+// WithAddr sets the Dragonfly server address (host:port). [traces-to: TPRD-§6-Option-WithAddr]
+func WithAddr(addr string) Option { return func(c *Config) { c.Addr = addr } }
+
+// WithUsername sets the ACL username. [traces-to: TPRD-§6-Option-WithUsername]
+func WithUsername(u string) Option { return func(c *Config) { c.Username = u } }
+
+// WithPassword sets the ACL password (prefer LoadCredsFromEnv). [traces-to: TPRD-§6-Option-WithPassword]
+func WithPassword(p string) Option { return func(c *Config) { c.Password = p } }
+
+// WithTLS enables TLS with the provided config. [traces-to: TPRD-§6-Option-WithTLS]
+func WithTLS(t *TLSConfig) Option { return func(c *Config) { c.TLS = t } }
+
+// WithTLSServerName sets SNI server name (convenience shortcut). [traces-to: TPRD-§6-Option-WithTLSServerName]
+func WithTLSServerName(name string) Option {
+	return func(c *Config) {
+		if c.TLS == nil {
+			c.TLS = &TLSConfig{}
+		}
+		c.TLS.ServerName = name
+	}
+}
+
+// WithPoolSize sets go-redis pool size. [traces-to: TPRD-§6-Option-WithPoolSize]
+func WithPoolSize(n int) Option { return func(c *Config) { c.PoolSize = n } }
+
+// WithPoolTimeout sets pool-checkout timeout. [traces-to: TPRD-§6-Option-WithPoolTimeout]
+func WithPoolTimeout(d time.Duration) Option { return func(c *Config) { c.PoolTimeout = d } }
+
+// WithConnMaxLifetime forces conn recycle (for secret rotation). [traces-to: TPRD-§6-Option-WithConnMaxLifetime]
+func WithConnMaxLifetime(d time.Duration) Option { return func(c *Config) { c.ConnMaxLifetime = d } }
+
+// WithDialTimeout sets TCP dial timeout. [traces-to: TPRD-§6-Option-WithDialTimeout]
+func WithDialTimeout(d time.Duration) Option { return func(c *Config) { c.DialTimeout = d } }
+
+// WithReadTimeout sets per-op read timeout. [traces-to: TPRD-§6-Option-WithReadTimeout]
+func WithReadTimeout(d time.Duration) Option { return func(c *Config) { c.ReadTimeout = d } }
+
+// WithWriteTimeout sets per-op write timeout. [traces-to: TPRD-§6-Option-WithWriteTimeout]
+func WithWriteTimeout(d time.Duration) Option { return func(c *Config) { c.WriteTimeout = d } }
+
+// WithDB selects Redis logical DB. [traces-to: TPRD-§6-Option-WithDB]
+func WithDB(db int) Option { return func(c *Config) { c.DB = db } }
+
+// WithClientName sets CLIENT SETNAME value. [traces-to: TPRD-§6-Option-WithClientName]
+func WithClientName(n string) Option { return func(c *Config) { c.ClientName = n } }
+
+// WithMaxRetries sets go-redis MaxRetries (default 0; see §3). [traces-to: TPRD-§6-Option-WithMaxRetries TPRD-§3]
+func WithMaxRetries(n int) Option { return func(c *Config) { c.MaxRetries = n } }
+
+// WithProtocol selects RESP2 or RESP3. [traces-to: TPRD-§6-Option-WithProtocol]
+func WithProtocol(p int) Option { return func(c *Config) { c.Protocol = p } }
+
+// WithPoolStatsInterval overrides poolstats.go scrape cadence. [traces-to: TPRD-§8.2-poolstats TPRD-§15.Q2]
+func WithPoolStatsInterval(d time.Duration) Option { return func(c *Config) { c.PoolStatsInterval = d } }
+
+// ---------------------------------------------------------------------------
+// Error sentinels + mapErr — errors.go
+// ---------------------------------------------------------------------------
+
+// Sentinel errors; callers use errors.Is. [traces-to: TPRD-§7]
+var (
+	ErrNotConnected     = errors.New("dragonfly: not connected")
+	ErrInvalidConfig    = errors.New("dragonfly: invalid config")
+	ErrTimeout          = errors.New("dragonfly: timeout")
+	ErrUnavailable      = errors.New("dragonfly: unavailable")
+	ErrCanceled         = errors.New("dragonfly: canceled")
+	ErrNil              = errors.New("dragonfly: key not found")
+	ErrWrongType        = errors.New("dragonfly: wrong type")
+	ErrOutOfRange       = errors.New("dragonfly: value out of range")
+	ErrSyntax           = errors.New("dragonfly: syntax error")
+	ErrMoved            = errors.New("dragonfly: moved")
+	ErrAsk              = errors.New("dragonfly: ask")
+	ErrClusterDown     = errors.New("dragonfly: cluster down")
+	ErrLoading          = errors.New("dragonfly: loading")
+	ErrReadOnly         = errors.New("dragonfly: readonly")
+	ErrMasterDown       = errors.New("dragonfly: master down")
+	ErrAuth             = errors.New("dragonfly: auth failed")
+	ErrNoPerm           = errors.New("dragonfly: no perm")
+	ErrTLS              = errors.New("dragonfly: tls failure")
+	ErrTxnAborted       = errors.New("dragonfly: transaction aborted")
+	ErrScriptNotFound   = errors.New("dragonfly: script not found")
+	ErrBusyScript       = errors.New("dragonfly: busy script")
+	ErrPoolExhausted    = errors.New("dragonfly: pool exhausted")
+	ErrPoolClosed       = errors.New("dragonfly: pool closed")
+	ErrRESP3Required    = errors.New("dragonfly: RESP3 required")
+	ErrSubscriberClosed = errors.New("dragonfly: subscriber closed")
+	ErrCircuitOpen      = errors.New("dragonfly: circuit open") // reserved; SDK never returns
+)
+
+// mapErr is the single-switch error-classification function. [traces-to: TPRD-§7-mapErr]
+func mapErr(err error) error {
+	if err == nil {
+		return nil
+	}
+	// impl Phase 2: switch over redis.Nil, redis.ErrClosed, context.*, net.Error,
+	// server-error prefixes (MOVED/ASK/WRONGTYPE/WRONGPASS/NOAUTH/NOPERM/CLUSTERDOWN/
+	// LOADING/READONLY/NOSCRIPT/BUSY/ERR out of range/ERR syntax), pool errors,
+	// default → ErrUnavailable. Always wrap with fmt.Errorf("%w: %v", sentinel, cause).
+	return fmt.Errorf("%w: %v", ErrUnavailable, err)
+}
+
+// classify returns the bounded error_class label for otel metrics (bounded to
+// {timeout, unavailable, nil, wrong_type, auth, other}). [traces-to: TPRD-§8.2]
+func classify(err error) string { return "other" }
+
+// ---------------------------------------------------------------------------
+// Credential loader — loader.go
+// ---------------------------------------------------------------------------
+
+// LoadCredsFromEnv reads ACL username + password from env-pointed file paths.
+// userEnv holds the username directly; passPathEnv holds a file path whose
+// contents are the password. [traces-to: TPRD-§9-LoadCredsFromEnv]
+func LoadCredsFromEnv(userEnv, passPathEnv string) (username, password string, err error) {
+	return "", "", nil
+}
+
+// ---------------------------------------------------------------------------
+// Cache struct + lifecycle — cache.go
+// ---------------------------------------------------------------------------
+
+// Cache is the Dragonfly L2 cache client. Safe for concurrent use.
+// [traces-to: TPRD-§5.1 TPRD-§8]
+type Cache struct {
+	rdb     *redis.Client
+	cfg     Config
+	scraper *poolStatsScraper
+}
+
+// Compile-time interface assertions (G43). [traces-to: TPRD-design-G43]
+var _ = (*Cache)(nil)
+
+// New constructs a Cache from the supplied options. Validates config, dials
+// lazily (first op establishes conn; Ping forces it). [traces-to: TPRD-§5.1-New]
+func New(opts ...Option) (*Cache, error) {
+	return nil, nil
+}
+
+// Ping verifies server reachability. [traces-to: TPRD-§5.1-Ping]
+func (c *Cache) Ping(ctx context.Context) error { return nil }
+
+// Close shuts down the pool and stops the pool-stats scraper.
+// Idempotent. [traces-to: TPRD-§5.1-Close]
+func (c *Cache) Close() error { return nil }
+
+// ---------------------------------------------------------------------------
+// String / Key methods — string.go (§5.2)
+// ---------------------------------------------------------------------------
+
+// [traces-to: TPRD-§5.2-Get] [constraint: P50 ≤ 200µs | bench/BenchmarkGet]
+func (c *Cache) Get(ctx context.Context, key string) (string, error) { return "", nil }
+
+// [traces-to: TPRD-§5.2-Set] [constraint: P50 ≤ 200µs | bench/BenchmarkSet]
+func (c *Cache) Set(ctx context.Context, key, value string, ttl time.Duration) error { return nil }
+
+// [traces-to: TPRD-§5.2-SetNX]
+func (c *Cache) SetNX(ctx context.Context, key, value string, ttl time.Duration) (bool, error) {
+	return false, nil
+}
+
+// [traces-to: TPRD-§5.2-SetXX]
+func (c *Cache) SetXX(ctx context.Context, key, value string, ttl time.Duration) (bool, error) {
+	return false, nil
+}
+
+// [traces-to: TPRD-§5.2-GetSet]
+func (c *Cache) GetSet(ctx context.Context, key, value string) (string, error) { return "", nil }
+
+// [traces-to: TPRD-§5.2-GetEx]
+func (c *Cache) GetEx(ctx context.Context, key string, ttl time.Duration) (string, error) {
+	return "", nil
+}
+
+// [traces-to: TPRD-§5.2-GetDel]
+func (c *Cache) GetDel(ctx context.Context, key string) (string, error) { return "", nil }
+
+// [traces-to: TPRD-§5.2-MGet]
+func (c *Cache) MGet(ctx context.Context, keys ...string) ([]any, error) { return nil, nil }
+
+// [traces-to: TPRD-§5.2-MSet]
+func (c *Cache) MSet(ctx context.Context, kv ...string) error { return nil }
+
+// [traces-to: TPRD-§5.2-Del]
+func (c *Cache) Del(ctx context.Context, keys ...string) (int64, error) { return 0, nil }
+
+// [traces-to: TPRD-§5.2-Exists]
+func (c *Cache) Exists(ctx context.Context, keys ...string) (int64, error) { return 0, nil }
+
+// [traces-to: TPRD-§5.2-Expire]
+func (c *Cache) Expire(ctx context.Context, key string, ttl time.Duration) (bool, error) {
+	return false, nil
+}
+
+// [traces-to: TPRD-§5.2-ExpireAt]
+func (c *Cache) ExpireAt(ctx context.Context, key string, at time.Time) (bool, error) {
+	return false, nil
+}
+
+// [traces-to: TPRD-§5.2-Persist]
+func (c *Cache) Persist(ctx context.Context, key string) (bool, error) { return false, nil }
+
+// [traces-to: TPRD-§5.2-TTL]
+func (c *Cache) TTL(ctx context.Context, key string) (time.Duration, error) { return 0, nil }
+
+// [traces-to: TPRD-§5.2-Incr]
+func (c *Cache) Incr(ctx context.Context, key string) (int64, error) { return 0, nil }
+
+// [traces-to: TPRD-§5.2-IncrBy]
+func (c *Cache) IncrBy(ctx context.Context, key string, n int64) (int64, error) { return 0, nil }
+
+// [traces-to: TPRD-§5.2-Decr]
+func (c *Cache) Decr(ctx context.Context, key string) (int64, error) { return 0, nil }
+
+// [traces-to: TPRD-§5.2-DecrBy]
+func (c *Cache) DecrBy(ctx context.Context, key string, n int64) (int64, error) { return 0, nil }
+
+// ---------------------------------------------------------------------------
+// Hash + HEXPIRE family — hash.go (§5.3)
+// ---------------------------------------------------------------------------
+
+// [traces-to: TPRD-§5.3-HGet]
+func (c *Cache) HGet(ctx context.Context, key, field string) (string, error) { return "", nil }
+
+// [traces-to: TPRD-§5.3-HSet]
+func (c *Cache) HSet(ctx context.Context, key string, values ...any) (int64, error) { return 0, nil }
+
+// [traces-to: TPRD-§5.3-HMGet]
+func (c *Cache) HMGet(ctx context.Context, key string, fields ...string) ([]any, error) {
+	return nil, nil
+}
+
+// [traces-to: TPRD-§5.3-HGetAll]
+func (c *Cache) HGetAll(ctx context.Context, key string) (map[string]string, error) {
+	return nil, nil
+}
+
+// [traces-to: TPRD-§5.3-HDel]
+func (c *Cache) HDel(ctx context.Context, key string, fields ...string) (int64, error) {
+	return 0, nil
+}
+
+// [traces-to: TPRD-§5.3-HExists]
+func (c *Cache) HExists(ctx context.Context, key, field string) (bool, error) { return false, nil }
+
+// [traces-to: TPRD-§5.3-HLen]
+func (c *Cache) HLen(ctx context.Context, key string) (int64, error) { return 0, nil }
+
+// [traces-to: TPRD-§5.3-HIncrBy]
+func (c *Cache) HIncrBy(ctx context.Context, key, field string, n int64) (int64, error) {
+	return 0, nil
+}
+
+// HExpire sets a TTL on hash fields. Return codes per HEXPIRE wire spec (see §15.Q1).
+// [traces-to: TPRD-§5.3-HExpire] [constraint: P99 ≤ 1ms | bench/BenchmarkHExpire]
+func (c *Cache) HExpire(ctx context.Context, key string, ttl time.Duration, fields ...string) ([]int64, error) {
+	return nil, nil
+}
+
+// [traces-to: TPRD-§5.3-HPExpire]
+func (c *Cache) HPExpire(ctx context.Context, key string, ttl time.Duration, fields ...string) ([]int64, error) {
+	return nil, nil
+}
+
+// [traces-to: TPRD-§5.3-HExpireAt]
+func (c *Cache) HExpireAt(ctx context.Context, key string, at time.Time, fields ...string) ([]int64, error) {
+	return nil, nil
+}
+
+// [traces-to: TPRD-§5.3-HTTL]
+func (c *Cache) HTTL(ctx context.Context, key string, fields ...string) ([]time.Duration, error) {
+	return nil, nil
+}
+
+// [traces-to: TPRD-§5.3-HPersist]
+func (c *Cache) HPersist(ctx context.Context, key string, fields ...string) ([]int64, error) {
+	return nil, nil
+}
+
+// ---------------------------------------------------------------------------
+// Pipeline + Transaction — pipeline.go (§5.4)
+// ---------------------------------------------------------------------------
+
+// [traces-to: TPRD-§5.4-Pipeline]
+func (c *Cache) Pipeline() redis.Pipeliner { return nil }
+
+// [traces-to: TPRD-§5.4-TxPipeline]
+func (c *Cache) TxPipeline() redis.Pipeliner { return nil }
+
+// [traces-to: TPRD-§5.4-Watch]
+func (c *Cache) Watch(ctx context.Context, fn func(*redis.Tx) error, keys ...string) error {
+	return nil
+}
+
+// ---------------------------------------------------------------------------
+// PubSub — pubsub.go (§5.5)
+// ---------------------------------------------------------------------------
+
+// [traces-to: TPRD-§5.5-Publish]
+func (c *Cache) Publish(ctx context.Context, channel, message string) (int64, error) {
+	return 0, nil
+}
+
+// Subscribe returns a *redis.PubSub; caller MUST call Close() to release the
+// subscriber goroutine in go-redis. [traces-to: TPRD-§5.5-Subscribe]
+func (c *Cache) Subscribe(ctx context.Context, channels ...string) *redis.PubSub { return nil }
+
+// [traces-to: TPRD-§5.5-PSubscribe]
+func (c *Cache) PSubscribe(ctx context.Context, patterns ...string) *redis.PubSub { return nil }
+
+// ---------------------------------------------------------------------------
+// Scripting — script.go (§5.6)
+// ---------------------------------------------------------------------------
+
+// [traces-to: TPRD-§5.6-Eval]
+func (c *Cache) Eval(ctx context.Context, script string, keys []string, args ...any) (any, error) {
+	return nil, nil
+}
+
+// [traces-to: TPRD-§5.6-EvalSha] [constraint: P99 ≤ 1ms | bench/BenchmarkEvalSha]
+func (c *Cache) EvalSha(ctx context.Context, sha string, keys []string, args ...any) (any, error) {
+	return nil, nil
+}
+
+// [traces-to: TPRD-§5.6-ScriptLoad]
+func (c *Cache) ScriptLoad(ctx context.Context, script string) (string, error) { return "", nil }
+
+// [traces-to: TPRD-§5.6-ScriptExists]
+func (c *Cache) ScriptExists(ctx context.Context, shas ...string) ([]bool, error) {
+	return nil, nil
+}
+
+// ---------------------------------------------------------------------------
+// Raw escape hatch — raw.go (§5.7)
+// ---------------------------------------------------------------------------
+
+// [traces-to: TPRD-§5.7-Do]
+func (c *Cache) Do(ctx context.Context, args ...any) (any, error) { return nil, nil }
+
+// Client returns the underlying *redis.Client. Use only for commands not yet
+// wrapped by Cache. Bypasses OTel instrumentation. [traces-to: TPRD-§5.7-Client]
+func (c *Cache) Client() *redis.Client { return c.rdb }
+
+// ---------------------------------------------------------------------------
+// Pool-stats scraper — poolstats.go
+// ---------------------------------------------------------------------------
+
+// poolStatsScraper is an internal goroutine that periodically reads rdb.PoolStats()
+// and emits gauges via motadatagosdk/otel/metrics. Owned by Cache; lifecycle is
+// Start()/Stop() paired with New()/Close(). [traces-to: TPRD-§8.2-poolstats]
+type poolStatsScraper struct {
+	rdb      *redis.Client
+	interval time.Duration
+	done     chan struct{}
+}
+
+// unused-symbol reference guard (keeps go vet happy on stub; removed in Phase 2).
+var _ = func() *TLSConfig { var t tls.Config; _ = t; return &TLSConfig{} }

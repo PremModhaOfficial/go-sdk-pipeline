@@ -1,0 +1,139 @@
+{
+  "mode": "A",
+  "override_reason": "User directive 2026-04-18: Slice-1 MANUAL files to be regenerated; TPRD §16 Mode B declaration superseded. All files (including lifecycle, config, options, errors) are pipeline-authored and carry [traces-to: TPRD-*] markers. No [owned-by: MANUAL] markers are emitted downstream; Phase 0.5 Extension-analyze is skipped.",
+  "tprd_declared_mode": "B",
+  "effective_mode": "A",
+  "target_package": "motadatagosdk/core/l2cache/dragonfly",
+  "target_package_dir": "src/motadatagosdk/core/l2cache/dragonfly",
+  "slices_in_scope": ["S1", "S2", "S3", "S4", "S5", "S6", "S7"],
+  "preserved_symbols": [],
+  "modified_exports": [],
+  "new_exports": {
+    "types": [
+      "Cache",
+      "Config",
+      "Option",
+      "TLSConfig"
+    ],
+    "constructors_and_loaders": [
+      "New",
+      "LoadCredsFromEnv"
+    ],
+    "options_expected": [
+      "WithAddr",
+      "WithUsername",
+      "WithPassword",
+      "WithTLS",
+      "WithTLSServerName",
+      "WithPoolSize",
+      "WithPoolTimeout",
+      "WithConnMaxLifetime",
+      "WithDialTimeout",
+      "WithReadTimeout",
+      "WithWriteTimeout",
+      "WithDB",
+      "WithClientName",
+      "WithMaxRetries",
+      "WithProtocol"
+    ],
+    "lifecycle_methods": [
+      "(*Cache).Ping",
+      "(*Cache).Close"
+    ],
+    "string_key_methods_s2": [
+      "(*Cache).Get",
+      "(*Cache).Set",
+      "(*Cache).SetNX",
+      "(*Cache).SetXX",
+      "(*Cache).GetSet",
+      "(*Cache).GetEx",
+      "(*Cache).GetDel",
+      "(*Cache).MGet",
+      "(*Cache).MSet",
+      "(*Cache).Del",
+      "(*Cache).Exists",
+      "(*Cache).Expire",
+      "(*Cache).ExpireAt",
+      "(*Cache).Persist",
+      "(*Cache).TTL",
+      "(*Cache).Incr",
+      "(*Cache).IncrBy",
+      "(*Cache).Decr",
+      "(*Cache).DecrBy"
+    ],
+    "hash_methods_s3": [
+      "(*Cache).HGet",
+      "(*Cache).HSet",
+      "(*Cache).HMGet",
+      "(*Cache).HGetAll",
+      "(*Cache).HDel",
+      "(*Cache).HExists",
+      "(*Cache).HLen",
+      "(*Cache).HIncrBy",
+      "(*Cache).HExpire",
+      "(*Cache).HPExpire",
+      "(*Cache).HExpireAt",
+      "(*Cache).HTTL",
+      "(*Cache).HPersist"
+    ],
+    "pipeline_tx_s4": [
+      "(*Cache).Pipeline",
+      "(*Cache).TxPipeline",
+      "(*Cache).Watch"
+    ],
+    "pubsub_s5": [
+      "(*Cache).Publish",
+      "(*Cache).Subscribe",
+      "(*Cache).PSubscribe"
+    ],
+    "scripting_s6": [
+      "(*Cache).Eval",
+      "(*Cache).EvalSha",
+      "(*Cache).ScriptLoad",
+      "(*Cache).ScriptExists"
+    ],
+    "raw_escape_s7": [
+      "(*Cache).Do",
+      "(*Cache).Client"
+    ],
+    "error_sentinels": [
+      "ErrNotConnected",
+      "ErrInvalidConfig",
+      "ErrTimeout",
+      "ErrUnavailable",
+      "ErrCanceled",
+      "ErrNil",
+      "ErrWrongType",
+      "ErrOutOfRange",
+      "ErrSyntax",
+      "ErrMoved",
+      "ErrAsk",
+      "ErrClusterDown",
+      "ErrLoading",
+      "ErrReadOnly",
+      "ErrMasterDown",
+      "ErrAuth",
+      "ErrNoPerm",
+      "ErrTLS",
+      "ErrTxnAborted",
+      "ErrScriptNotFound",
+      "ErrBusyScript",
+      "ErrPoolExhausted",
+      "ErrPoolClosed",
+      "ErrRESP3Required",
+      "ErrSubscriberClosed",
+      "ErrCircuitOpen"
+    ]
+  },
+  "source_tprd_section_refs": {
+    "lifecycle": "§5.1",
+    "strings": "§5.2",
+    "hash": "§5.3",
+    "pipeline_tx": "§5.4",
+    "pubsub": "§5.5",
+    "scripting": "§5.6",
+    "raw_escape": "§5.7",
+    "config": "§6",
+    "errors": "§7"
+  }
+}

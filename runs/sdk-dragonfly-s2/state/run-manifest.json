@@ -1,0 +1,56 @@
+{
+  "run_id": "sdk-dragonfly-s2",
+  "pipeline_version": "0.1.0",
+  "started_at": "2026-04-18T00:00:00Z",
+  "target_repo": "/home/prem-modha/projects/nextgen/motadata-go-sdk",
+  "target_package_dir": "src/motadatagosdk/core/l2cache/dragonfly",
+  "target_branch": "sdk-pipeline/sdk-dragonfly-s2",
+  "target_base_branch": "l2Cache",
+  "mode": "A",
+  "mode_rationale": "User override 2026-04-18: despite TPRD §16 declaring Mode B with Slice-1 MANUAL preservation, user directs pipeline to regenerate Slice-1 files too. Treating as greenfield new-package addition. Intake agent must flag §16 inconsistency but proceed as Mode A. No [owned-by: MANUAL] markers will be emitted; all files get [traces-to: TPRD-*].",
+  "tprd_path": "src/motadatagosdk/core/l2cache/dragonfly/TPRD.md",
+  "push_allowed": false,
+  "commit_allowed": false,
+  "flags": {
+    "dry_run": false,
+    "auto_approve_tprd": false,
+    "skip_design_gate": false,
+    "skip_impl_gate": false,
+    "accept_perf_regression_pct": null,
+    "seed": null,
+    "golden_only": false
+  },
+  "scope": {
+    "slices": ["S1", "S2", "S3", "S4", "S5", "S6", "S7"],
+    "slice_status": {
+      "S1": "pending",
+      "S2": "pending",
+      "S3": "pending",
+      "S4": "pending",
+      "S5": "pending",
+      "S6": "pending",
+      "S7": "pending"
+    }
+  },
+  "phases": {
+    "intake": {"status": "completed", "completed_waves": ["I1","I2","I3","I4","I5","I6","I7"], "verdicts": {"G20":"PASS","G21":"PASS","G22":"PASS-0-clarifications","G23":"WARN-8-misses-filed","G24":"PASS-38-scripts"}, "h1_approved_at": "2026-04-18T06:00:00Z"},
+    "extension": {"status": "n/a-modeA"},
+    "design": {"status": "completed", "completed_waves": ["D1","D2","D3","D4","D5","H6"], "verdicts": {"G30":"PASS","G31":"PASS","G32":"PASS-new-deps-clean-8-stdlib-vulns-out-of-scope","G33":"PASS-post-upgrade","G34":"PASS","G38":"PASS","sdk-design-devil":"ACCEPT","sdk-dep-vet-devil":"ACCEPT-conditional-on-pinned-versions","sdk-semver-devil":"ACCEPT-minor","sdk-convention-devil":"ACCEPT","sdk-security-devil":"ACCEPT"}, "rework_iterations": 1, "dep_pins_mandatory": {"testcontainers-go":"v0.42.0 (new dep; latest stable at H6)","goleak":"v1.3.0 (already in target go.sum; promote to direct)"}, "dep_untouchable": ["golang.org/x/crypto@v0.48.0","go 1.26 toolchain directive","go-redis/v9","miniredis/v2","testify"], "user_directive_2026-04-18": "DO not update deps if not touched by our code ever", "h5_approved_at": "2026-04-18T12:20:00Z", "h6_approved_at": "2026-04-18T12:20:00Z"},
+    "impl": {"status": "completed", "completed_waves": ["M1","M3","M5","M6","M7","M8-skipped","M9","M10"], "base_sha": "bd3a4f7f618e9f7342750922db9461474ce87f0c", "head_sha": "b83c23e", "exports_count": 94, "exports_delta_vs_design_stub": 1, "exports_delta_justification": "WithCredsFromEnv for K8s-secret rotation per design §P5a", "test_pass": 71, "test_skip": 1, "test_fail": 0, "coverage_pct": 90.4, "commits": ["08d2b15","2618937","c3a1592","ba70ea0","cabe922","b83c23e"], "devils": {"marker-hygiene":"PASS","leak-hunter":"PASS","ergonomics":"PASS","overengineering":"PASS","code-reviewer":"PASS"}, "supply_chain_observation": "otel/sdk v1.39.0 GO-2026-4394 reachable through pre-existing target otel/tracer (not dragonfly); out-of-scope per user directive", "h7_approved_at": "2026-04-18T14:00:00Z", "dep_escalation": {"status": "resolved-option-A", "resolved_at": "2026-04-18T12:45:00Z", "approved_bumps": {"go.opentelemetry.io/otel":"v1.39.0->v1.41.0","go.opentelemetry.io/otel/metric":"v1.39.0->v1.41.0","go.opentelemetry.io/otel/trace":"v1.39.0->v1.41.0","github.com/klauspost/compress":"v1.18.4->v1.18.5"}}},
+    "testing": {"status": "completed", "completed_waves": ["T1","T2","T3","T4","T5","T6","T7","T8","T9","T10-skipped","H8","H9"], "coverage_pct": 90.4, "unit_tests": {"pass": 71, "skip": 1, "fail": 0}, "integration_tests": {"pass": 2, "skip": 1, "fail": 0}, "observability_tests": {"pass": 4, "skip": 0, "fail": 0}, "flake_hunt": {"iterations": 3, "pass": 217, "fail": 0}, "leak_hunt": {"unit_race_count": 5, "integration_race_count": 5, "leaks": 0, "races": 0}, "fuzz": {"FuzzMapErr": {"execs": 659850, "new_corpus": 17, "crashes": 0}, "FuzzKeyEncoding": {"execs": 179820, "new_corpus": 9, "crashes": 0}}, "supply_chain": {"govulncheck_reachable": 10, "govulncheck_new_vs_baseline": 0, "osv_findings": 17, "osv_new_cvss_ge_7_in_dragonfly_deps": 0}, "verdicts": {"G60":"PASS","G61":"PASS","G62":"PASS","G63":"PASS","G64":"PASS","G65":"PASS","G32":"PASS-with-baseline-exemption","G33":"PASS","G34":"PASS","G97":"PASS-WITH-WAIVER"}, "phase3_commits": ["a4d5d7f"], "bench_baseline_captured": true, "h8_disposition": {"option": "a-accept-with-waiver", "approved_at": "2026-04-18T14:45:00Z", "new_target": "allocs_per_GET <= 35 (go-redis v9.18 floor)", "baseline": 32, "regression_gate": "32+5% = 34", "phase4_backlog": "option (c): A/B harness BenchmarkGet_Raw vs BenchmarkGet for wrapper-overhead measurement"}, "h9_approved_at": "2026-04-18T14:45:00Z"},
+    "feedback": {"status": "completed", "completed_waves": ["F1","F2","F3-skipped-no-defects","F4a","F4b","F5-NA-empty-corpus","F6","F7","F8"], "pipeline_quality": 0.95, "per_agent_quality": {"sdk-intake-agent": 1.00, "sdk-design-lead": 0.85, "sdk-impl-lead": 0.98, "sdk-testing-lead": 0.98}, "anomalies": 5, "retro_patterns": {"systemic_high": 2, "isolated_medium": 2, "isolated_low_medium": 1}, "skill_drift": {"major": 0, "moderate": 1, "minor": 3, "none": 14}, "skill_coverage": {"invoked_declared": 16, "declared_unused_triggers_gap": 3, "invoked_undeclared_manifest_gaps": 2}, "golden_regression": "N/A-empty-corpus", "improvements": {"prompt_patches_applied": 4, "skill_patches_applied_patch_level": 2, "skill_patches_deferred_to_post_corpus_seed": 2, "new_skill_proposals_filed": 3, "new_guardrail_proposals_filed": 7, "process_proposals": 5}, "baselines_captured": ["performance","quality","coverage","skill-health"], "completed_at": "2026-04-18T16:00:00Z"}
+  },
+  "hitl_gates": {
+    "H0_target_dir": "pending",
+    "H1_tprd": "approved",
+    "H4_breaking": "n/a-modeA",
+    "H5_design": "approved",
+    "H6_dep_vet": "approved-conditional",
+    "H7_impl_diff": "approved",
+    "H7b_mode_c_diff": "n/a-modeA",
+    "H8_bench": "approved-option-a-waiver",
+    "H9_testing": "approved",
+    "H10_merge": "keep-branch-no-merge"
+  },
+  "notes": "Fresh run 2026-04-18. Prior run state (awaiting-hitl-h2 bootstrap) discarded; Phase -1 Bootstrap removed from pipeline per CLAUDE.md. Branch sdk-pipeline/sdk-dragonfly-s2 retained (off base l2Cache). HEAD commit bd3a4f7 holds pre-pipeline Slice-1 baseline; per user directive these files will be regenerated by this run — the impl phase diff vs HEAD becomes a full-package replace."
+}

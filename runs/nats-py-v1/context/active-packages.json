@@ -1,0 +1,131 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "nats-py-v1",
+  "resolved_at": "2026-05-02T00:30:00Z",
+  "pipeline_version": "0.5.0",
+  "target_language": "python",
+  "target_tier": "T1",
+  "resolution_method": "default-applied (TPRD lacked §Target-Language / §Target-Tier / §Required-Packages; sdk-intake-agent Wave I5.5 defaults: python, T1, [shared-core@>=1.0.0, python@>=1.0.0]). REGENERATED 2026-05-02T00:30:00Z after H1 augmentation: python pack 1.0.0 -> 1.1.0 (+3 skills, +5 guardrails).",
+  "packages": [
+    {
+      "name": "shared-core",
+      "version": "1.0.0",
+      "manifest_path": ".claude/package-manifests/shared-core.json",
+      "depends": [],
+      "agents": [
+        "baseline-manager",
+        "defect-analyzer",
+        "guardrail-validator",
+        "improvement-planner",
+        "learning-engine",
+        "metrics-collector",
+        "phase-retrospector",
+        "root-cause-tracer",
+        "sdk-design-devil",
+        "sdk-design-lead",
+        "sdk-drift-detector",
+        "sdk-impl-lead",
+        "sdk-intake-agent",
+        "sdk-marker-hygiene-devil",
+        "sdk-marker-scanner",
+        "sdk-merge-planner",
+        "sdk-overengineering-critic",
+        "sdk-security-devil",
+        "sdk-semver-devil",
+        "sdk-skill-coverage-reporter",
+        "sdk-skill-drift-detector",
+        "sdk-testing-lead"
+      ],
+      "skills": [
+        "api-ergonomics-audit",
+        "conflict-resolution",
+        "context-summary-writing",
+        "decision-logging",
+        "environment-prerequisites-check",
+        "feedback-analysis",
+        "guardrail-validation",
+        "idempotent-retry-safety",
+        "lifecycle-events",
+        "mcp-knowledge-graph",
+        "network-error-classification",
+        "review-fix-protocol",
+        "sdk-marker-protocol",
+        "sdk-semver-governance",
+        "spec-driven-development",
+        "tdd-patterns"
+      ],
+      "guardrails": [
+        "G01",
+        "G02",
+        "G03",
+        "G04",
+        "G05",
+        "G06",
+        "G07",
+        "G20",
+        "G21",
+        "G22",
+        "G23",
+        "G24",
+        "G69",
+        "G80",
+        "G81",
+        "G83",
+        "G84",
+        "G85",
+        "G86",
+        "G90",
+        "G93",
+        "G116"
+      ]
+    },
+    {
+      "name": "python",
+      "version": "1.1.0",
+      "manifest_path": ".claude/package-manifests/python.json",
+      "depends": ["shared-core@>=1.0.0"],
+      "agents": [],
+      "skills": [
+        "asyncio-cancellation-patterns",
+        "nats-python-client-patterns",
+        "pydantic-settings-patterns",
+        "pytest-table-tests",
+        "python-asyncio-patterns",
+        "python-class-design",
+        "python-otel-instrumentation"
+      ],
+      "guardrails": [
+        "G120",
+        "G121",
+        "G122",
+        "G123",
+        "G124"
+      ],
+      "toolchain": {
+        "build": "python -m build",
+        "test": "pytest -x --no-header",
+        "lint": "ruff check .",
+        "vet": "mypy --strict .",
+        "fmt": "ruff format --check .",
+        "coverage": "pytest --cov=src --cov-report=json --cov-report=term",
+        "coverage_min_pct": 90,
+        "bench": "pytest --benchmark-only --benchmark-json=bench.json",
+        "supply_chain": ["pip-audit", "safety check --full-report"],
+        "leak_check": "pytest tests/leak --asyncio-mode=auto"
+      },
+      "file_extensions": [".py"],
+      "marker_comment_syntax": {
+        "line": "#",
+        "block_open": "\"\"\"",
+        "block_close": "\"\"\""
+      },
+      "module_file": "pyproject.toml"
+    }
+  ],
+  "scope_notes": {
+    "tprd_skills_manifest_status": "DERIVED at intake (source TPRD lacked §Skills-Manifest; G23 WARN-level expected). Derived list documented in tprd.md §Skills-Manifest; H1 confirms.",
+    "tprd_guardrails_manifest_status": "DERIVED at intake (source TPRD lacked §Guardrails-Manifest; G24 BLOCKER expected). Default 49-guardrail set documented in tprd.md §Guardrails-Manifest; H1 EXPLICIT acceptance required.",
+    "h1_augmentation": "User instructed 'construct the missing things' during H1 review. 3 Python skills authored (nats-python-client-patterns, python-otel-instrumentation, pydantic-settings-patterns) + 5 Python guardrails authored (G120 build, G121 test, G122 lint+mypy, G123 supply-chain, G124 cred-scan). See runs/nats-py-v1/intake/H1-augmentation-note.md.",
+    "marker_protocol_note": "G95-G103 (marker byte-hash) excluded from active set for this Mode A run per python.json::notes.marker_protocol_note. Resolution path documented; first Mode B/C extension run for this package will need to lift G95/G96/G99/G100/G101/G103."
+  }
+}

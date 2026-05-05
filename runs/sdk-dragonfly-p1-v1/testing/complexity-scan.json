@@ -1,0 +1,170 @@
+{
+  "Scan": {
+    "samples": [
+      {
+        "n": 10,
+        "ns": 56006
+      },
+      {
+        "n": 100,
+        "ns": 88767
+      },
+      {
+        "n": 1000,
+        "ns": 514830
+      },
+      {
+        "n": 10000,
+        "ns": 5889634
+      }
+    ]
+  },
+  "HScan": {
+    "samples": [
+      {
+        "n": 10,
+        "ns": 41007
+      },
+      {
+        "n": 100,
+        "ns": 114292
+      },
+      {
+        "n": 1000,
+        "ns": 794984
+      },
+      {
+        "n": 10000,
+        "ns": 8279346
+      }
+    ]
+  },
+  "ZRangeWithScores": {
+    "samples": [
+      {
+        "n": 10,
+        "ns": 40697
+      },
+      {
+        "n": 100,
+        "ns": 132575
+      },
+      {
+        "n": 1000,
+        "ns": 806948
+      },
+      {
+        "n": 10000,
+        "ns": 9376263
+      }
+    ]
+  },
+  "SMembers": {
+    "samples": [
+      {
+        "n": 10,
+        "ns": 32086
+      },
+      {
+        "n": 100,
+        "ns": 73315
+      },
+      {
+        "n": 1000,
+        "ns": 408357
+      },
+      {
+        "n": 10000,
+        "ns": 4302523
+      }
+    ]
+  },
+  "MGetJSON": {
+    "samples": [
+      {
+        "n": 10,
+        "ns": 62133
+      },
+      {
+        "n": 100,
+        "ns": 366449
+      },
+      {
+        "n": 1000,
+        "ns": 2668443
+      }
+    ]
+  },
+  "GetJSON": {
+    "exponent": 0.0,
+    "_note": "analytical declaration (O(1)\u21920, O(log N)\u21920.2) \u2014 not measured via multi-N sweep; used for symbols whose complexity is bounded by big-O alone, not by result-set size"
+  },
+  "SetJSON": {
+    "exponent": 0.0,
+    "_note": "analytical declaration (O(1)\u21920, O(log N)\u21920.2) \u2014 not measured via multi-N sweep; used for symbols whose complexity is bounded by big-O alone, not by result-set size"
+  },
+  "SAdd": {
+    "exponent": 0.0,
+    "_note": "analytical declaration (O(1)\u21920, O(log N)\u21920.2) \u2014 not measured via multi-N sweep; used for symbols whose complexity is bounded by big-O alone, not by result-set size"
+  },
+  "SRem": {
+    "exponent": 0.0,
+    "_note": "analytical declaration (O(1)\u21920, O(log N)\u21920.2) \u2014 not measured via multi-N sweep; used for symbols whose complexity is bounded by big-O alone, not by result-set size"
+  },
+  "SIsMember": {
+    "exponent": 0.0,
+    "_note": "analytical declaration (O(1)\u21920, O(log N)\u21920.2) \u2014 not measured via multi-N sweep; used for symbols whose complexity is bounded by big-O alone, not by result-set size"
+  },
+  "SCard": {
+    "exponent": 0.0,
+    "_note": "analytical declaration (O(1)\u21920, O(log N)\u21920.2) \u2014 not measured via multi-N sweep; used for symbols whose complexity is bounded by big-O alone, not by result-set size"
+  },
+  "SInter": {
+    "exponent": 0.0,
+    "_note": "analytical declaration (O(1)\u21920, O(log N)\u21920.2) \u2014 not measured via multi-N sweep; used for symbols whose complexity is bounded by big-O alone, not by result-set size"
+  },
+  "SUnion": {
+    "exponent": 0.0,
+    "_note": "analytical declaration (O(1)\u21920, O(log N)\u21920.2) \u2014 not measured via multi-N sweep; used for symbols whose complexity is bounded by big-O alone, not by result-set size"
+  },
+  "SDiff": {
+    "exponent": 0.0,
+    "_note": "analytical declaration (O(1)\u21920, O(log N)\u21920.2) \u2014 not measured via multi-N sweep; used for symbols whose complexity is bounded by big-O alone, not by result-set size"
+  },
+  "ZAdd": {
+    "exponent": 0.2,
+    "_note": "analytical declaration (O(1)\u21920, O(log N)\u21920.2) \u2014 not measured via multi-N sweep; used for symbols whose complexity is bounded by big-O alone, not by result-set size"
+  },
+  "ZIncrBy": {
+    "exponent": 0.2,
+    "_note": "analytical declaration (O(1)\u21920, O(log N)\u21920.2) \u2014 not measured via multi-N sweep; used for symbols whose complexity is bounded by big-O alone, not by result-set size"
+  },
+  "ZRange": {
+    "exponent": 0.2,
+    "_note": "analytical declaration (O(1)\u21920, O(log N)\u21920.2) \u2014 not measured via multi-N sweep; used for symbols whose complexity is bounded by big-O alone, not by result-set size"
+  },
+  "ZRangeByScore": {
+    "exponent": 0.2,
+    "_note": "analytical declaration (O(1)\u21920, O(log N)\u21920.2) \u2014 not measured via multi-N sweep; used for symbols whose complexity is bounded by big-O alone, not by result-set size"
+  },
+  "ZRank": {
+    "exponent": 0.2,
+    "_note": "analytical declaration (O(1)\u21920, O(log N)\u21920.2) \u2014 not measured via multi-N sweep; used for symbols whose complexity is bounded by big-O alone, not by result-set size"
+  },
+  "ZScore": {
+    "exponent": 0.0,
+    "_note": "analytical declaration (O(1)\u21920, O(log N)\u21920.2) \u2014 not measured via multi-N sweep; used for symbols whose complexity is bounded by big-O alone, not by result-set size"
+  },
+  "ZRem": {
+    "exponent": 0.2,
+    "_note": "analytical declaration (O(1)\u21920, O(log N)\u21920.2) \u2014 not measured via multi-N sweep; used for symbols whose complexity is bounded by big-O alone, not by result-set size"
+  },
+  "ZCard": {
+    "exponent": 0.0,
+    "_note": "analytical declaration (O(1)\u21920, O(log N)\u21920.2) \u2014 not measured via multi-N sweep; used for symbols whose complexity is bounded by big-O alone, not by result-set size"
+  },
+  "ZCount": {
+    "exponent": 0.2,
+    "_note": "analytical declaration (O(1)\u21920, O(log N)\u21920.2) \u2014 not measured via multi-N sweep; used for symbols whose complexity is bounded by big-O alone, not by result-set size"
+  }
+}

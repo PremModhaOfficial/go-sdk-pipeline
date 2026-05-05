@@ -1,0 +1,303 @@
+=== Symbol Results ===
+
+Vulnerability #1: GO-2026-4947
+    Unexpected work during chain building in crypto/x509
+  More info: https://pkg.go.dev/vuln/GO-2026-4947
+  Standard library
+    Found in: crypto/x509@go1.26
+    Fixed in: crypto/x509@go1.26.2
+    Example traces found:
+      #1: core/types/string.go:502:25: types.AESEncrypt calls io.ReadFull, which eventually calls x509.Certificate.Verify
+
+Vulnerability #2: GO-2026-4946
+    Inefficient policy validation in crypto/x509
+  More info: https://pkg.go.dev/vuln/GO-2026-4946
+  Standard library
+    Found in: crypto/x509@go1.26
+    Fixed in: crypto/x509@go1.26.2
+    Example traces found:
+      #1: core/types/string.go:502:25: types.AESEncrypt calls io.ReadFull, which eventually calls x509.Certificate.Verify
+
+Vulnerability #3: GO-2026-4870
+    Unauthenticated TLS 1.3 KeyUpdate record can cause persistent connection
+    retention and DoS in crypto/tls
+  More info: https://pkg.go.dev/vuln/GO-2026-4870
+  Standard library
+    Found in: crypto/tls@go1.26
+    Fixed in: crypto/tls@go1.26.2
+    Example traces found:
+      #1: events/connection.go:146:25: events.Connect calls nats.Connect, which eventually calls tls.Conn.Handshake
+      #2: core/pool/memorypool/poolmanager.go:285:10: memorypool.NewPoolManager calls sync.Once.Do, which eventually calls tls.Conn.HandshakeContext
+      #3: core/types/string.go:502:25: types.AESEncrypt calls io.ReadFull, which eventually calls tls.Conn.Read
+      #4: events/connection.go:212:11: events.Connection.Close calls nats.Conn.Close, which eventually calls tls.Conn.Write
+      #5: core/pool/memorypool/poolmanager.go:285:10: memorypool.NewPoolManager calls sync.Once.Do, which eventually calls tls.Dialer.DialContext
+
+Vulnerability #4: GO-2026-4866
+    Case-sensitive excludedSubtrees name constraints cause Auth Bypass in
+    crypto/x509
+  More info: https://pkg.go.dev/vuln/GO-2026-4866
+  Standard library
+    Found in: crypto/x509@go1.26
+    Fixed in: crypto/x509@go1.26.2
+    Example traces found:
+      #1: core/types/string.go:502:25: types.AESEncrypt calls io.ReadFull, which eventually calls x509.Certificate.Verify
+
+Vulnerability #5: GO-2026-4865
+    JsBraceDepth Context Tracking Bugs (XSS) in html/template
+  More info: https://pkg.go.dev/vuln/GO-2026-4865
+  Standard library
+    Found in: html/template@go1.26
+    Fixed in: html/template@go1.26.2
+    Example traces found:
+      #1: events/utils/errors.go:702:57: utils.combinedError.Error calls template.Error.Error
+      #2: core/pool/memorypool/poolmanager.go:285:10: memorypool.NewPoolManager calls sync.Once.Do, which eventually calls template.Template.Funcs
+      #3: core/pool/memorypool/poolmanager.go:285:10: memorypool.NewPoolManager calls sync.Once.Do, which eventually calls template.Template.Parse
+      #4: zapcore/field.go:231:51: zapcore.encodeStringer calls template.context.String
+
+Vulnerability #6: GO-2026-4602
+    FileInfo can escape from a Root in os
+  More info: https://pkg.go.dev/vuln/GO-2026-4602
+  Standard library
+    Found in: os@go1.26
+    Fixed in: os@go1.26.1
+    Example traces found:
+      #1: core/pool/memorypool/poolmanager.go:285:10: memorypool.NewPoolManager calls sync.Once.Do, which eventually calls os.File.Readdir
+      #2: core/pool/memorypool/poolmanager.go:285:10: memorypool.NewPoolManager calls sync.Once.Do, which eventually calls os.ReadDir
+
+Vulnerability #7: GO-2026-4601
+    Incorrect parsing of IPv6 host literals in net/url
+  More info: https://pkg.go.dev/vuln/GO-2026-4601
+  Standard library
+    Found in: net/url@go1.26
+    Fixed in: net/url@go1.26.1
+    Example traces found:
+      #1: core/types/string.go:306:21: types.IsURL calls url.Parse
+      #2: core/pool/memorypool/poolmanager.go:285:10: memorypool.NewPoolManager calls sync.Once.Do, which eventually calls url.URL.Parse
+
+Vulnerability #8: GO-2026-4600
+    Panic in name constraint checking for malformed certificates in crypto/x509
+  More info: https://pkg.go.dev/vuln/GO-2026-4600
+  Standard library
+    Found in: crypto/x509@go1.26
+    Fixed in: crypto/x509@go1.26.1
+    Example traces found:
+      #1: core/types/string.go:502:25: types.AESEncrypt calls io.ReadFull, which eventually calls x509.Certificate.Verify
+
+Vulnerability #9: GO-2026-4599
+    Incorrect enforcement of email constraints in crypto/x509
+  More info: https://pkg.go.dev/vuln/GO-2026-4599
+  Standard library
+    Found in: crypto/x509@go1.26
+    Fixed in: crypto/x509@go1.26.1
+    Example traces found:
+      #1: core/types/string.go:502:25: types.AESEncrypt calls io.ReadFull, which eventually calls x509.Certificate.Verify
+
+Vulnerability #10: GO-2026-4394
+    OpenTelemetry Go SDK Vulnerable to Arbitrary Code Execution via PATH
+    Hijacking in go.opentelemetry.io/otel/sdk
+  More info: https://pkg.go.dev/vuln/GO-2026-4394
+  Module: go.opentelemetry.io/otel/sdk
+    Found in: go.opentelemetry.io/otel/sdk@v1.39.0
+    Fixed in: go.opentelemetry.io/otel/sdk@v1.40.0
+    Example traces found:
+      #1: otel/tracer/provider.go:87:50: tracer.newTracerProvider calls trace.NewBatchSpanProcessor, which calls env.BatchSpanProcessorExportTimeout
+      #2: otel/tracer/provider.go:87:50: tracer.newTracerProvider calls trace.NewBatchSpanProcessor, which calls env.BatchSpanProcessorMaxExportBatchSize
+      #3: otel/tracer/provider.go:87:50: tracer.newTracerProvider calls trace.NewBatchSpanProcessor, which calls env.BatchSpanProcessorMaxQueueSize
+      #4: otel/tracer/provider.go:87:50: tracer.newTracerProvider calls trace.NewBatchSpanProcessor, which calls env.BatchSpanProcessorScheduleDelay
+      #5: otel/tracer/provider.go:142:46: tracer.newTracerProvider calls trace.NewTracerProvider, which eventually calls env.SpanAttributeCount
+      #6: otel/tracer/provider.go:142:46: tracer.newTracerProvider calls trace.NewTracerProvider, which eventually calls env.SpanAttributeValueLength
+      #7: otel/tracer/provider.go:142:46: tracer.newTracerProvider calls trace.NewTracerProvider, which eventually calls env.SpanEventAttributeCount
+      #8: otel/tracer/provider.go:142:46: tracer.newTracerProvider calls trace.NewTracerProvider, which eventually calls env.SpanEventCount
+      #9: otel/tracer/provider.go:142:46: tracer.newTracerProvider calls trace.NewTracerProvider, which eventually calls env.SpanLinkAttributeCount
+      #10: otel/tracer/provider.go:142:46: tracer.newTracerProvider calls trace.NewTracerProvider, which eventually calls env.SpanLinkCount
+      #11: otel/tracer/provider.go:14:2: tracer.init calls trace.init, which calls env.init
+      #12: otel/tracer/provider.go:14:2: tracer.init calls trace.init, which calls instrumentation.init
+      #13: otel/tracer/provider.go:87:50: tracer.newTracerProvider calls trace.NewBatchSpanProcessor, which eventually calls observ.BSP.Processed
+      #14: otel/tracer/types.go:187:23: tracer.spanWrapper.End calls trace.recordingSpan.End, which eventually calls observ.BSP.ProcessedQueueFull
+      #15: core/pool/memorypool/poolmanager.go:285:10: memorypool.NewPoolManager calls sync.Once.Do, which eventually calls observ.BSP.Shutdown
+      #16: core/pool/memorypool/poolmanager.go:285:10: memorypool.NewPoolManager calls sync.Once.Do, which eventually calls observ.NewBSP
+      #17: otel/tracer/provider.go:87:50: tracer.newTracerProvider calls trace.NewBatchSpanProcessor, which calls observ.NewBSP
+      #18: otel/tracer/provider.go:118:74: tracer.newTracerProvider calls trace.NewSimpleSpanProcessor, which calls observ.NewSSP
+      #19: otel/tracer/tracer.go:166:27: tracer.Init calls trace.TracerProvider.Tracer, which eventually calls observ.NewTracer
+      #20: otel/tracer/types.go:187:23: tracer.spanWrapper.End calls trace.recordingSpan.End, which eventually calls observ.SSP.SpanProcessed
+      #21: otel/tracer/types.go:187:23: tracer.spanWrapper.End calls trace.recordingSpan.End, which calls observ.Tracer.Enabled
+      #22: otel/tracer/types.go:187:23: tracer.spanWrapper.End calls trace.recordingSpan.End, which calls observ.Tracer.SpanEnded
+      #23: otel/tracer/tracer.go:463:24: tracer.Start calls trace.tracer.Start, which eventually calls observ.Tracer.SpanLive
+      #24: otel/tracer/tracer.go:463:24: tracer.Start calls trace.tracer.Start, which calls observ.Tracer.SpanStarted
+      #25: events/utils/errors.go:702:57: utils.combinedError.Error calls multierr.multiError.Error, which eventually calls observ.init
+      #26: otel/tracer/provider.go:14:2: tracer.init calls trace.init, which calls observ.init
+      #27: otel/metrics/provider.go:351:45: metrics.NewOTELProvider calls metric.NewMeterProvider, which eventually calls resource.Default
+      #28: core/pool/memorypool/poolmanager.go:285:10: memorypool.NewPoolManager calls sync.Once.Do, which eventually calls resource.Default
+      #29: otel/metrics/provider.go:351:45: metrics.NewOTELProvider calls metric.NewMeterProvider, which eventually calls resource.Empty
+      #30: otel/tracer/provider.go:142:46: tracer.newTracerProvider calls trace.NewTracerProvider, which eventually calls resource.Environment
+      #31: otel/tracer/provider.go:142:46: tracer.newTracerProvider calls trace.NewTracerProvider, which eventually calls resource.Merge
+      #32: otel/common/resource.go:90:45: common.NewOTELResource calls resource.New
+      #33: otel/metrics/provider.go:797:62: metrics.otelHistogram.Observe calls metric.WithAttributes, which eventually calls resource.NewSchemaless
+      #34: otel/tracer/provider.go:87:50: tracer.newTracerProvider calls trace.NewBatchSpanProcessor, which eventually calls resource.Resource.Equivalent
+      #35: core/pool/memorypool/poolmanager.go:285:10: memorypool.NewPoolManager calls sync.Once.Do, which eventually calls resource.Resource.Iter
+      #36: otel/logger/provider.go:91:58: logger.newOTELProvider calls log.NewBatchProcessor, which eventually calls resource.Resource.Len
+      #37: otel/tracer/tracer.go:166:27: tracer.Init calls trace.TracerProvider.Tracer, which eventually calls resource.Resource.MarshalLog
+      #38: core/pool/memorypool/poolmanager.go:285:10: memorypool.NewPoolManager calls sync.Once.Do, which eventually calls resource.Resource.SchemaURL
+      #39: zapcore/field.go:231:51: zapcore.encodeStringer calls resource.Resource.String
+      #40: otel/common/resource.go:91:26: common.NewOTELResource calls resource.WithAttributes
+      #41: otel/common/resource.go:32:2: common.init calls resource.init
+      #42: otel/metrics/provider.go:354:32: metrics.NewOTELProvider calls metric.NewPeriodicReader, which eventually calls sdk.Version
+      #43: otel/common/resource.go:32:2: common.init calls resource.init, which calls sdk.init
+      #44: otel/tracer/provider.go:174:31: tracer.createSampler calls trace.AlwaysSample
+      #45: otel/tracer/provider.go:169:30: tracer.createSampler calls trace.NeverSample
+      #46: otel/tracer/provider.go:87:50: tracer.newTracerProvider calls trace.NewBatchSpanProcessor
+      #47: core/pool/memorypool/poolmanager.go:285:10: memorypool.NewPoolManager calls sync.Once.Do, which eventually calls trace.NewBatchSpanProcessor
+      #48: otel/tracer/provider.go:118:74: tracer.newTracerProvider calls trace.NewSimpleSpanProcessor
+      #49: otel/tracer/provider.go:142:46: tracer.newTracerProvider calls trace.NewTracerProvider
+      #50: otel/tracer/provider.go:132:44: tracer.newTracerProvider calls trace.ParentBased
+      #51: core/pool/memorypool/poolmanager.go:285:10: memorypool.NewPoolManager calls sync.Once.Do, which eventually calls trace.Shutdown
+      #52: core/pool/memorypool/poolmanager.go:285:10: memorypool.NewPoolManager calls sync.Once.Do, which eventually calls trace.Shutdown
+      #53: core/pool/memorypool/poolmanager.go:285:10: memorypool.NewPoolManager calls sync.Once.Do, which eventually calls trace.Shutdown
+      #54: otel/tracer/provider.go:179:36: tracer.createSampler calls trace.TraceIDRatioBased
+      #55: otel/tracer/tracer.go:417:34: tracer.Tracer.Shutdown calls trace.TracerProvider.Shutdown
+      #56: otel/tracer/tracer.go:166:27: tracer.Init calls trace.TracerProvider.Tracer
+      #57: otel/tracer/provider.go:97:28: tracer.newTracerProvider calls trace.WithBatchTimeout
+      #58: otel/tracer/provider.go:94:34: tracer.newTracerProvider calls trace.WithMaxExportBatchSize
+      #59: otel/tracer/provider.go:90:28: tracer.newTracerProvider calls trace.WithMaxQueueSize
+      #60: otel/tracer/provider.go:128:24: tracer.newTracerProvider calls trace.WithResource
+      #61: otel/tracer/provider.go:132:23: tracer.newTracerProvider calls trace.WithSampler
+      #62: otel/tracer/provider.go:138:71: tracer.newTracerProvider calls trace.WithSpanProcessor
+      #63: events/utils/errors.go:702:57: utils.combinedError.Error calls trace.errUnsupportedSampler.Error
+      #64: otel/tracer/provider.go:14:2: tracer.init calls trace.init
+      #65: core/pool/memorypool/poolmanager.go:285:10: memorypool.NewPoolManager calls sync.Once.Do, which eventually calls trace.init
+      #66: core/pool/memorypool/poolmanager.go:285:10: memorypool.NewPoolManager calls sync.Once.Do, which eventually calls trace.logDropped[go.opentelemetry.io/otel/sdk/trace.Event]
+      #67: core/pool/memorypool/poolmanager.go:285:10: memorypool.NewPoolManager calls sync.Once.Do, which eventually calls trace.logDropped[go.opentelemetry.io/otel/sdk/trace.Link]
+      #68: otel/tracer/types.go:231:28: tracer.spanWrapper.AddEvent calls trace.nonRecordingSpan.AddEvent
+      #69: otel/tracer/types.go:187:23: tracer.spanWrapper.End calls trace.nonRecordingSpan.End
+      #70: otel/tracer/types.go:249:38: tracer.spanWrapper.IsRecording calls trace.nonRecordingSpan.IsRecording
+      #71: otel/tracer/types.go:237:31: tracer.spanWrapper.RecordError calls trace.nonRecordingSpan.RecordError
+      #72: otel/tracer/types.go:225:33: tracer.spanWrapper.SetAttributes calls trace.nonRecordingSpan.SetAttributes
+      #73: otel/tracer/types.go:193:27: tracer.spanWrapper.SetName calls trace.nonRecordingSpan.SetName
+      #74: otel/tracer/types.go:219:29: tracer.spanWrapper.SetOK calls trace.nonRecordingSpan.SetStatus
+      #75: otel/tracer/types.go:243:38: tracer.spanWrapper.SpanContext calls trace.nonRecordingSpan.SpanContext
+      #76: otel/tracer/types.go:255:41: tracer.spanWrapper.TracerProvider calls trace.nonRecordingSpan.TracerProvider
+      #77: otel/tracer/types.go:231:28: tracer.spanWrapper.AddEvent calls trace.recordingSpan.AddEvent
+      #78: otel/tracer/types.go:187:23: tracer.spanWrapper.End calls trace.recordingSpan.End
+      #79: otel/tracer/types.go:249:38: tracer.spanWrapper.IsRecording calls trace.recordingSpan.IsRecording
+      #80: otel/tracer/types.go:237:31: tracer.spanWrapper.RecordError calls trace.recordingSpan.RecordError
+      #81: otel/tracer/types.go:225:33: tracer.spanWrapper.SetAttributes calls trace.recordingSpan.SetAttributes
+      #82: otel/tracer/types.go:193:27: tracer.spanWrapper.SetName calls trace.recordingSpan.SetName
+      #83: otel/tracer/types.go:219:29: tracer.spanWrapper.SetOK calls trace.recordingSpan.SetStatus
+      #84: otel/tracer/types.go:243:38: tracer.spanWrapper.SpanContext calls trace.recordingSpan.SpanContext
+      #85: otel/tracer/types.go:255:41: tracer.spanWrapper.TracerProvider calls trace.recordingSpan.TracerProvider
+      #86: events/utils/errors.go:702:57: utils.combinedError.Error calls trace.samplerArgParseError.Error
+      #87: events/utils/errors.go:623:29: utils.RootCause calls errors.Unwrap, which calls trace.samplerArgParseError.Unwrap
+      #88: otel/tracer/tracer.go:463:24: tracer.Start calls trace.tracer.Start
+      #89: otel/metrics/provider.go:374:30: metrics.NewOTELProvider calls metric.MeterProvider.Meter, which eventually calls trace.tracerProviderConfig.MarshalLog
+      #90: otel/tracer/types.go:187:23: tracer.spanWrapper.End calls trace.recordingSpan.End, which eventually calls tracetest.SpanStubsFromReadOnlySpans
+      #91: otel/tracer/provider.go:13:2: tracer.init calls stdouttrace.init, which calls tracetest.init
+      #92: otel/metrics/provider.go:354:32: metrics.NewOTELProvider calls metric.NewPeriodicReader, which eventually calls x.Feature[string].Enabled[string]
+      #93: otel/common/resource.go:32:2: common.init calls resource.init, which calls x.init
+
+Your code is affected by 10 vulnerabilities from 1 module and the Go standard library.
+This scan also found 3 vulnerabilities in packages you import and 1
+vulnerability in modules you require, but your code doesn't appear to call these
+vulnerabilities.
+Use '-show verbose' for more details.
+
+=== OSV-SCANNER OUTPUT ===
+could not determine extractor for /home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/go.sum
+could not determine extractor for /home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/go.sum
+Scanned /home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/go.mod file as a go.mod and found 105 packages
+Failed to run code analysis (govulncheck) on '/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/go.mod' because govulncheck: loading packages: 
+There are errors with the provided package patterns:
+
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/events/utils/const.go:1:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/config/config.go:1:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/utils/const.go:1:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/core/circuitbreaker/circuitbreaker.go:225:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/core/codec/codec.go:157:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/core/types/intmap.go:112:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/core/l1cache/cache.go:227:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/core/pool/memorypool/pool.go:177:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/core/pool/resourcepool/pool.go:116:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/core/pool/workerpool/options.go:3:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.26.0.linux-amd64/src/vendor/golang.org/x/crypto/chacha20poly1305/fips140only_go1.26.go:7:9: file requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/go/pkg/mod/golang.org/x/sys@v0.42.0/unix/affinity_linux.go:7:1: package requires newer Go version go1.25 (application built with go1.24)
+/home/prem-modha/go/pkg/mod/golang.org/x/net@v0.49.0/http2/config_go126.go:7:9: file requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/otel/common/exporter.go:1:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/otel/tracer/provider.go:1:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/go/pkg/mod/golang.org/x/sys@v0.42.0/cpu/byteorder.go:5:1: package requires newer Go version go1.25 (application built with go1.24)
+/home/prem-modha/go/pkg/mod/golang.org/x/crypto@v0.48.0/blake2b/go125.go:7:9: file requires newer Go version go1.25 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/events/core/core.go:3:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/otel/logger/context.go:1:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/otel/metrics/metrics.go:1:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/events/middleware/circuitbreaker.go:1:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/events/connection.go:1:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/events/corenats/batch_publisher.go:1:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/events/jetstream/consumer.go:1:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/events/stores/kv.go:2:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/otel/otel.go:48:1: package requires newer Go version go1.26 (application built with go1.24)
+
+For details on package patterns, see https://pkg.go.dev/cmd/go#hdr-Package_lists_and_patterns.
+
+(the Go toolchain is required)
++-------------------------------------+------+-----------+-------------------------------------------------------------------+---------+---------------------------------------------+
+| OSV URL                             | CVSS | ECOSYSTEM | PACKAGE                                                           | VERSION | SOURCE                                      |
++-------------------------------------+------+-----------+-------------------------------------------------------------------+---------+---------------------------------------------+
+| https://osv.dev/GO-2026-4828        | 4.2  | Go        | github.com/nats-io/nats-server/v2                                 | 2.12.5  | ../motadata-go-sdk/src/motadatagosdk/go.mod |
+| https://osv.dev/GHSA-3f24-pcvm-5jqc |      |           |                                                                   |         |                                             |
+| https://osv.dev/GO-2026-4830        | 6.4  | Go        | github.com/nats-io/nats-server/v2                                 | 2.12.5  | ../motadata-go-sdk/src/motadatagosdk/go.mod |
+| https://osv.dev/GHSA-55h8-8g96-x4hj |      |           |                                                                   |         |                                             |
+| https://osv.dev/GO-2026-4826        | 4.3  | Go        | github.com/nats-io/nats-server/v2                                 | 2.12.5  | ../motadata-go-sdk/src/motadatagosdk/go.mod |
+| https://osv.dev/GHSA-8m2x-3m6q-6w8j |      |           |                                                                   |         |                                             |
+| https://osv.dev/GO-2026-4831        | 5.3  | Go        | github.com/nats-io/nats-server/v2                                 | 2.12.5  | ../motadata-go-sdk/src/motadatagosdk/go.mod |
+| https://osv.dev/GHSA-8r68-gvr4-jh7j |      |           |                                                                   |         |                                             |
+| https://osv.dev/GO-2026-4832        | 4.9  | Go        | github.com/nats-io/nats-server/v2                                 | 2.12.5  | ../motadata-go-sdk/src/motadatagosdk/go.mod |
+| https://osv.dev/GHSA-9983-vrx2-fg9c |      |           |                                                                   |         |                                             |
+| https://osv.dev/GO-2026-4833        | 6.5  | Go        | github.com/nats-io/nats-server/v2                                 | 2.12.5  | ../motadata-go-sdk/src/motadatagosdk/go.mod |
+| https://osv.dev/GHSA-fcjp-h8cc-6879 |      |           |                                                                   |         |                                             |
+| https://osv.dev/GO-2026-4834        | 7.1  | Go        | github.com/nats-io/nats-server/v2                                 | 2.12.5  | ../motadata-go-sdk/src/motadatagosdk/go.mod |
+| https://osv.dev/GHSA-jxxm-27vp-c3m5 |      |           |                                                                   |         |                                             |
+| https://osv.dev/GO-2026-4835        | 6.4  | Go        | github.com/nats-io/nats-server/v2                                 | 2.12.5  | ../motadata-go-sdk/src/motadatagosdk/go.mod |
+| https://osv.dev/GHSA-pwx7-fx9r-hr4h |      |           |                                                                   |         |                                             |
+| https://osv.dev/GO-2026-4836        | 8.6  | Go        | github.com/nats-io/nats-server/v2                                 | 2.12.5  | ../motadata-go-sdk/src/motadatagosdk/go.mod |
+| https://osv.dev/GHSA-v722-jcv5-w7mc |      |           |                                                                   |         |                                             |
+| https://osv.dev/GO-2026-4837        | 7.5  | Go        | github.com/nats-io/nats-server/v2                                 | 2.12.5  | ../motadata-go-sdk/src/motadatagosdk/go.mod |
+| https://osv.dev/GHSA-vprv-35vv-q339 |      |           |                                                                   |         |                                             |
+| https://osv.dev/GO-2026-4827        | 7.4  | Go        | github.com/nats-io/nats-server/v2                                 | 2.12.5  | ../motadata-go-sdk/src/motadatagosdk/go.mod |
+| https://osv.dev/GHSA-x6g4-f6q3-fqvv |      |           |                                                                   |         |                                             |
+| https://osv.dev/GHSA-w8rr-5gcm-pp58 | 5.3  | Go        | go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp       | 0.15.0  | ../motadata-go-sdk/src/motadatagosdk/go.mod |
+| https://osv.dev/GHSA-w8rr-5gcm-pp58 | 5.3  | Go        | go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp | 1.39.0  | ../motadata-go-sdk/src/motadatagosdk/go.mod |
+| https://osv.dev/GHSA-w8rr-5gcm-pp58 | 5.3  | Go        | go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp   | 1.39.0  | ../motadata-go-sdk/src/motadatagosdk/go.mod |
+| https://osv.dev/GO-2026-4394        | 7.0  | Go        | go.opentelemetry.io/otel/sdk                                      | 1.39.0  | ../motadata-go-sdk/src/motadatagosdk/go.mod |
+| https://osv.dev/GHSA-9h8m-3fm2-qjrq |      |           |                                                                   |         |                                             |
+| https://osv.dev/GHSA-hfvc-g4fc-pqhx | 7.3  | Go        | go.opentelemetry.io/otel/sdk                                      | 1.39.0  | ../motadata-go-sdk/src/motadatagosdk/go.mod |
+| https://osv.dev/GO-2026-4762        | 9.1  | Go        | google.golang.org/grpc                                            | 1.78.0  | ../motadata-go-sdk/src/motadatagosdk/go.mod |
+| https://osv.dev/GHSA-p77j-4mvh-x3m3 |      |           |                                                                   |         |                                             |
++-------------------------------------+------+-----------+-------------------------------------------------------------------+---------+---------------------------------------------+
+
+=== PREGATE SUMMARY ===
+
+## govulncheck verdict: PASS-with-baseline
+
+Call-reachable vulns: 10 (9 Go 1.26.0 stdlib + 1 go.opentelemetry.io/otel/sdk v1.39.0).
+
+Baseline recorded at H6 cited "8 Go 1.26.0 stdlib items". Current scan shows 9 stdlib (2 NEW: GO-2026-4947, GO-2026-4946 both crypto/x509 — disclosed between H6 and resume). Plus 1 NEW pre-existing finding in go.opentelemetry.io/otel/sdk@v1.39.0 (GO-2026-4394 PATH hijacking). ALL trace sources hit pre-existing target-SDK code paths (events/, core/types/, core/pool/memorypool/, otel/tracer/). NONE hit the dragonfly package (which does not yet exist).
+
+Delta vs H6 baseline:
+- +2 stdlib (GO-2026-4947, GO-2026-4946) — pre-existing, not introduced by dragonfly (target uses go 1.26.0, fixed in 1.26.2). Same class as H6-excused items.
+- +1 otel/sdk v1.39.0 finding — pre-existing target-SDK dep. Requires bump to v1.40.0 but otel/sdk was NOT in the approved-bumps list (H6 approved only otel/core, metric, trace). Bumping otel/sdk requires NEW escalation.
+
+NOT a dragonfly-scoped blocker. Filed as observation under H6's pre-existing-baseline exemption.
+
+## osv-scanner verdict: PASS-with-baseline
+
+All 4 findings are in pre-existing non-dragonfly modules:
+- nats-io/nats-server/v2 v2.12.5 — 11 advisories (used only by events/)
+- otel/exporters/otlp/otlp*http@0.15.0/1.39.0 — 1 advisory (pre-existing)
+- otel/sdk@1.39.0 — 2 advisories (pre-existing; mirrors govuln finding)
+- google.golang.org/grpc@1.78.0 — 1 advisory (pre-existing)
+
+NONE are in the approved-bumps (testcontainers / otel-core / metric / trace / klauspost/compress / goleak).
+NONE are in the dragonfly package (which does not yet exist).
+
+## Gate verdict: PROCEED
+
+No NEW call-reachable vuln attributable to the dragonfly slice. Pre-existing target-SDK baseline items are out-of-scope per H6 verdict and run-driver Option-A directive (no additional dep bumps beyond the 4 approved). Recording for H7.
+

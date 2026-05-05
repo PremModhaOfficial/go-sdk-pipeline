@@ -1,0 +1,56 @@
+goos: linux
+goarch: amd64
+pkg: motadatagosdk/core/l2cache/dragonfly
+cpu: 11th Gen Intel(R) Core(TM) i7-1185G7 @ 3.00GHz
+BenchmarkHExpire-8        	   49563	     24667 ns/op	    1817 B/op	      47 allocs/op
+BenchmarkHExpire-8        	   48226	     25045 ns/op	    1817 B/op	      47 allocs/op
+BenchmarkHExpire-8        	   48978	     25061 ns/op	    1816 B/op	      47 allocs/op
+BenchmarkHExpire-8        	   47421	     24981 ns/op	    1816 B/op	      47 allocs/op
+BenchmarkHExpire-8        	   52462	     23582 ns/op	    1816 B/op	      47 allocs/op
+BenchmarkHExpire-8        	   47545	     25349 ns/op	    1816 B/op	      47 allocs/op
+BenchmarkHExpire-8        	   50120	     24896 ns/op	    1816 B/op	      47 allocs/op
+BenchmarkHExpire-8        	   46047	     25177 ns/op	    1816 B/op	      47 allocs/op
+BenchmarkHExpire-8        	   49227	     25733 ns/op	    1816 B/op	      47 allocs/op
+BenchmarkHExpire-8        	   46135	     25048 ns/op	    1816 B/op	      47 allocs/op
+BenchmarkPipeline_100-8   	    1455	    819377 ns/op	   50509 B/op	    1917 allocs/op
+BenchmarkPipeline_100-8   	    1494	    838472 ns/op	   50508 B/op	    1917 allocs/op
+BenchmarkPipeline_100-8   	    1419	    929503 ns/op	   50509 B/op	    1917 allocs/op
+BenchmarkPipeline_100-8   	    1222	    987008 ns/op	   50522 B/op	    1917 allocs/op
+BenchmarkPipeline_100-8   	    1152	    974309 ns/op	   50524 B/op	    1917 allocs/op
+BenchmarkPipeline_100-8   	    1213	    958382 ns/op	   50523 B/op	    1917 allocs/op
+BenchmarkPipeline_100-8   	    1227	    963458 ns/op	   50516 B/op	    1917 allocs/op
+BenchmarkPipeline_100-8   	    1254	    972092 ns/op	   50515 B/op	    1917 allocs/op
+BenchmarkPipeline_100-8   	    1268	    943715 ns/op	   50517 B/op	    1917 allocs/op
+BenchmarkPipeline_100-8   	    1261	    953390 ns/op	   50517 B/op	    1917 allocs/op
+BenchmarkEvalSha-8        	    9140	    131647 ns/op	  178620 B/op	     729 allocs/op
+BenchmarkEvalSha-8        	    8810	    138132 ns/op	  178622 B/op	     729 allocs/op
+BenchmarkEvalSha-8        	    8313	    138233 ns/op	  178621 B/op	     729 allocs/op
+BenchmarkEvalSha-8        	    9543	    136536 ns/op	  178622 B/op	     729 allocs/op
+BenchmarkEvalSha-8        	    8181	    136039 ns/op	  178623 B/op	     729 allocs/op
+BenchmarkEvalSha-8        	    8478	    134597 ns/op	  178622 B/op	     729 allocs/op
+BenchmarkEvalSha-8        	    8857	    136086 ns/op	  178623 B/op	     729 allocs/op
+BenchmarkEvalSha-8        	    9598	    136173 ns/op	  178622 B/op	     729 allocs/op
+BenchmarkEvalSha-8        	    8438	    134754 ns/op	  178624 B/op	     729 allocs/op
+BenchmarkEvalSha-8        	    8620	    136809 ns/op	  178623 B/op	     729 allocs/op
+BenchmarkGet-8            	   42896	     26120 ns/op	    1256 B/op	      32 allocs/op
+BenchmarkGet-8            	   44790	     26221 ns/op	    1256 B/op	      32 allocs/op
+BenchmarkGet-8            	   46705	     26164 ns/op	    1256 B/op	      32 allocs/op
+BenchmarkGet-8            	   46038	     26199 ns/op	    1256 B/op	      32 allocs/op
+BenchmarkGet-8            	   45925	     26979 ns/op	    1256 B/op	      32 allocs/op
+BenchmarkGet-8            	   37248	     31429 ns/op	    1256 B/op	      32 allocs/op
+BenchmarkGet-8            	   42318	     25767 ns/op	    1256 B/op	      32 allocs/op
+BenchmarkGet-8            	   47370	     27587 ns/op	    1256 B/op	      32 allocs/op
+BenchmarkGet-8            	   45252	     27014 ns/op	    1256 B/op	      32 allocs/op
+BenchmarkGet-8            	   37980	     27123 ns/op	    1256 B/op	      32 allocs/op
+BenchmarkSet-8            	   43777	     26855 ns/op	    1426 B/op	      37 allocs/op
+BenchmarkSet-8            	   39301	     27369 ns/op	    1426 B/op	      37 allocs/op
+BenchmarkSet-8            	   42391	     26598 ns/op	    1426 B/op	      37 allocs/op
+BenchmarkSet-8            	   47017	     26413 ns/op	    1426 B/op	      37 allocs/op
+BenchmarkSet-8            	   43417	     26683 ns/op	    1426 B/op	      37 allocs/op
+BenchmarkSet-8            	   44349	     26445 ns/op	    1426 B/op	      37 allocs/op
+BenchmarkSet-8            	   44388	     26688 ns/op	    1426 B/op	      37 allocs/op
+BenchmarkSet-8            	   44984	     26433 ns/op	    1426 B/op	      37 allocs/op
+BenchmarkSet-8            	   44024	     26869 ns/op	    1426 B/op	      37 allocs/op
+BenchmarkSet-8            	   45224	     26660 ns/op	    1426 B/op	      37 allocs/op
+PASS
+ok  	motadatagosdk/core/l2cache/dragonfly	68.945s

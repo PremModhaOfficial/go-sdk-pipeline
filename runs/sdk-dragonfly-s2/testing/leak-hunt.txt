@@ -1,0 +1,4 @@
+=== UNIT -race -count=5 ===
+ok  	motadatagosdk/core/l2cache/dragonfly	4.613s
+=== INTEGRATION -race -count=5 ===
+ok  	motadatagosdk/core/l2cache/dragonfly	14.708s

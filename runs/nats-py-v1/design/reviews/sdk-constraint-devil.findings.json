@@ -1,0 +1,84 @@
+{
+  "reviewer": "sdk-constraint-devil",
+  "reviewer_mode": "sub-agent (independent, harness-spawned at H5-rev-3 iter 5 REVISE-strict full re-pass)",
+  "review_target": "runs/nats-py-v1/design/{api.py.stub,perf-budget.md,algorithms.md,scope.md} — full re-pass after iter-3 added 7 event-domain dataclass __post_init__ validators (StreamConfig / ConsumerConfig / TenantConsumerConfig / RequesterConfig / KeyValueConfig / ObjectStoreConfig / ObjectMeta) + 5 NEW module-level compiled regex constants (_STREAM_NAME_REGEX / _CONSUMER_NAME_REGEX / _SUBJECT_REGEX / _BUCKET_NAME_REGEX / _OBJECT_NAME_REGEX) — task brief said '6 new regex constants' but the file shows 5 NEW + the pre-existing _TENANT_ID_REGEX (5+1=6 total module-level patterns); audit treats both interpretations as identical-cost",
+  "review_round": "rev-3 iter 5",
+  "verdict": "ACCEPT",
+  "convergence": true,
+  "iter3_carryover_status": "All iter-3 PASS findings remain valid; iter-3 sole remaining NOTE (CONSTRAINT-5: §15.30 propagator.extract within Subscriber.subscribe.cb 25us budget with 13us headroom) re-verified unchanged in iter-5 — TracingMiddleware OTel-mode subscribe path at api.py.stub:2107-2150 untouched by iter-3 dataclass-validator work.",
+  "iter5_new_scrutiny_summary": "Iter-3 added 7 __post_init__ validators on event-domain Config dataclasses + 5 NEW compiled regex constants at module load. Audit confirms: (a) the regex compile cost (~200-500us TOTAL across all 5 patterns at first import) is one-shot module-load cost, NOT per-op — falls outside any [constraint:] marker; (b) per-Config-instantiation __post_init__ cost is 1 regex match (~1-3us for short strings) + a few cmp/len checks (~100ns) = ~5-15us total per Config construction; (c) ZERO perf-budget rows construct any of the 7 event-domain Config dataclasses in their inner-loop body, verified via `grep -n 'StreamConfig\\|ConsumerConfig\\|RequesterConfig\\|KeyValueConfig\\|ObjectStoreConfig\\|ObjectMeta\\|TenantConsumerConfig' perf-budget.md` returning ZERO matches; (d) algorithms.md only constructs Configs at client-startup paths (Stream.create / Consumer.create / KVStore.create / etc.) which are explicitly cold-path with budgets in the 1500-8000us range — a 5-15us added validation cost is 0.06-1% of those budgets, well within margin headroom (e.g. Stream.create p50=8000us, oracle 5000us, margin 1.6x = ~3000us headroom; Consumer dispatch loop p50=5000us, margin 1.7x = ~2000us headroom). No CONFIG-construction bench in the perf-budget table; no §7-symbol's hot-path traverses a Config __post_init__. CONV-5 fix is perf-neutral.",
+  "marker_count_delta": "+0 measurable benchable markers (iter-3: 46 [constraint:] markers, 31 measurable. iter-5: 46 [constraint:] markers, 31 measurable). The 7 new __post_init__ validators introduce ZERO new [constraint:] markers — they are runtime hygiene checks on cold-path Config construction, not perf-budgeted symbols. The 5 new module-level regex constants introduce ZERO new [constraint:] markers — module-load cost is one-shot and not budgetable. Iter-5 is perf-marker-additive-zero. Wire-exact and deterministic markers also unchanged.",
+  "perf_budget_row_count": "iter-3: ~85 budgeted rows across 9 sections (Section J self-reports ~85 at perf-budget.md:238). iter-5: ~85 unchanged. Zero new rows added by CONV-5 fix (correctly — Config construction is cold-path one-shot at client wiring, NOT a §7-public-symbol that benchmark-devil would gate at T5). Iter-5 is row-additive-zero.",
+  "constraint_markers_found": 46,
+  "markers_with_planned_bench": 31,
+  "markers_below_advisory_floor": 0,
+  "markers_above_advisory_floor": "all 31 benchable markers stay AT or ABOVE H1 advisory floors: nats-py 50-200us publish floor (Publisher.publish 350us > floor); codec ~30 allocs/op floor (pack_map CUSTOM = 30 allocs exact); asyncio dispatch 10-30us floor (Subscriber.subscribe.cb 25us within floor). Iter-5 introduced no new measurable markers, so no new floor checks. The KV.put p50=1500us span-amortization (1us span / 1500us op = 0.07%) and ObjectStore.put_file 1MB p50=80000us (1us span / 80000us op = 0.001%) §15.29 fixes still hold from iter-3.",
+  "findings": [
+    {
+      "id": "CONSTRAINT-1",
+      "severity": "PASS",
+      "marker": "summary",
+      "location": "api.py.stub (whole file) + perf-budget.md Sections A-K",
+      "issue": "46 [constraint:] markers (unchanged from iter-3), 31 measurable benchable. Iter-3 CONV-5 fix added 7 event-domain __post_init__ validators + 5 new module-level compiled regex constants (_STREAM_NAME_REGEX, _CONSUMER_NAME_REGEX, _SUBJECT_REGEX, _BUCKET_NAME_REGEX, _OBJECT_NAME_REGEX) without introducing ANY new [constraint:] markers — correct, because (a) Config construction is cold-path one-shot at client startup, and (b) module-load regex compile is one-shot at import. ZERO perf-budget rows reference these Config dataclasses in their hot-path body. All H1 advisory floors (nats-py 50-200us publish, codec <=30 allocs/op, asyncio dispatch 10-30us) still honored or strictly above. Bench naming convention (perf-budget Section L) unchanged.",
+      "recommendation": "no action"
+    },
+    {
+      "id": "CONSTRAINT-2",
+      "severity": "PASS",
+      "marker": "Module-load regex compile cost (5 NEW + 1 existing = 6 patterns total)",
+      "location": "api.py.stub:203-230 (events.utils module-level _*_REGEX constants)",
+      "issue": "5 NEW `re.compile(...)` calls at module load (alongside the pre-existing _TENANT_ID_REGEX) — total 6 module-level compiled patterns. CPython's `sre_compile` typically takes 30-100us per simple pattern (the patterns here are simple character classes with optional anchors / wildcards). Total module-load overhead: ~200-500us as a one-shot cost at first `import motadata_py_sdk.events.utils`. This is import-time, NOT per-op or per-Config — it does NOT fall under any [constraint:] marker, and it does NOT register against the Settings()/EventsConfig.validate() perf-budget rows (Section H). The Settings() cold p50=5000us budget already absorbs `pyyaml + pydantic` import cascades that dwarf this; an additional 200-500us under 5000us is 4-10% of the cold-path budget which has 2000us headroom (oracle 3000us, margin 1.7x). Verdict: PASS. No new perf-budget row warranted — module import cost is intentionally NOT a §7-symbol gate.",
+      "recommendation": "no action"
+    },
+    {
+      "id": "CONSTRAINT-3",
+      "severity": "PASS",
+      "marker": "7 event-domain dataclass __post_init__ validators (CONV-5 fix)",
+      "location": "api.py.stub StreamConfig:924, ConsumerConfig:1070, TenantConsumerConfig:1124, RequesterConfig:1337, KeyValueConfig:1457, ObjectStoreConfig:1586, ObjectMeta:1618",
+      "issue": "Per-Config-construction validation cost: 1-4 regex matches against compiled patterns + 1-3 len()/falsiness checks. Compiled regex .match() against short strings (typical names <64 chars) is ~1-3us in CPython 3.11+; len() / `not x` checks are ~50-100ns each. Total per-Config: ~5-15us at instantiation (matches task brief estimate). Configs are constructed ONCE at client startup wiring (Stream.create / Consumer.create call paths), NEVER in per-op hot loops. Verified via grep: NO perf-budget row references these dataclasses in its hot-path. Cold-path budgets that DO involve Config construction (Stream.create p50=8000us, oracle 5000us margin 1.6x = ~3000us headroom; Consumer dispatch loop p50=5000us, margin 1.7x = ~2000us headroom) absorb a 5-15us validation cost trivially (0.06-0.3% of budget). Verdict: PASS. ZERO perf-budget impact.",
+      "recommendation": "no action"
+    },
+    {
+      "id": "CONSTRAINT-4",
+      "severity": "PASS",
+      "marker": "Hot-path Config construction audit — verify no test/bench creates Configs in a hot loop",
+      "location": "perf-budget.md Sections A-K (full grep), algorithms.md (full search)",
+      "issue": "Comprehensive search confirms NO perf-budget row constructs StreamConfig / ConsumerConfig / TenantConsumerConfig / RequesterConfig / KeyValueConfig / ObjectStoreConfig / ObjectMeta inside its inner-loop body (`grep StreamConfig\\|ConsumerConfig\\|... perf-budget.md` returns ZERO matches). algorithms.md references `nats.js.api.StreamConfig` (third-party) at line 446 inside Stream.create — that is a DIFFERENT class (server-side raw StreamConfig from nats-py), not our event-domain StreamConfig dataclass. The only places our Config dataclasses are constructed are at client wiring (Mode A entry points called once per process at startup). Hot-path symbols (Publisher.publish, Subscriber.subscribe.cb, KVStore.put/get, BatchPublisher.add, etc.) all take pre-constructed handles, never raw Config dicts. Bench-author guidance for T5: bench fixtures should construct the Config ONCE in the `setup` block (pytest-benchmark's `setup` parameter), NOT inside the timed function. CONV-5 fix is hot-path-safe by construction.",
+      "recommendation": "Optional/non-blocking: at Phase 2 T5, sdk-benchmark-devil should sanity-check that bench fixtures use pytest-benchmark `setup=` for Config construction (not inside the `target=` callable). One-line review at bench-fixture-write time, no separate gate needed."
+    },
+    {
+      "id": "CONSTRAINT-5",
+      "severity": "NOTE",
+      "marker": "TracingMiddleware.intercept_subscribe propagator.extract (§15.30 / A2 fix; iter-3 carry-over NOTE re-verified)",
+      "location": "algorithms.md §A17.2 (lines 675-710), api.py.stub:2107-2150 (TracingMiddleware OTel mode subscribe)",
+      "issue": "Iter-3 NOTE re-verified UNCHANGED in iter-5: propagator.extract on subscribe path adds ~2-4us per consumer message (W3C tracecontext + baggage propagators dispatch + traceparent parse + SpanContext alloc + NatsHeaderGetter calls). Subscriber.subscribe.cb constraint (api.py.stub:788) is p50=25us with oracle 12us, margin 2.0x = ~13us headroom. The 2-4us added cost stays within the 13us headroom but tightens the budget by 15-30%. perf-budget.md Section C row 3 floor justification (line 83) still notes 'Increase to 40us once tracing middleware is wrapped' — this is the relevant flag, unchanged. Iter-3 CONV-5 dataclass-validator work does NOT touch this code path (TracingMiddleware is class-level at api.py.stub:2107, separate from event-domain dataclasses 924-1618). NOTE persists from iter-3 — non-blocking.",
+      "recommendation": "OPTIONAL (carried from iter-3): At Phase 2 T5, sdk-benchmark-devil should record TWO Subscriber dispatch benches: bare (p50<=25us) AND tracing-wrapped (p50<=40us). Cost: 1 extra bench function, ~30 lines. Non-blocking for H5."
+    },
+    {
+      "id": "CONSTRAINT-6",
+      "severity": "PASS",
+      "marker": "KV/ObjectStore span overhead amortization (§15.29 iter-3 fix re-verified)",
+      "location": "perf-budget.md Section E (lines 117-138)",
+      "issue": "Re-verified: 1us span overhead remains correctly amortized across all KV/ObjectStore op budgets. KV.put p50=1500us → span = 0.07%. KV.get p50=800us → span = 0.13%. ObjectStore.put_bytes 1KB p50=3000us → span = 0.03%. ObjectStore.put_file 1MB p50=80000us → span = 0.001%. ObjectStore.put_file 100MB streaming soak (mmd_seconds=120) → span overhead is per-chunk and amortized to negligible. All 13 §15.29 KV/ObjectStore span-instrumented rows + 2 watch-soak rows preserved unchanged from iter-3. Iter-3 CONV-5 dataclass-validator work does NOT touch the span emission path inside KVStore.put / ObjectStore.put_bytes (those construct nats-py raw kv/os handles internally, not our Config dataclasses, in the hot path). Verdict: PASS.",
+      "recommendation": "no action"
+    },
+    {
+      "id": "CONSTRAINT-7",
+      "severity": "PASS",
+      "marker": "is_retryable p50<=500ns / 0 allocs row (Section B.1; iter-3 added)",
+      "location": "perf-budget.md Section B.1 (lines 55-65), api.py.stub:451-452",
+      "issue": "Re-verified: events.utils.is_retryable row remains intact (p50=0.5us, p95=1.0us, p99=2.0us, allocs=0, complexity=O(1), oracle=`frozenset.__contains__ + isinstance` 0.3us, margin_mult=1.7x, bench=bench_is_retryable_typical). Both [constraint:] markers on the symbol (p50 + allocs_per_op) remain at api.py.stub:451-452 with matching bench name. Floor justification paragraph still acknowledges _NEVER_RETRY frozenset overhead (~50-100ns) leaving ~200-300ns headroom under the 500ns budget. is_temporary row (p50=0.3us) also preserved. CONV-5 dataclass-validator work does NOT modify events.utils.is_retryable / is_temporary or the _NEVER_RETRY frozenset (those are sentinel-classification helpers, class-level not instance-level, unaffected by Config dataclass __post_init__ additions). Verdict: PASS — row intact.",
+      "recommendation": "no action"
+    },
+    {
+      "id": "CONSTRAINT-8",
+      "severity": "PASS",
+      "marker": "All 32 measurable [constraint:] markers re-confirmed against H1 advisory floors",
+      "location": "api.py.stub (46 [constraint:] markers, 31 measurable benchable + the new is_retryable allocs marker = 32 measurable assertions across 31 bench functions)",
+      "issue": "Full re-pass confirms ALL 32 measurable [constraint:] assertions (p50 / allocs_per_op / wire-exact-with-bench / etc.) still respect H1 advisory floors from H1-summary.md §4: (a) nats-py loopback publish floor 50-200us → Publisher.publish budget 350us (oracle 200us x margin 1.75) is ABOVE upper floor; (b) codec 10-field custom pack_map alloc floor ~30 allocs → marker `p50 <= 30us` and budget allocs=30 sit AT floor exactly (within design intent — cannot go below structural floor without breaking per-tag dispatch model); (c) asyncio dispatch floor 10-30us → Subscriber.subscribe.cb marker `p50_callback_dispatch <= 25us` is WITHIN floor at p50 25us (acceptable per H1 advisory range). ZERO floor breaches across all 32 assertions. The brief task asks for re-confirmation of '32 measurable markers' — this audit confirms 31 measurable [constraint:] markers across 31 bench functions, with one bench function (bench_is_retryable_typical) carrying TWO assertions (p50 + allocs) = 32 measurable assertions total, matching the brief's count exactly.",
+      "recommendation": "no action"
+    }
+  ],
+  "convergence_summary": "ITER-5 CONVERGED with verdict ACCEPT (sustained from iter-3 ACCEPT). REVISE-strict full re-pass confirms iter-3 CONV-5 fix (7 event-domain dataclass __post_init__ validators + 5 new compiled regex constants at module load) is PERF-NEUTRAL: (1) module-load regex compile is one-shot ~200-500us not under any [constraint:] marker; (2) per-Config __post_init__ cost ~5-15us is cold-path only (verified via grep: ZERO perf-budget rows construct these dataclasses in their inner loops); (3) Cold-path Stream.create / Consumer.create / KVStore.create budgets (1500-8000us with 1.5-1.7x margin = 750-3000us headroom) trivially absorb the 5-15us validation cost. Marker count: 46 unchanged from iter-3 (CONV-5 added ZERO [constraint:] markers — correct). Perf-budget row count: ~85 unchanged from iter-3 (CONV-5 added ZERO new rows — correct, Config construction is not a §7-symbol gate). All 32 measurable assertions still honor H1 advisory floors. §15.29 KV/ObjectStore span amortization (1us / 1500-80000us op) preserved. §15.30 propagator.extract within Subscriber.subscribe.cb 25us budget (13us headroom) preserved as iter-3 carry-over NOTE — non-blocking. is_retryable Section B.1 row (p50<=500ns, 0 allocs) preserved. ZERO BLOCKERs introduced by iter-3 work. ZERO new findings beyond carry-over NOTE. Safe to proceed to H5 sign-off.",
+  "fix-required": false
+}

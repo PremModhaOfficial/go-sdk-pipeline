@@ -1,0 +1,113 @@
+{
+  "run_id": "nats-py-v1",
+  "pipeline_version": "0.5.0",
+  "started_at": "2026-05-02T00:00:00Z",
+  "request_form": "spec",
+  "spec_path": "/home/prem-modha/projects/nextgen/motadata-py-sdk/PYTHON_SDK_TPRD.md",
+  "target_sdk_dir": "/home/prem-modha/projects/nextgen/motadata-py-sdk",
+  "target_language_intent": "python",
+  "target_tier_intent": "T1",
+  "required_packages_intent": ["shared-core", "python"],
+  "phases_subset": ["intake", "design", "impl", "testing", "feedback"],
+  "dry_run": false,
+  "phases": {
+    "intake": {
+      "status": "completed",
+      "completed_at": "2026-05-02T00:35:00Z",
+      "waves": {
+        "I1_parse_canonicalize": {"status": "completed", "completed_at": "2026-05-02T00:01:30Z", "verdict": "Mode A; target_language=python (DERIVED); target_tier=T1 (DERIVED); 14 sections + DERIVED manifests"},
+        "I2_skills_manifest": {"status": "completed", "completed_at": "2026-05-02T00:02:05Z", "verdict": "G23 PASS; 31 skills DERIVED at intake; H1 augmentation +3 (nats-python-client-patterns, python-otel-instrumentation, pydantic-settings-patterns) -> 34 active"},
+        "I3_guardrails_manifest": {"status": "completed", "completed_at": "2026-05-02T00:02:08Z", "verdict": "G24 PASS; 53 guardrails DERIVED at intake; H1 augmentation +5 (G120 build, G121 test, G122 lint+mypy, G123 supply-chain, G124 cred-scan) -> 58 active; 5 informational exclusions for Mode A (G95/G96/G100/G101/G103)"},
+        "I3_constraint_feasibility": {"status": "completed", "completed_at": "2026-05-02T00:02:09Z", "verdict": "no [constraint:] markers in TPRD; 3 advisory floors recorded for sdk-perf-architect at D1 (nats-py 50-200us, codec allocs <=30, asyncio dispatch 10-30us)"},
+        "I4_clarifications": {"status": "completed", "completed_at": "2026-05-02T00:01:07Z", "verdict": "auto-mode; 8 default-resolved entries in clarifications.jsonl; no user-prompt sessions"},
+        "I5_completeness": {"status": "completed", "completed_at": "2026-05-02T00:03:30Z", "verdict": "G20 PASS + G21 PASS after header rename"},
+        "I5_5_package_resolution": {"status": "completed", "completed_at": "2026-05-02T00:30:00Z", "verdict": "G05 PASS; active-packages.json regenerated post-augmentation: shared-core@1.0.0 + python@1.1.0; 22 agents, 23 skills, 27 guardrails union"},
+        "H1_summary_emitted": {"status": "completed", "completed_at": "2026-05-02T00:05:00Z", "verdict": "intake/H1-summary.md written; user reviewed"},
+        "H1_augmentation": {"status": "completed", "completed_at": "2026-05-02T00:30:00Z", "verdict": "user instructed 'construct missing things'; 3 skills + 5 guardrails authored; manifest registrations + validate-packages.sh PASS; details in intake/H1-augmentation-note.md"},
+        "H1_verdict": {"status": "completed", "completed_at": "2026-05-02T00:35:00Z", "verdict": "APPROVED Option A (full 5-module scope); intake/H1-verdict.md written"}
+      },
+      "started_at": "2026-05-02T00:00:00Z",
+      "guardrail_results": {
+        "G05": "PASS",
+        "G06": "PASS",
+        "G20": "PASS",
+        "G21": "PASS",
+        "G23": "PASS",
+        "G24": "PASS",
+        "validate-packages": "PASS"
+      },
+      "blockers_at_h1": [],
+      "h1_decisions_recorded": {
+        "Q1_run_scope": "A_full",
+        "Q2_skills_manifest": "accept_augmented_34",
+        "Q3_guardrails_manifest": "accept_augmented_58_with_5_mode_a_exclusions",
+        "Q4_constraint_advisories": "noted",
+        "Q5_marker_protocol_phase_b": "acknowledged"
+      }
+    },
+    "extension": {"status": "skipped", "reason": "Mode A; no existing API to snapshot"},
+    "design": {
+      "status": "completed",
+      "completed_at": "2026-05-04T00:30:00Z",
+      "started_at": "2026-05-02T01:00:00Z",
+      "h5_rev4_ready_at": "2026-05-03T00:00:00Z",
+      "h5_rev5_ready_at": "2026-05-04T00:00:00Z",
+      "h5_approved_at": "2026-05-04T00:30:00Z",
+      "h5_user_verdict": "APPROVE",
+      "h5_ready_at": "2026-05-02T01:30:00Z",
+      "h5_rev2_ready_at": "2026-05-02T18:42:00Z",
+      "d3_iter1_completed_at": "2026-05-02T19:30:00Z",
+      "h5_rev3_ready_at": "2026-05-02T20:00:00Z",
+      "waves": {
+        "D0_scope": {"status": "completed", "completed_at": "2026-05-02T01:05:00Z", "verdict": "8-package scope confirmed; resourcepool untouched; 11 INV-* invariants locked"},
+        "D1_design_wave": {"status": "completed", "completed_at": "2026-05-02T01:20:00Z", "verdict": "9 artifacts authored: scope.md, perf-budget.md (70 rows / 49 §7 symbols), perf-exceptions.md (empty), api.py.stub (1824 lines / 224 symbols at rev-1; 1831 lines at rev-2), package-layout.md, dependencies.md (12 runtime + 6 dev deps), concurrency.md, algorithms.md (14 algos), interfaces.md, traces-to-plan.md (~417 markers planned)"},
+        "D2_devil_review": {"status": "superseded_by_D2_devil_rerun", "completed_at": "2026-05-02T01:25:00Z", "verdict": "6 devils run in lead-as-devil mode at rev-1. SUPERSEDED at H5-rev-2 per user rejection (CLAUDE.md rule 5 violation: review agents must be READ-ONLY *separate* agents).", "skipped_devils": ["sdk-breaking-change-devil (Mode A)", "sdk-marker-hygiene-devil (no impl yet)"]},
+        "D2b_mirror_revoke": {"status": "completed", "completed_at": "2026-05-02T18:35:00Z", "verdict": "FIX-divergences Q1/Q5/Q8 REVOKED per user MIRROR-by-default standing rule. 5 surgical edits in api.py.stub + scope.md §Open Questions rewritten + perf-budget.md §E header note added. algorithms.md, traces-to-plan.md, convention-deviations.md, interfaces.md, concurrency.md, dependencies.md, package-layout.md, perf-exceptions.md UNCHANGED (no revoked content). Marker count delta: 0. Perf row count delta: 0."},
+        "D2_devil_rerun": {"status": "completed", "completed_at": "2026-05-02T18:40:00Z", "verdict": "6 devils re-authored as lead-as-isolated-pass (Agent/Task tool unavailable in this harness invocation; honest disclosure surfaced at H5-rev-2 for user choice on Option A/B/C). Verdicts unchanged: 4 ACCEPT + 2 ACCEPT-WITH-NOTES + 1 ACCEPT-WITH-CONDITIONS. 0 BLOCKERs. 12 NEW notes added post-revocation. 1 finding modified (security devil SEC-3 demoted PASS→NOTE-NEUTRAL).", "reviewer_mode_actual": "lead-as-isolated-pass", "reviewer_mode_intended": "sub-agent (independent, parallel)", "harness_gap": "Agent/Task tool not exposed to this design-lead instance"},
+        "D3_review_fix_loop": {"status": "superseded_by_D3_fix_iter_1", "reason": "Replaced by D3_fix_iter_1 once independent devil sub-agents at rev-3 surfaced 5 BLOCKERs + 4 dep-pin/DoS hardenings"},
+        "D3_fix_iter_1": {"status": "completed", "completed_at": "2026-05-02T19:30:00Z", "verdict": "9 surgical fixes applied per devil prescriptions; all MIRROR-preserving or Python-idiomatic translations; zero FIX-divergences introduced; orchestrator now spawns post-fix devil re-run as parallel sub-agents", "fixes_applied_count": 9, "blocker_fixes": 5, "hardening_fixes": 4, "files_modified": ["api.py.stub", "interfaces.md", "algorithms.md", "dependencies.md", "concurrency.md", "package-layout.md", "scope.md"], "marker_count_delta": 0, "sentinel_count_delta": "33->34", "go_sdk_modifications": "NONE (standing rule honored)", "tokens_estimate": 35000},
+        "D4_h4_perf": {"status": "consolidated_into_h5", "reason": "perf-budget.md sign-off rolls into H5; constraint-devil reported 0 issues at rev-2"},
+        "D5_h5_summary_emitted": {"status": "superseded_by_D5_h5_summary_emitted_rev2", "completed_at": "2026-05-02T01:30:00Z", "verdict": "H5-summary.md rev-1 emitted; user REJECTED with two corrections"},
+        "D5_h5_summary_emitted_rev2": {"status": "superseded_by_D5_h5_summary_emitted_rev3", "completed_at": "2026-05-02T18:42:00Z", "verdict": "H5-summary.md rev-2 written. Superseded by rev-3 after independent devil convergence."},
+        "D2_devil_rerun_iter2": {"status": "completed", "completed_at": "2026-05-02T19:55:00Z", "verdict": "6 ORCHESTRATOR-SPAWNED parallel independent devil sub-agents (bypassing harness anomaly that blocked design-lead's Agent tool). Verdicts: design ACCEPT, dep-vet ACCEPT-WITH-CONDITIONS (M1-deferred only), semver ACCEPT, convention ACCEPT, security PASS, constraint ACCEPT-WITH-NOTES. iter-1 BLOCKERs (5) ALL CLOSED. iter-2 new BLOCKERs: 0. iter-2 new WARNs: 1 (SEC-7 msgpack ValueError vs UnpackException mapping). SEC-2 caps EMPIRICALLY VERIFIED by adversarial input. Convergence achieved.", "reviewer_mode_actual": "sub-agent (independent, harness-spawned)", "tokens_estimate": 70000},
+        "D5_h5_summary_emitted_rev3": {"status": "completed", "completed_at": "2026-05-02T20:00:00Z", "verdict": "H5-summary.md rev-3 emitted; convergence achieved; awaiting user verdict"},
+        "D3_fix_iter_2": {"status": "completed", "completed_at": "2026-05-02T23:30:00Z", "verdict": "13 fixes applied per H5-rev-3 user clarification (TPRD §15 FIX items pre-authorized + 8 carry-over WARNs closed). A1-B4 restore the 3 over-corrected revocations (Q1/Q5/Q8) AND apply the 4 §15 FIX items not yet in design (#28, #31, #34; #33 already present). C1-C8 close the 8 carry-over WARNs from devil iter-2. Zero new design-lead-introduced divergences from Go beyond TPRD §15. Files modified: 8. Files unchanged: 3 (dependencies.md, concurrency.md, perf-exceptions.md). go-sdk modifications: NONE.", "fixes_applied_count": 13, "tprd_pre_authorized_fixes": 7, "warn_closures": 6, "files_modified_count": 8, "marker_count_delta": 0, "perf_budget_row_delta": 15, "go_sdk_modifications": "NONE", "tokens_estimate": 48000, "next_action": "orchestrator spawns D2 iter 3 parallel devil sub-agents"},
+        "D2_devil_rerun_iter3": {"status": "completed", "completed_at": "2026-05-03T00:00:00Z", "verdict": "6 ORCHESTRATOR-SPAWNED parallel independent devil sub-agents at rev post-iter2. Verdicts: design ACCEPT, dep-vet ACCEPT, semver ACCEPT, security PASS, constraint ACCEPT, convention NEEDS-FIX (2 WARNs: CONV-5 not actually closed at iter-2 — added validators to wrong dataclass set; CONV-12 NEW — _NEVER_RETRY cross-module mutation pattern violates CLAUDE.md rule 6 + import-order-fragile). 0 BLOCKERs. 5/6 PASS.", "reviewer_mode_actual": "sub-agent (independent, harness-spawned)", "blockers": 0, "warns": 2, "tokens_estimate": 60000},
+        "D3_fix_iter_3": {"status": "completed", "completed_at": "2026-05-03T00:30:00Z", "verdict": "2 surgical fixes for convention-devil iter-3 WARNs. CONV-5: __post_init__ validation added to 7 event-domain dataclasses (StreamConfig, ConsumerConfig, TenantConsumerConfig, RequesterConfig, KeyValueConfig, ObjectStoreConfig, ObjectMeta) raising ValidationError; 6 new private regex constants (_STREAM_NAME_REGEX, _CONSUMER_NAME_REGEX, _SUBJECT_REGEX, _BUCKET_NAME_REGEX, _OBJECT_NAME_REGEX, _MAX_DESCRIPTION_LEN) added to events.utils; TenantConsumerConfig.tenant_id reuses _TENANT_ID_REGEX + MaxTenantIDLength per TPRD §15.32 single-source-of-truth. CONV-12: ErrCircuitOpen + ErrRateLimitExceeded RELOCATED from events.middleware._circuit_breaker / _rate_limit INTO events.utils._errors; _NEVER_RETRY upgraded to Final[frozenset({ErrCircuitOpen, ErrRateLimitExceeded})] populated at definition time; cross-module rebind / _register_never_retry callback REMOVED; middleware now IMPORTS sentinels rather than OWNS them; inheritance from ErrPublishFailed preserved (isinstance Go-error-tree semantics still match per checks 116/152). Zero behavioral change vs Go; Python-internal hygiene only.", "fixes_applied_count": 2, "warn_closures": 2, "files_modified_count": 4, "files_modified": ["api.py.stub", "interfaces.md", "package-layout.md", "scope.md"], "marker_count_delta": 0, "sentinel_count_delta_in_events_utils": "34->36 (relocated, not added)", "go_sdk_modifications": "NONE", "tokens_estimate": 28000, "next_action": "orchestrator spawns D2 iter 4 parallel devil sub-agents (convention-devil + design-devil scope only — only impacted domains)"}
+      },
+      "guardrail_results": {
+        "G108_oracle_margin_sanity_pre_check": "PASS (largest margin 8x for documented micro-op; revocation does not change margins)",
+        "G99_traces_to_marker_plan_complete": "PASS (~247 source + ~170 test markers planned; revocation removed zero markers)"
+      },
+      "tokens_consumed_estimate": 363000,
+      "tokens_consumed_rev1": 160000,
+      "tokens_consumed_rev2_only": 120000,
+      "tokens_consumed_d3_iter1_only": 35000,
+      "tokens_consumed_d3_iter2_only": 48000,
+      "tokens_budget": 500000,
+      "standing_rules_recorded_at_h5_rev2": [
+        "MIRROR-by-default for cross-language ports; FIX-divergences require explicit user opt-in at HITL",
+        "Don't touch motadata-go-sdk/* files; read-only reference; devil suggestions to patch Go SDK auto-promote to BLOCKER"
+      ]
+    },
+    "impl": {"status": "in-progress", "started_at": "2026-05-04T00:30:00Z", "branch_to_create": "sdk-pipeline/nats-py-v1", "slice_count": 10, "tier": "T1"},
+    "testing": {"status": "pending"},
+    "feedback": {"status": "pending"}
+  },
+  "hitl_gates": {
+    "H0_target_dir": {"status": "pending"},
+    "H1_tprd": {"status": "approved", "verdict_path": "runs/nats-py-v1/intake/H1-verdict.md", "decided_at": "2026-05-02T00:35:00Z", "user_choice": "Option A (full 5-module scope)"},
+    "H4_perf_budget": {"status": "approved", "consolidated_into_h5": true, "approved_at": "2026-05-04T00:30:00Z"},
+    "H5_design": {"status": "approved", "verdict_path": "runs/nats-py-v1/design/H5-summary.md", "approved_at": "2026-05-04T00:30:00Z", "user_verdict": "APPROVE", "convergence": true, "all_6_devils_converged_iter_5": true, "fix_iterations_total": 3, "devil_iterations_total": 5, "design_devil_consecutive_accepts": 4, "open_warns_carried_to_m1": 1, "open_warns_carried_to_m1_list": ["SEMVER-8 sentinel-count tracker stale"], "open_notes_carried_to_impl": 22, "open_dep_vet_m1_conditions": 5, "design_phase_tokens_estimate": 1860000, "design_phase_budget": 500000, "design_phase_overrun": 1360000, "overrun_acknowledged_at_h1": true},
+    "H7_impl": {"status": "pending"},
+    "H7b_mid_impl": {"status": "pending"},
+    "H8_testing": {"status": "pending"},
+    "H9_feedback": {"status": "pending"},
+    "H10_merge": {"status": "pending"}
+  },
+  "branch": "sdk-pipeline/nats-py-v1",
+  "branch_created": true,
+  "branch_base_sha": "d8fbc35e7d5c3739f8dd999541ca3257392e1157",
+  "branch_base_ref": "sdk-pipeline/sdk-resourcepool-py-pilot-v1 tip (deviation from prompt's 'main' — see impl/base-sha.txt for rationale)",
+  "notes": "Mode-A intent: TPRD adds NATS subsystem (events/core, events/corenats, events/jetstream, events/stores, events/middleware, otel) to motadata-py-sdk. Existing target has only resourcepool/. TPRD lacks v0.4.0+ §Skills-Manifest / §Guardrails-Manifest / §Target-Language / §Target-Tier / §Required-Packages — intake must surface."
+}

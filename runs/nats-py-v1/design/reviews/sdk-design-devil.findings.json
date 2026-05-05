@@ -1,0 +1,75 @@
+{
+  "agent": "sdk-design-devil",
+  "run_id": "nats-py-v1",
+  "review_round": "rev-3 iter 5",
+  "review_date": "2026-05-02",
+  "verdict": "ACCEPT",
+  "convergence": true,
+  "consecutive_accept_count": 4,
+  "scope": "REVISE-strict ALWAYS standing rule. Fresh, independent full re-pass on the post-D3-iter-3 design (api.py.stub ~2370 lines + interfaces.md + concurrency.md + algorithms.md + scope.md + perf-budget.md + package-layout.md). Did NOT defer to prior ACCEPTs; re-verified every design-devil criterion from scratch. TPRD §15 FIX items (Q1/Q5/Q8 restoration) treated as pre-authorized per standing rule.",
+  "summary": "Fourth consecutive ACCEPT after independent re-derivation. Re-walked all 11 design-devil criteria against the artifact set and found no defects in design-devil's domain. The CONV-12 relocation continues to be a structural improvement (no cross-module mutable rebind); CONV-5 __post_init__ validators are uniform across all 7 event-domain dataclasses; param counts are within budget on every constructor; sentinel hierarchy is consistent; task ownership is documented for every spawned asyncio.Task; no init() / no package-level mutable vars; all internals are _-prefixed and absent from the package-layout.md re-export list.",
+  "fresh_independent_recheck": {
+    "C1_parameter_count": {
+      "status": "PASS",
+      "evidence": "Largest constructor surface: BatchPublisher.__init__ = 1 positional (publisher) + 5 KW-only (max_batch_size, flush_interval, concurrent_flush, max_flush_workers, on_flush_error). KW-only enforces named-call ergonomics; no positional ambiguity. Publisher.__init__ = 2 positional. Subscriber.__init__ = 1 positional + 1 KW. JsPublisher.__init__ = 3 positional (mirrors Go NewPublisher(nc, js, maxPayload)). Consumer.__init__ = 1 KW only. Requester construction is via Requester.create(cfg: RequesterConfig) — Config struct pattern; bypasses param-count concern. All other multi-knob entry points use Config dataclasses (StreamConfig, ConsumerConfig, KeyValueConfig, ObjectStoreConfig, RetryConfig, CircuitBreakerConfig, RateLimiterConfig, TLSConfig, *InitConfig). No function exceeds the 4-positional cap."
+    },
+    "C2_exposed_internals": {
+      "status": "PASS",
+      "evidence": "Inspected api.py.stub for symbols that should be _-prefixed but are not, and vice-versa. Private symbols correctly _-prefixed: _NEVER_RETRY, _TENANT_ID_REGEX, _STREAM_NAME_REGEX, _CONSUMER_NAME_REGEX, _SUBJECT_REGEX, _BUCKET_NAME_REGEX, _OBJECT_NAME_REGEX, _MAX_DESCRIPTION_LEN, _Subscription (impl class returned via Subscription Protocol), _tenant_id_var / _trace_context_var / _message_id_var / _correlation_id_var / _reply_to_var / _metadata_var ContextVars, _Literal alias. Public sentinels (ErrCircuitOpen, ErrRateLimitExceeded) live in events.utils._errors but are intentionally re-exported from events.utils per package-layout.md (caller-facing for `except` clauses); the leading underscore on _errors marks the SUBMODULE as private while keeping the class names public. No internal type leak."
+    },
+    "C3_mutable_shared_state": {
+      "status": "PASS",
+      "evidence": "_NEVER_RETRY is `Final[frozenset[type[BaseException]]]` populated at module-definition time (api.py.stub L413-416). The cross-module rebind from events.middleware/__init__ that existed pre-CONV-12 is REMOVED. All InitConfigs (TracerInitConfig, MetricsInitConfig, LoggerInitConfig) are `frozen=True, slots=True` per CONV-2. Mutable dataclasses (StreamConfig / ConsumerConfig / KeyValueConfig / ObjectStoreConfig / ObjectMeta / *Config middleware configs) are documented as builder-style: caller mutates pre-construction, passes ONCE to a factory, and the factory captures by-reference at construction time. Pydantic config sub-models (ServiceConfig / TracerConfig / EventsConfig / etc.) use Field(default_factory=...) per CONV-4 — no shared-instance footgun."
+    },
+    "C4_naming": {
+      "status": "PASS",
+      "evidence": "No stuttering: motadata_py_sdk.events.corenats.Publisher (NOT NatsPublisher); events.jetstream.JsPublisher uses Js prefix to disambiguate from corenats.Publisher (legitimate, not stutter). No `-er` suffix on non-actor (MetricsCollector is a real collector; LoggingMiddleware/TracingMiddleware/RetryMiddleware/RateLimiterConfig all describe real behavior). Acronym casing follows Python (PEP 8): IDs are lowercase in field names (tenant_id, message_id, correlation_id), classes use CapWords (TraceContext, MultiCircuitBreaker), constants SCREAMING_SNAKE (HEADER_TENANT_ID, OTEL_DEFAULT_*). The Go-style `ID` casing (caps) is correctly Python-translated to `id` snake_case in fields/parameters."
+    },
+    "C5_unchecked_error_propagation": {
+      "status": "PASS",
+      "evidence": "Subscriber.close() and Consumer dispatch loop intentionally MIRROR Go's silent-log-and-return behavior — but the DD-1 fix from D3 iter 1 added the optional `on_error` async hook (concrete-impl convenience, not on Protocol). Default `on_error=None` preserves Go behavior; opt-in surfaces errors. Documented per concurrency.md §events.corenats Subscriber + §events.jetstream Consumer entries. All 7 dataclass __post_init__ validators FAIL FAST (raise ValidationError immediately on bad input) — no swallow-and-default. msgpack_unpack_safe re-raises ValueError + UnpackException at the codec boundary (api.py.stub L116-128). The 'log-and-return-None' Subscriber close pattern is OPT-IN-OVERRIDABLE rather than silent, which clears the criterion."
+    },
+    "C6_task_ownership": {
+      "status": "PASS",
+      "evidence": "concurrency.md table 'asyncio task accounting' (L127-135) enumerates every spawned task with: owner, name pattern, creation site, cancellation site. BatchPublisher auto-flush spawned only if flush_interval>0; cancelled in close(). JsPublisher.publish_async spawns one task per call; lifecycle tracked via the returned Future (acknowledged unbounded — MIRROR per scope.md and Go SDK). Consumer dispatch spawned in start(), cancelled in stop(). Requester dispatch spawned in create(), cancelled in close(). C-5 invariant (every long-running task captured in self._tasks: set[asyncio.Task] with done_callback) covers leak harness. Subscriber explicitly does NOT spawn its own tasks (nats-py owns the per-msg callback tasks). All ownership documented BLOCKER-clean."
+    },
+    "C7_missing_context": {
+      "status": "PASS",
+      "evidence": "Python idiom: asyncio uses caller's contextvars + asyncio.timeout(t); explicit ctx parameter is non-Pythonic. Concurrency invariant C-2 documents the convention: 'First parameter (after self) of every I/O method that takes a deadline is `*, timeout: float | None = None`'. Per-method timeout knobs present where needed: Consumer.fetch(*, timeout=30.0, heartbeat=5.0), Consumer.next(*, timeout=30.0), Publisher.request_with_timeout(subject, msg, timeout). Default-deadline injection documented per JsPublisher.publish (10s if caller has no asyncio.timeout). No I/O method silently fire-and-forgets."
+    },
+    "C8_init_global_state": {
+      "status": "PASS",
+      "evidence": "Python equivalent of Go's init() = module-level executable code. Inspected every module section (§1 codec through §9 config) for module-level mutating side effects. Found ONLY: enum class declarations, dataclass declarations, Final constant assignments, ContextVar declarations (immutable container; the value is mutated via set_/get_ helpers per request, NOT shared mutable state), _NEVER_RETRY frozenset (Final, immutable). interfaces.md §'Import side-effect prohibition' (L353-360) explicitly bans nats.connect() / OTel Init() / YAML parse / file-open at import. Confirmed honored across all modules. No init() function. No global mutable var."
+    },
+    "C9_inconsistent_error_types": {
+      "status": "PASS",
+      "evidence": "All 33 (now 34 per DD-3 ErrNoMessages) sentinel exceptions inherit from EventsError. All 5 codec sentinels inherit from CodecError. All 7 dataclass __post_init__ validators raise the SAME exception type: ValidationError. Wrapper classes (Error, TenantError, SerializationError, ConfigError, ValidationError, MultiError) all inherit from EventsError. RequesterConfigError inherits from ValueError (not EventsError) but is documented at interfaces.md L306 as intentional Python idiom for typed-wrapper-around-Go-plain-string-validation; the divergence is called out explicitly. No method returns raw exception in some paths and wrapped in others without rationale."
+    },
+    "C10_interface_bloat": {
+      "status": "PASS",
+      "evidence": "Largest Protocol surface: Subscription (4 methods: subject, unsubscribe, drain, is_valid). NatsMsg (4 attrs, no methods). JsMsg (NatsMsg + 4 ack methods + 1 metadata attr = 5 method-equivalents — at the limit; justified because JsMsg is the natural Go-mirror of nats-py's Msg-with-JS-extension; splitting would force callers to type-narrow at every dispatch point). Publisher Protocol = 3 methods. Subscriber Protocol = 3 methods. Interceptor Protocol = 2 methods. No Protocol exceeds 5 method-equivalents."
+    },
+    "C11_hidden_complexity": {
+      "status": "PASS",
+      "evidence": "Multi-step state machines / multi-task / multi-lock components are exhaustively documented: CircuitBreaker state machine (4 states explicit in api.py.stub L1838-1843); BatchPublisher size-trigger/auto-flush/concurrent-flush narrative in api.py.stub L737-759 + concurrency.md §events.corenats §BatchPublisher; Consumer dispatch loop 4-step protocol in api.py.stub L1230-1247 + concurrency.md §Consumer; Requester request/dispatch flow in concurrency.md §Requester. The is_retryable() classifier explicitly documents the 3-rule precedence (NEVER_RETRY first, then non-retryable sentinels, then SerializationError/ConfigError). MultiCircuitBreaker lazy-create semantics (lock-protected dict.get-or-create) documented at concurrency.md §CircuitBreaker. No undocumented state machine."
+    }
+  },
+  "regression_check_vs_iter4": {
+    "all_iter1_iter2_iter3_iter4_findings": "RESOLVED + STABLE. DD-001 (BLOCKER iter-1, _NEVER_RETRY mutable global) and DD-002 (HIGH iter-1, retry-through-OPEN-breaker composition) both remain RESOLVED at iter-5. Inheritance chain (ErrCircuitOpen / ErrRateLimitExceeded inherit from ErrPublishFailed) preserved per Go-mirror. CONV-5 + CONV-12 + CONV-2 + CONV-3 + CONV-4 fixes structurally intact. TPRD §15 Q1/Q5/Q8 FIX restoration honored (TenantKVStore/TenantObjectStore/TenantConsumerConfig validate tenant_id; TracingMiddleware subscribe extracts W3C trace via propagator; KVStore/ObjectStore emit OTel spans).",
+    "post_iter3_artifact_diffs": "No design changes since iter-3 fix loop completed. Re-pass operates on the same byte sequence reviewed at iter-4."
+  },
+  "new_findings": [],
+  "new_blocker_count": 0,
+  "convergence_signal": "Four consecutive design-devil ACCEPT verdicts (iter-2, iter-3, iter-4, iter-5). Independent re-derivation under the REVISE-strict ALWAYS rule produced zero new findings; the post-D3-iter-3 design is stable in design-devil's domain. The criterion-by-criterion fresh recheck above confirms each of the 11 design-devil rules is honored without dependency on prior ACCEPT inertia. Recommend H5 sign-off can proceed; no further design-devil iteration expected on the current artifact set unless TPRD §15 / scope changes upstream.",
+  "notification_target": "sdk-design-lead",
+  "rationale_for_continued_accept": [
+    "Fresh re-walk of all 11 design-devil criteria found zero defects.",
+    "Param count: BatchPublisher (5 KW + 1 pos) is largest; KW-only enforces named-call ergonomics; all other constructors take Config structs.",
+    "Mutable shared state: _NEVER_RETRY is Final[frozenset]; pydantic configs use Field(default_factory=...) per CONV-4; *InitConfig frozen+slots per CONV-2.",
+    "Task ownership: every spawned asyncio.Task documented in concurrency.md §asyncio task accounting with create+cancel sites; leak harness in tests/leak/ asserts task-count baseline.",
+    "init() / global state: No init(), no package-level mutable vars; ContextVars are immutable containers; functools.cache for tracer/meter/registry per the python-otel-instrumentation lazy pattern.",
+    "Error type consistency: All sentinels inherit EventsError / CodecError; all 7 __post_init__ validators raise ValidationError uniformly.",
+    "Interface bloat: Subscription Protocol = 4 methods (largest); JsMsg = 5 (justified, Go mirror).",
+    "Hidden complexity: Every multi-step state machine + multi-lock / multi-task component documented; is_retryable() 3-rule precedence explicit; CircuitBreaker 4-state machine declared inline."
+  ]
+}

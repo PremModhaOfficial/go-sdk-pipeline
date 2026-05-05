@@ -1,0 +1,27 @@
+{
+  "GetJSON": {
+    "measured_ns": 28238,
+    "reference_ns": 29223
+  },
+  "SetJSON": {
+    "measured_ns": 31935,
+    "reference_ns": 32037
+  },
+  "MGetJSON": {
+    "measured_ns": 53979,
+    "reference_ns": 31792
+  },
+  "SAdd": {
+    "measured_ns": 26424,
+    "reference_ns": 32037
+  },
+  "ZAdd": {
+    "measured_ns": 27032,
+    "reference_ns": 32037
+  },
+  "ZRangeWithScores": {
+    "measured_ns": 841043,
+    "reference_ns": 491055
+  },
+  "_measured_with": "miniredis v2.37.0, benchmem, 500 iterations per bench. Same Go runtime + harness for p1 symbol and its reference. json.go uses unsafe.Slice+StringData to avoid []byte(rawString) alloc on decode hot path."
+}

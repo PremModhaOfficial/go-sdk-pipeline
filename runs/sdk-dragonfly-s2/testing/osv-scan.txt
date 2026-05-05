@@ -1,0 +1,109 @@
+Scanned /home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/go.mod file and found 105 packages
+Failed to run code analysis (govulncheck) on '/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/go.mod' because govulncheck: loading packages: 
+There are errors with the provided package patterns:
+
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/events/utils/const.go:1:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/config/config.go:1:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/utils/const.go:1:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/core/circuitbreaker/circuitbreaker.go:225:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/core/codec/codec.go:157:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/core/types/intmap.go:112:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/core/l1cache/cache.go:227:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/core/pool/resourcepool/pool.go:116:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.26.0.linux-amd64/src/vendor/golang.org/x/crypto/chacha20poly1305/fips140only_go1.26.go:7:9: file requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/go/pkg/mod/golang.org/x/sys@v0.42.0/unix/affinity_linux.go:7:1: package requires newer Go version go1.25 (application built with go1.24)
+/home/prem-modha/go/pkg/mod/golang.org/x/net@v0.49.0/http2/config_go126.go:7:9: file requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/otel/common/exporter.go:1:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/otel/logger/context.go:1:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/otel/metrics/metrics.go:1:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/otel/tracer/provider.go:1:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/core/l2cache/dragonfly/cache.go:30:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/core/pool/memorypool/pool.go:177:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/core/pool/workerpool/options.go:3:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/go/pkg/mod/golang.org/x/sys@v0.42.0/cpu/byteorder.go:5:1: package requires newer Go version go1.25 (application built with go1.24)
+/home/prem-modha/go/pkg/mod/golang.org/x/crypto@v0.48.0/blake2b/go125.go:7:9: file requires newer Go version go1.25 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/events/core/core.go:3:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/events/middleware/circuitbreaker.go:1:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/events/connection.go:1:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/events/corenats/batch_publisher.go:1:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/events/jetstream/consumer.go:1:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/events/stores/kv.go:2:1: package requires newer Go version go1.26 (application built with go1.24)
+/home/prem-modha/projects/nextgen/motadata-go-sdk/src/motadatagosdk/otel/otel.go:48:1: package requires newer Go version go1.26 (application built with go1.24)
+
+For details on package patterns, see https://pkg.go.dev/cmd/go#hdr-Package_lists_and_patterns.
+
+(the Go toolchain is required)
++-------------------------------------+------+-----------+-------------------------------------------------------------------+---------+--------+
+| OSV URL                             | CVSS | ECOSYSTEM | PACKAGE                                                           | VERSION | SOURCE |
++-------------------------------------+------+-----------+-------------------------------------------------------------------+---------+--------+
+| https://osv.dev/GO-2026-4828        | 4.2  | Go        | github.com/nats-io/nats-server/v2                                 | 2.12.5  | go.mod |
+| https://osv.dev/GHSA-3f24-pcvm-5jqc |      |           |                                                                   |         |        |
+| https://osv.dev/GO-2026-4830        | 6.4  | Go        | github.com/nats-io/nats-server/v2                                 | 2.12.5  | go.mod |
+| https://osv.dev/GHSA-55h8-8g96-x4hj |      |           |                                                                   |         |        |
+| https://osv.dev/GO-2026-4826        | 4.3  | Go        | github.com/nats-io/nats-server/v2                                 | 2.12.5  | go.mod |
+| https://osv.dev/GHSA-8m2x-3m6q-6w8j |      |           |                                                                   |         |        |
+| https://osv.dev/GO-2026-4831        | 5.3  | Go        | github.com/nats-io/nats-server/v2                                 | 2.12.5  | go.mod |
+| https://osv.dev/GHSA-8r68-gvr4-jh7j |      |           |                                                                   |         |        |
+| https://osv.dev/GO-2026-4832        | 4.9  | Go        | github.com/nats-io/nats-server/v2                                 | 2.12.5  | go.mod |
+| https://osv.dev/GHSA-9983-vrx2-fg9c |      |           |                                                                   |         |        |
+| https://osv.dev/GO-2026-4833        | 6.5  | Go        | github.com/nats-io/nats-server/v2                                 | 2.12.5  | go.mod |
+| https://osv.dev/GHSA-fcjp-h8cc-6879 |      |           |                                                                   |         |        |
+| https://osv.dev/GO-2026-4834        | 7.1  | Go        | github.com/nats-io/nats-server/v2                                 | 2.12.5  | go.mod |
+| https://osv.dev/GHSA-jxxm-27vp-c3m5 |      |           |                                                                   |         |        |
+| https://osv.dev/GO-2026-4835        | 6.4  | Go        | github.com/nats-io/nats-server/v2                                 | 2.12.5  | go.mod |
+| https://osv.dev/GHSA-pwx7-fx9r-hr4h |      |           |                                                                   |         |        |
+| https://osv.dev/GO-2026-4836        | 8.6  | Go        | github.com/nats-io/nats-server/v2                                 | 2.12.5  | go.mod |
+| https://osv.dev/GHSA-v722-jcv5-w7mc |      |           |                                                                   |         |        |
+| https://osv.dev/GO-2026-4837        | 7.5  | Go        | github.com/nats-io/nats-server/v2                                 | 2.12.5  | go.mod |
+| https://osv.dev/GHSA-vprv-35vv-q339 |      |           |                                                                   |         |        |
+| https://osv.dev/GO-2026-4827        | 7.4  | Go        | github.com/nats-io/nats-server/v2                                 | 2.12.5  | go.mod |
+| https://osv.dev/GHSA-x6g4-f6q3-fqvv |      |           |                                                                   |         |        |
+| https://osv.dev/GHSA-w8rr-5gcm-pp58 | 5.3  | Go        | go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp       | 0.15.0  | go.mod |
+| https://osv.dev/GHSA-w8rr-5gcm-pp58 | 5.3  | Go        | go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp | 1.39.0  | go.mod |
+| https://osv.dev/GHSA-w8rr-5gcm-pp58 | 5.3  | Go        | go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp   | 1.39.0  | go.mod |
+| https://osv.dev/GO-2026-4394        | 7.0  | Go        | go.opentelemetry.io/otel/sdk                                      | 1.39.0  | go.mod |
+| https://osv.dev/GHSA-9h8m-3fm2-qjrq |      |           |                                                                   |         |        |
+| https://osv.dev/GHSA-hfvc-g4fc-pqhx | 7.3  | Go        | go.opentelemetry.io/otel/sdk                                      | 1.39.0  | go.mod |
+| https://osv.dev/GO-2026-4762        | 9.1  | Go        | google.golang.org/grpc                                            | 1.78.0  | go.mod |
+| https://osv.dev/GHSA-p77j-4mvh-x3m3 |      |           |                                                                   |         |        |
++-------------------------------------+------+-----------+-------------------------------------------------------------------+---------+--------+
+
+===== T8 POST-SCAN ANALYSIS (sdk-testing-lead, 2026-04-18) =====
+
+FINDINGS-TRIAGE:
+
+Pre-existing target-SDK baseline (exempt per H6/H7):
+  - nats-io/nats-server/v2 2.12.5: 11 advisories (CVSS 4.2-8.6)
+      attribution: pre-existing; unrelated to dragonfly scope
+  - go.opentelemetry.io/otel/exporters/otlp* 0.15.0/1.39.0: 3x GHSA-w8rr (CVSS 5.3)
+      attribution: pre-existing (otel exporters NOT in Option-A approved bumps)
+  - go.opentelemetry.io/otel/sdk 1.39.0: GO-2026-4394 (7.0), GHSA-hfvc-g4fc-pqhx (7.3)
+      attribution: pre-existing (otel/sdk NOT in Option-A approved bumps); observation filed in H7
+  - google.golang.org/grpc 1.78.0: GO-2026-4762 (9.1)
+      attribution: pre-existing target-SDK dep; NOT dragonfly-reachable
+
+Dragonfly-introduced deps (new in run sdk-dragonfly-s2):
+  - testcontainers-go 0.42.0: no advisories
+  - goleak 1.3.0: no advisories
+  - otel/otel, otel/metric, otel/trace 1.41.0: no advisories (approved bumps)
+  - klauspost/compress 1.18.5: no advisories (approved bump)
+
+G33 VERDICT (CVSS ≥ 7.0 in dragonfly-introduced deps): **PASS**
+  No dragonfly-introduced dep has a CVSS >= 7.0 finding.
+
+G32 VERDICT (govulncheck call-reachable from dragonfly/...): PASS-WITH-EXEMPTED-BASELINE
+  10 call-reachable vulns, all pre-existing Go 1.26.0 stdlib or otel/sdk 1.39.0
+  reach from dragonfly code paths via redis/tls, fmt.Errorf/template, os.ReadDir/x509,
+  and sync.Once/otel.init. SAME 10 items as H7 baseline (same IDs: GO-2026-4947/4946/4870/4866/4865/4602/4601/4600/4599/4394).
+  ZERO NEW CVEs introduced by dragonfly scope. Fix-in paths are go1.26.1+/otel-sdk 1.40+.
+
+G34 VERDICT (license allowlist: MIT/Apache-2.0/BSD/ISC/0BSD/MPL-2.0): PASS
+  osv-scanner flagged 3 "violations":
+    1. miniredis BSL-1.0/Unlicense - pre-existing test-only dep (not shipped). BSL-1.0 is
+       OSI-approved permissive. Test-scope exempt.
+    2. opencontainers/go-digest 1.0.0 CC-BY-SA-4.0 - DRAGONFLY-INTRODUCED INDIRECT VIA
+       testcontainers-go. CONFIRMED ON-DISK: go-digest CODE is Apache-2.0; CC-BY-SA-4.0
+       applies only to LICENSE.docs (repo-level docs). Code license PASS.
+    3. stdlib UNKNOWN - osv-scanner cannot detect Go stdlib license; stdlib is BSD-3-Clause
+       (widely known). PASS.
+

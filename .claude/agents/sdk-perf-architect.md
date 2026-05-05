@@ -118,6 +118,56 @@ symbols:
 - Margin multiplier default is **2.0×** (our impl within 2× of oracle's number). Tighten for identical surfaces (1.3×), relax for justified value-add (≤4×).
 - If oracle is >10× faster than our target, halt and escalate — design target is miscalibrated.
 
+### Cross-language oracle caveats (added v0.5.0; pipeline v0.5.0)
+
+When the oracle is **a reference impl in a different language than the
+target SDK** (e.g. Python target vs Go reference, Rust target vs C
+reference), you MUST emit a `cross_language_oracle_caveats` block in the
+budget entry that names the **underlying primitive cost-model assumption**.
+A cross-language number transferred without this caveat is the single most
+common source of mid-impl re-baselining — see
+`sdk-resourcepool-py-pilot-v1` M10 Fix 2 root cause + run-retrospective
+"Cross-language oracle derivation" for the canonical failure.
+
+Required fields when `oracle.reference_language ≠ target_language`:
+
+```yaml
+oracle:
+  name: "Go sync.Mutex (golang.org/x/sync)"
+  reference_language: go        # NEW: explicit, even when same-as-target
+  measured_p50_us: 0.05         # the foreign number
+  measured_allocs: 0
+  margin_multiplier: 10.0       # NEW: cross-language margin SHOULD widen
+  cross_language_oracle_caveats:
+    target_language: python
+    primitive_in_oracle: "Go chan / sync.Mutex (M:N goroutine scheduler, lock-free fast path)"
+    primitive_in_target: "asyncio.Lock + asyncio.Condition (1:1 task on event loop, FIFO wakeup)"
+    cost_factor_estimate: "≈10× (asyncio.Lock acquire ≈ 0.5 µs vs Go sync.Mutex ≈ 0.05 µs on contemporary hardware)"
+    derivation: |
+      asyncio.Lock acquire requires: (1) Future allocation in pure Python,
+      (2) event-loop tick to dispatch the wakeup, (3) FIFO queue insertion.
+      Go sync.Mutex fast path is a single CAS. The 10× factor is empirical
+      across pilots; add benchmark-derived numbers when available.
+    risk_if_ignored: |
+      Setting `target.p50_us = oracle.measured_p50_us` directly produces
+      an unreachable budget. M10 / M11 re-baselining will be needed; cost
+      a full rework wave in sdk-resourcepool-py-pilot-v1.
+    margin_widening: "10.0× minimum vs default 2.0×; tightened only with profile evidence."
+```
+
+Triggers requiring this block:
+
+- Python target, Go oracle (asyncio.Lock vs chan/sync.Mutex)
+- Python target, C oracle (CPython interpreter overhead vs native)
+- Rust target, C oracle (only if Rust uses ownership patterns the C ref
+  doesn't, e.g. reference-counted vs raw pointer)
+- Any future language pack where the oracle ref-impl declares
+  `language: != target_language`
+
+When in doubt, EMIT the block — false positive (overly cautious widening)
+costs nothing; false negative (missing widening) costs a full re-baseline
+wave.
+
 ### Theoretical floor rules
 
 - Derive from first principles: RTTs, syscalls, memory bandwidth, disk seek, cache line loads. Cite the rule in `derivation`.

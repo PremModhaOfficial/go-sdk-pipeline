@@ -1,0 +1,3 @@
+# python-otel-instrumentation — evolution log
+
+- 1.0.0 (2026-05-02): initial — authored during run `nats-py-v1` intake on user instruction "construct the missing things". Sourced from context7 `/open-telemetry/opentelemetry-python` digest at `runs/nats-py-v1/intake/research/otel-python.md`. Python sibling of `otel-instrumentation` (Go). Covers TracerProvider/MeterProvider setup with OTLP gRPC exporter, lazy meter handles via `functools.cache`, span lifecycle context manager, custom carrier (NATS headers) `Getter`/`Setter` subclasses, W3C TraceContext + Baggage composite propagator, bounded-cardinality attribute conventions, tracer-then-meter shutdown ordering, `LoggingInstrumentor` for trace-id correlation.

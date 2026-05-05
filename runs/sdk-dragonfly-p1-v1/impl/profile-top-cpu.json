@@ -1,0 +1,62 @@
+[
+  {
+    "fn": "internal/runtime/syscall/linux.Syscall6",
+    "flat_pct": 47.53
+  },
+  {
+    "fn": "runtime.futex",
+    "flat_pct": 5.53
+  },
+  {
+    "fn": "runtime.stealWork",
+    "flat_pct": 1.94
+  },
+  {
+    "fn": "runtime.findRunnable",
+    "flat_pct": 1.35
+  },
+  {
+    "fn": "runtime.nextFreeFast",
+    "flat_pct": 1.35
+  },
+  {
+    "fn": "runtime.(*mspan).writeHeapBitsSmall",
+    "flat_pct": 1.2
+  },
+  {
+    "fn": "time.runtimeNow",
+    "flat_pct": 1.2
+  },
+  {
+    "fn": "internal/sync.(*Mutex).Lock",
+    "flat_pct": 1.05
+  },
+  {
+    "fn": "sync/atomic.(*Int32).Add",
+    "flat_pct": 0.9
+  },
+  {
+    "fn": "internal/poll.(*fdMutex).rwlock",
+    "flat_pct": 0.75
+  },
+  {
+    "fn": "internal/runtime/atomic.(*Uint32).CompareAndSwap (inline)",
+    "flat_pct": 0.75
+  },
+  {
+    "fn": "runtime.memmove",
+    "flat_pct": 0.75
+  },
+  {
+    "fn": "runtime.netpollblock",
+    "flat_pct": 0.75
+  },
+  {
+    "fn": "bufio.(*Reader).fill",
+    "flat_pct": 0.6
+  },
+  {
+    "fn": "github.com/redis/go-redis/v9/internal/proto.(*Reader).readLine",
+    "flat_pct": 0.6
+  }
+]

@@ -1,0 +1,113 @@
+{
+  "reviewer": "sdk-dep-vet-devil",
+  "reviewer_mode": "sub-agent (independent, harness-spawned at H5-rev-3 iter 5)",
+  "review_target": "runs/nats-py-v1/design/api.py.stub (2618 lines, +316 vs iter-3) + runs/nats-py-v1/design/dependencies.md (160 lines, unchanged from iter 3)",
+  "review_round": "rev-3 iter 5",
+  "verdict": "ACCEPT-WITH-CONDITIONS",
+  "verdict_rationale": "REVISE-strict re-pass. dependencies.md is byte-identical to iter 3 (160 lines, no new content). api.py.stub grew from 2302 to 2618 lines; targeted scan of the two post-D3-iter-3 changes (CONV-5 private regex constants + CONV-12 ErrCircuit/RateLimit relocation) finds zero undeclared imports. All 16 top-level import statements remain stdlib-only. Third-party import count in stub = 0. All iter-3 CONDITIONALs remain closed. No new findings.",
+  "deps_reviewed": 18,
+  "convergence": true,
+  "iter5_scope": "Post-D3-iter-3 delta verification: (1) new private _*_REGEX constants (re module, CONV-5), (2) ErrCircuitOpen + ErrRateLimitExceeded relocation from events.middleware to events.utils._errors (CONV-12). Cross-check that neither change implies an undeclared third-party dep.",
+  "import_scan": {
+    "method": "grep '^import|^from ' api.py.stub (top-level lines); confirmed 16 hits, all stdlib",
+    "stub_line_count_iter3": 2302,
+    "stub_line_count_iter5": 2618,
+    "delta_lines": 316,
+    "all_top_level_imports_found": [
+      "import re",
+      "from __future__ import annotations",
+      "from enum import IntEnum",
+      "from typing import Any, Final",
+      "from typing import Final",
+      "from contextvars import ContextVar",
+      "from dataclasses import dataclass, field",
+      "from datetime import datetime",
+      "from typing import Awaitable, Callable, Final, Protocol",
+      "from typing import Any, Callable, Mapping",
+      "import asyncio",
+      "from enum import Enum",
+      "from typing import AsyncIterator, Iterable",
+      "from typing import Generic, TypeVar",
+      "from typing import Literal as _Literal",
+      "from typing import Annotated, Literal"
+    ],
+    "top_level_import_line_count": 16,
+    "top_level_import_line_count_iter3": 16,
+    "delta_import_lines": 0,
+    "third_party_imports_found": 0,
+    "verdict": "CLEAN — 100% stdlib, identical set to iter 3"
+  },
+  "targeted_checks": [
+    {
+      "id": "TC-1",
+      "trigger": "CONV-5 fix (D3 iter 3) — new private regex constants in events.utils",
+      "symbols": [
+        "_TENANT_ID_REGEX (line 203)",
+        "_STREAM_NAME_REGEX (line 214)",
+        "_CONSUMER_NAME_REGEX (line 217)",
+        "_SUBJECT_REGEX (line 222)",
+        "_BUCKET_NAME_REGEX (line 227)",
+        "_OBJECT_NAME_REGEX (line 230)"
+      ],
+      "mechanism": "All six use re.compile(...). re is Python stdlib.",
+      "dep_implied": "re (stdlib)",
+      "existing_top_level_import": "import re at line 20 — present since iter 1",
+      "declared_in_dependencies_md": "N/A — stdlib",
+      "verdict": "NO GAP"
+    },
+    {
+      "id": "TC-2",
+      "trigger": "CONV-12 fix (D3 iter 3) — ErrCircuitOpen + ErrRateLimitExceeded relocated from events.middleware to events.utils._errors",
+      "symbols": [
+        "ErrCircuitOpen (line 364) — class inheriting ErrPublishFailed",
+        "ErrRateLimitExceeded (line 381) — class inheriting ErrPublishFailed",
+        "_NEVER_RETRY (line 413) — frozenset populated at definition time from same-module classes"
+      ],
+      "mechanism": "Pure Python class definitions; inheritance from ErrPublishFailed (same module). _NEVER_RETRY = frozenset({ErrCircuitOpen, ErrRateLimitExceeded}) — no import needed. events.middleware._circuit_breaker and _rate_limit will perform intra-package import: 'from motadata_py_sdk.events.utils import ErrCircuitOpen' — stdlib import machinery.",
+      "dep_implied": "none (intra-package import; no third-party package)",
+      "declared_in_dependencies_md": "N/A — no new dep",
+      "verdict": "NO GAP"
+    },
+    {
+      "id": "TC-3",
+      "trigger": "Full delta scan — remaining 316 new lines in stub (beyond TC-1 and TC-2 regions)",
+      "mechanism": "top-level import count unchanged at 16 between iter 3 and iter 5; grep for any net-new 'import' or 'from' at top-level found zero additions",
+      "dep_implied": "none",
+      "declared_in_dependencies_md": "N/A",
+      "verdict": "NO GAP"
+    }
+  ],
+  "per_dep_status": [
+    {"dep": "nats-py", "version": ">=2.7.0,<3.0", "license": "Apache-2.0", "vuln": "0 known", "size": "0.4 MB", "last_commit_age": "<30d", "verdict": "ACCEPT"},
+    {"dep": "msgpack", "version": ">=1.0.7,<2.0", "license": "Apache-2.0", "vuln": "historic CVE-2022-32149 fixed in 1.0.4; pin clears", "size": "0.3 MB", "last_commit_age": "<90d", "verdict": "ACCEPT"},
+    {"dep": "opentelemetry-api", "version": ">=1.30.0,<2.0", "license": "Apache-2.0", "vuln": "0 known on 1.30+", "size": "0.1 MB", "last_commit_age": "<30d", "verdict": "ACCEPT"},
+    {"dep": "opentelemetry-sdk", "version": ">=1.30.0,<2.0", "license": "Apache-2.0", "vuln": "0 known", "size": "0.5 MB", "last_commit_age": "<30d", "verdict": "ACCEPT"},
+    {"dep": "opentelemetry-exporter-otlp-proto-grpc", "version": ">=1.30.0,<2.0", "license": "Apache-2.0", "vuln": "0 known", "size": "0.2 MB", "last_commit_age": "<30d", "verdict": "ACCEPT"},
+    {"dep": "opentelemetry-exporter-otlp-proto-http", "version": ">=1.30.0,<2.0", "license": "Apache-2.0", "vuln": "0 known", "size": "0.2 MB", "last_commit_age": "<30d", "verdict": "ACCEPT"},
+    {"dep": "opentelemetry-propagator-b3", "version": ">=1.30.0,<2.0", "license": "Apache-2.0", "vuln": "0 known", "size": "0.05 MB", "last_commit_age": "<30d", "verdict": "ACCEPT"},
+    {"dep": "opentelemetry-propagator-jaeger", "version": ">=1.30.0,<2.0", "license": "Apache-2.0", "vuln": "0 known", "size": "0.05 MB", "last_commit_age": "<30d", "verdict": "ACCEPT"},
+    {"dep": "opentelemetry-instrumentation-logging", "version": ">=0.51b0,<0.63", "license": "Apache-2.0", "vuln": "0 known", "size": "0.05 MB", "last_commit_age": "<30d", "condition": "DD-001/SEC-3: M1 validates <0.63 upper bound against PyPI at install time", "verdict": "ACCEPT-WITH-CONDITION"},
+    {"dep": "pydantic", "version": ">=2.7.0,<3.0", "license": "MIT", "vuln": "CVE-2024-3772 in v1 only; v2 enforced by floor pin", "size": "0.4 MB", "last_commit_age": "<14d", "verdict": "ACCEPT"},
+    {"dep": "pydantic-settings", "version": ">=2.3.0,<3.0", "license": "MIT", "vuln": "0 known", "size": "0.05 MB", "last_commit_age": "<30d", "verdict": "ACCEPT"},
+    {"dep": "pyyaml", "version": ">=6.0,<7.0", "license": "MIT", "vuln": "CVE-2020-14343 in <5.4; pin >=6.0 clears", "size": "0.7 MB", "last_commit_age": "<365d (stable)", "verdict": "ACCEPT"},
+    {"dep": "pytest", "version": ">=9.0.3", "license": "MIT", "vuln": "GHSA-6w46-j5rx-g56g fixed at 9.0.3; floor clears", "size": "—", "last_commit_age": "<30d", "verdict": "ACCEPT"},
+    {"dep": "pytest-asyncio", "version": ">=0.23,<2.0", "license": "Apache-2.0", "vuln": "0 known", "size": "—", "last_commit_age": "<30d", "condition": "DD-003: M1 validates 1.x asyncio_mode=auto behavior before relaxing upper bound", "verdict": "ACCEPT-WITH-CONDITION"},
+    {"dep": "pytest-benchmark", "version": ">=4.0", "license": "BSD-2-Clause", "vuln": "0 known", "size": "—", "last_commit_age": "<90d", "verdict": "ACCEPT"},
+    {"dep": "pytest-cov", "version": ">=4.1", "license": "MIT", "vuln": "0 known", "size": "—", "last_commit_age": "<30d", "verdict": "ACCEPT"},
+    {"dep": "testcontainers", "version": ">=4.0,<5.0", "license": "Apache-2.0", "vuln": "0 known", "size": "0.2 MB", "last_commit_age": "<90d", "verdict": "ACCEPT"},
+    {"dep": "import-linter", "version": ">=2.0", "license": "BSD-2-Clause", "vuln": "0 known", "size": "0.1 MB", "last_commit_age": "<90d", "verdict": "ACCEPT"}
+  ],
+  "new_findings": [],
+  "iter3_conditionals_still_closed": true,
+  "remaining_conditions": [
+    "M1: pip-audit + safety check --full-report on resolved environment",
+    "M1: transitive license re-confirmation with pip-licenses --with-authors for full grpcio chain",
+    "M1: validate <0.63 upper bound on opentelemetry-instrumentation-logging against PyPI at install time (DD-001/SEC-3)",
+    "M1: validate pytest-asyncio 1.x asyncio_mode=auto behavior against test suite before relaxing <2.0 upper bound (DD-003)",
+    "M1: confirm yaml.safe_load()-only usage in impl via sdk-security-devil grep gate (SEC-1)",
+    "M1: confirm msgpack_unpack_safe wrapper usage at all unpackb call sites (SEC-2)"
+  ],
+  "hitl_gate": "H6 NOT triggered. Zero new CONDITIONAL findings. Zero dep gaps. Design phase convergence confirmed for iter 5.",
+  "timestamp": "2026-05-02",
+  "run_id": "nats-py-v1"
+}

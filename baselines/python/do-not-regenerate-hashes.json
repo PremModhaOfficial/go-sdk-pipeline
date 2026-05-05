@@ -1,0 +1,9 @@
+{
+  "schema_version": "1.0.0",
+  "scope": "per-language",
+  "language": "python",
+  "first_seeded_at": "2026-04-28",
+  "first_seeded_by_run": "sdk-resourcepool-py-pilot-v1",
+  "policy": "Files / symbols carrying the [do-not-regenerate] marker have their byte-hash recorded here. Subsequent pipeline runs verify the byte-hash is unchanged; a mismatch is BLOCKER per G100. The motadata_py_sdk.resourcepool package has zero [do-not-regenerate] markers (Mode A new package; impl-phase G100 PASS vacuously) — this file is created as the first-run seed scaffold and currently lists no protected files.",
+  "protected_files": {}
+}

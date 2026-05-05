@@ -1,0 +1,183 @@
+{
+  "run_id": "sdk-resourcepool-py-pilot-v1",
+  "pipeline_version": "0.5.0",
+  "started_at": "2026-04-27T00:00:00Z",
+  "request_mode": "A",
+  "target_language": "python",
+  "target_tier": "T1",
+  "target_sdk_dir": "/home/prem-modha/projects/nextgen/motadata-py-sdk",
+  "target_branch_planned": "sdk-pipeline/sdk-resourcepool-py-pilot-v1",
+  "tprd_path": "runs/sdk-resourcepool-py-pilot-tprd.md",
+  "required_packages": [
+    "shared-core@>=1.0.0",
+    "python@>=1.0.0"
+  ],
+  "phases": {
+    "intake": {
+      "status": "completed",
+      "lead": "sdk-intake-agent"
+    },
+    "design": {
+      "status": "completed",
+      "lead": "sdk-design-lead",
+      "completed_at": "2026-04-27T00:02:36Z",
+      "artifact_count": 23,
+      "devil_verdicts_all_accept": true,
+      "review_fix_iterations": 0
+    },
+    "testing": {
+      "status": "completed",
+      "lead": "sdk-testing-lead",
+      "completed_at": "2026-04-28T12:55:00Z",
+      "tests_total": 83,
+      "flake_invocations": 690,
+      "flakes": 0,
+      "coverage_pct": 92.33,
+      "soak_actual_duration_s": 600.38,
+      "soak_mmd_s": 600,
+      "supply_chain_clean": true
+    },
+    "feedback": {
+      "status": "completed",
+      "lead": "metrics-collector + parallel F1 + improvement-planner + learning-engine + baseline-manager",
+      "completed_at": "2026-04-28T15:00:00Z",
+      "skill_patches_applied": 3,
+      "skill_patches_retained_at_h10": 3,
+      "agent_patches_applied": 4,
+      "agent_patches_retained_at_h10": 1,
+      "agent_patches_reverted_at_h10": 3,
+      "h10_revert_rationale": "Patches 5/6/7 (sdk-impl-lead, sdk-testing-lead, sdk-design-devil) baked Python-specific content into shared-core agent bodies, violating D6=Split. Reverted at user request; same content already routed to PROPOSED-SKILLS / PROPOSED-CONVENTIONS by improvement-planner. Filed as next-run improvement-planner dedup-check candidate.",
+      "g_script_patches_applied": 3,
+      "g_script_patches": ["G81.sh (v0.4.0 partition awareness)", "G90.sh #1 (generalize section list)", "G90.sh #2 (skip hidden dirs)"]
+    },
+    "implementation": {
+      "status": "completed",
+      "lead": "sdk-impl-lead",
+      "completed_at": "2026-04-27T01:30:00Z",
+      "m10_completed_at": "2026-04-28T12:00:00Z",
+      "m11_completed_at": "2026-04-28T12:15:00Z",
+      "branch": "sdk-pipeline/sdk-resourcepool-py-pilot-v1",
+      "base_sha": "b6c8e383b825a241e8e0efb1a09014bedbffa0b2",
+      "head_sha": "bd14539",
+      "commits_on_branch": 7,
+      "tests_total": 83,
+      "coverage_pct": 92.33,
+      "devil_verdicts_all_accept": true,
+      "review_fix_iterations": 0,
+      "tech_debt_scan_hits": 0,
+      "g104_alloc_budget": "PASS",
+      "g109_profile_shape": "PASS-strict-via-py-spy-v0.4.2",
+      "h7_recommendation": "APPROVE",
+      "m10_rework_applied": {
+        "fix_1_try_acquire_harness": "RESOLVED-PASS-71ns-vs-5us-budget",
+        "fix_2_contention_throughput": "RESOLVED-via-M11-rebaseline",
+        "fix_3_g109_profile_shape": "RESOLVED-PASS-strict-via-py-spy",
+        "escalation_marker": "RESOLVED-via-M11-rebaseline",
+        "escalation_doc": "runs/sdk-resourcepool-py-pilot-v1/impl/profile/profile-audit.md#0e-escalationcontention-budget-unreachable-on-current-impl"
+      },
+      "m11_rebaseline_applied": {
+        "fix_2_contention_throughput": "RESOLVED-PASS-via-rebaseline-450k",
+        "user_decision_link": "AskUserQuestion answer 'Re-baseline to 458k (recommended for v1.0.0)' on 2026-04-28",
+        "v1_1_0_tprd_draft": "runs/sdk-resourcepool-py-pilot-v1/feedback/v1.1.0-perf-improvement-tprd-draft.md",
+        "design_budget_old": 500000,
+        "design_budget_new": 450000,
+        "ci_gate_floor": 425000,
+        "measured_quiet_host_best_of_3": 458000,
+        "measured_loaded_host_best_of_15": 448650,
+        "m11_commit": "bd14539"
+      }
+    },
+    "testing": {
+      "status": "completed",
+      "lead": "sdk-testing-lead",
+      "completed_at": "2026-04-28T12:50:00Z",
+      "recommendation": "APPROVE",
+      "coverage_pct": 92.33,
+      "tests_total": 81,
+      "tests_unit_integration_leak": 81,
+      "bench_tests": 14,
+      "flake_count_10x_invocations": 690,
+      "flake_failures": 0,
+      "leak_suite_5x_pass": true,
+      "leak_harness_sensitivity_verified": true,
+      "soak_actual_duration_s": 600.38,
+      "soak_mmd_seconds": 600,
+      "soak_samples": 20,
+      "soak_total_ops": 40256000,
+      "g104_alloc_budget": "PASS",
+      "g105_mmd": "PASS",
+      "g106_drift": "PASS",
+      "g107_complexity": "PASS",
+      "g108_oracle_6_of_7": "PASS",
+      "g108_oracle_contention": "CALIBRATION-WARN",
+      "g109_profile_shape": "PASS-cited-from-impl-M10",
+      "g110_perf_exceptions": "PASS-vacuously",
+      "supply_chain_pip_audit": "PASS",
+      "supply_chain_safety_check": "PASS",
+      "license_allowlist": "PASS",
+      "devil_verdicts_no_blocker": true,
+      "review_fix_iterations": 0,
+      "rule_0_attestation": "satisfied \u2014 every \u00a711 category has \u22651 real test; every \u00a710 bench measured; \u00a711.5 --count=10 ran; coverage re-verified; supply chain re-verified; leak fixture sensitivity confirmed; zero forbidden artifacts in any pipeline-authored test",
+      "baselines_seeded": [
+        "baselines/python/performance-baselines.json",
+        "baselines/python/coverage-baselines.json",
+        "baselines/python/output-shape-history.jsonl",
+        "baselines/python/devil-verdict-history.jsonl",
+        "baselines/python/do-not-regenerate-hashes.json",
+        "baselines/python/stable-signatures.json"
+      ],
+      "h8_recommendation": "AUTO-PASS-WITH-ADVISORY",
+      "h9_recommendation": "APPROVE",
+      "escalations": []
+    },
+    "feedback": {
+      "status": "pending",
+      "lead": "metrics-collector"
+    }
+  },
+  "hitl_gates": {
+    "H0_target_dir": "passed (repo confirmed: motadata-py-sdk on main, scaffolded for pilot)",
+    "H1_tprd": "approved",
+    "H5_design": "pending",
+    "H7_impl": "approved (M11 re-baseline applied; APPROVE)",
+    "H7b_mid_impl": "passed (informational; cancellation contract matched design; see runs/sdk-resourcepool-py-pilot-v1/impl/h7b-summary.md)",
+    "H8_perf": "pending \u2014 recommendation AUTO-PASS-WITH-ADVISORY (testing/h8-summary.md). One CALIBRATION-WARN on contention 32:4 host-load variance; not a code regression; no waiver needed.",
+    "H9_testing": "pending \u2014 recommendation APPROVE (testing/h9-summary.md).",
+    "H10_merge": "approved (2026-04-28; user accepted recommendation post-revert of 3 language-contaminated agent patches)"
+  },
+  "notes": [
+    "User invoked /run-sdk-addition (not registered as slash command); proceeded per commands/run-sdk-addition.md contract.",
+    "User-supplied SDK_TARGET_DIR had typo (motadata-py-sdkj); corrected to motadata-py-sdk (verified to exist + git repo + has pilot scaffold commit b6c8e38).",
+    "Auto mode active; intake will gate at H1 only on hard ambiguity (TPRD is detailed Mode A, manifests populated).",
+    "First Python pilot \u2014 Phase B of v0.5.0 language-agnostic work. Decisions D2 (Lenient debt-bearer) + D6 (Split rule/examples) are empirically tested by this run.",
+    "g90_patch_applied: 2026-04-27T00:00:14Z \u2014 orchestrator applied user-authorized Option 2 patch to scripts/guardrails/G90.sh (generalized hardcoded section list 'ported_verbatim','ported_with_delta','sdk_native' to iterate over all skills.* sections). Reason: G90 v0.3.0-straighten era did not read the python_specific section added by v0.5.0 Phase A index schema 1.1.0 (commit 3bff99c), reporting the four python-* skills as 'present on fs but not indexed' even though they were correctly indexed. Generalizing future-proofs against the next language-adapter PR (e.g. rust_specific). Verification: G90 PASS (45 skills); check-doc-drift.sh PASS (G06+G90+G116). H1 unblocked + approved."
+  ],
+  "user_hard_constraints": {
+    "zero_tprd_tech_debt": {
+      "stated_at": "2026-04-27 (run start, before intake spawn)",
+      "rule": "ZERO tech debt on the TPRD. No deferring, skipping, or partial implementation of any TPRD-declared functionality, test type, performance gate, milestone slice, or retrospective hook. Every \u00a72 Goal, every \u00a75 API symbol, every \u00a710 Perf Target, every \u00a711 Test Strategy item (unit + integration + bench + leak + race), every \u00a713 milestone S1-S6, and every Appendix C retrospective question MUST ship complete in this run.",
+      "explicit_carve_outs": [
+        "\u00a73 Non-Goals are written contracts (e.g. 'no OTel wiring this pilot', 'no Python 3.10 backport', 'no thread pool', 'no streaming acquire'). These remain out of scope as the TPRD already accepted that scope decision \u2014 they are NOT tech debt.",
+        "Skills/guardrails the TPRD \u00a7Skills-Manifest / \u00a7Guardrails-Manifest declare as missing/WARN are filed to docs/PROPOSED-SKILLS.md / docs/PROPOSED-GUARDRAILS.md per pipeline rule 23 \u2014 that is not skipping; it is the documented promotion path."
+      ],
+      "forbidden_artifacts": [
+        "TODO / FIXME / XXX / HACK comments in pipeline-authored code",
+        "pass # placeholder",
+        "raise NotImplementedError",
+        "@pytest.mark.skip without an issue link AND user H7/H9 sign-off",
+        "Empty test bodies",
+        "Bench files that don't actually run a measured loop",
+        "[traces-to:] markers pointing at TPRD-\u00a7 entries that have no implementation",
+        "Stub Example_* docstrings without runnable assertions",
+        "Retrospective answers like 'TBD' / 'see follow-up' on Appendix C questions"
+      ],
+      "enforcement": [
+        "sdk-intake-agent records this constraint in intake/intake-summary.md so every downstream lead inherits it via the context dir.",
+        "sdk-impl-lead must run an explicit 'tech-debt scan' (grep -nE 'TODO|FIXME|XXX|HACK|NotImplementedError|pass\\s*#\\s*placeholder' on all pipeline-authored files) at end of every wave.",
+        "sdk-testing-lead must verify every \u00a711 test category produced \u22651 real test, every \u00a710 bench is runnable + measured, and \u00a711.5 --count=10 flake detection actually ran.",
+        "Phase 4 retrospective MUST answer all 5 Appendix C questions with concrete data drawn from this run's artifacts; no 'will-revisit-next-run' answers.",
+        "guardrail-validator G14 (Implementation Completeness, CLAUDE.md rule 14) is BLOCKER for this run \u2014 no waivers."
+      ]
+    }
+  }
+}

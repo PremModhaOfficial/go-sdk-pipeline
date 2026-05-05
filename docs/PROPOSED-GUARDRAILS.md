@@ -155,6 +155,16 @@ Per `settings.json § safety_caps.new_guardrails_per_run = 0`, none of the above
 
 ---
 
+## Auto-filed from run `sdk-dragonfly-s2` on 2026-04-18
+
+Source: `improvement-planner` Wave F6, derived from retro patterns P1/P2/P4/P5 and anomaly flags A1/A2/A3.
+
+### G25 — Perf-constraint dep-floor check (HIGH confidence)
+
+(See body above.)
+
+---
+
 ## Auto-filed from run `sdk-dragonfly-p1-v1` on 2026-04-22 (G24 BLOCKER halt)
 
 Source: `sdk-intake-agent` Wave I3. G24 BLOCKER-failed on 10 declared guardrails whose scripts do not exist at `scripts/guardrails/<id>.sh`. Pipeline halted with exit 6 before Phase 0.5. Each entry below maps to pipeline `CLAUDE.md` rule-set 28 (learning-engine safeguards) and rule-set 32 (Performance-Confidence Regime) and requires human PR authorship before this TPRD (or any TPRD referencing these IDs) can clear intake.
@@ -176,3 +186,107 @@ Source: `sdk-intake-agent` Wave I3. G24 BLOCKER-failed on 10 declared guardrails
 
 Per command spec §Exit codes and `commands/run-sdk-addition.md`, this is an **exit 6** halt. The run-summary marks intake BLOCKED and H1 is not asked. The remaining waves (I4 clarifications, I5 mode detection, I6 completeness, I7 H1 gate) are skipped; Phase 0.5 extension-analyze does not run. Re-run requires either (a) human-authored scripts at `scripts/guardrails/G{81,83,84,104,105,106,107,108,109,110}.sh` + `chmod +x`, or (b) a TPRD revision that drops the unresolved IDs from §Guardrails-Manifest (not recommended — rule 32 axes 2-7 are load-bearing for the TPRD's declared perf targets in §10).
 
+---
+
+## Auto-filed from run `sdk-resourcepool-py-pilot-v1` on 2026-04-28 (F2 improvement-planner)
+
+Source: `improvement-planner` Wave F2 of Phase 4 feedback. First Python pilot (v0.5.0 Phase B).
+Derived from: intake-retro G90 BLOCKER pattern, impl-retro M10 Fix 3 (py-spy), testing-retro
+heap_bytes drift false-positive, impl-retro M10 Fix 1 (bench-harness shape), intake-retro
+G23 WARN on `feedback-analysis` SKILL.md frontmatter.
+
+### G-SCHEMA-SECTION-COVERAGE — Skill-index schema-section coverage (HIGH confidence)
+
+- **Phase**: Intake (Pre-G90; runs at I0/H1 preflight).
+- **Severity**: BLOCKER.
+- **Motivation**: G90 BLOCKER at H1 caused by hardcoded section list (`ported_verbatim`,
+  `ported_with_delta`, `sdk_native`) failing to iterate the new `python_specific` section
+  added in v0.5.0 Phase A schema 1.1.0. Required user-authorized out-of-band patch to G90.sh.
+  Schema evolution outpacing guardrail body is a recurring class.
+- **Check logic**:
+  ```
+  Read .claude/skills/skill-index.json → enumerate top-level keys under .skills.*
+  For each guardrail at scripts/guardrails/G*.sh that references skill-index.json:
+    grep the script for hardcoded section names matching .skills.*
+    if any current schema section is NOT referenced (and the script iterates by literal name): emit BLOCKER
+  ```
+- **Pass criteria**: every `skills.*` schema section is iterated by every guardrail that walks
+  the index (or the guardrail uses a generic `skills.*` glob).
+- **Fail criteria**: BLOCKER on first hardcoded gap.
+- **Consumer**: pre-G90 preflight; consumed by `sdk-intake-agent` H1 closure.
+
+### G-PY-SPY-INSTALLED — py-spy installed in venv (HIGH confidence)
+
+- **Phase**: Impl (M3.5 preflight; runs only when G109 is in active-packages).
+- **Severity**: BLOCKER (gated on G109 active).
+- **Motivation**: py-spy was not pre-installed; G109 returned "INCOMPLETE for strict
+  surprise-hotspot" at M3.5; M10 ad-hoc install resolved. Preflight removes the round-trip.
+- **Check logic**:
+  ```
+  if G109 in active-packages.json AND target_language == "python":
+    which py-spy || pip show py-spy || emit BLOCKER "py-spy required for G109 strict mode"
+  ```
+- **Pass criteria**: py-spy on PATH or installed in venv.
+- **Fail criteria**: BLOCKER if absent and G109 active.
+- **Consumer**: `sdk-impl-lead` (M3.5 preflight); `sdk-profile-auditor`.
+
+### G-DRIFT-MAGNITUDE — Drift-detector magnitude floor (MEDIUM confidence)
+
+- **Phase**: Testing (T5.5 drift verdict).
+- **Severity**: WARN-only (does not BLOCKER; reclassifies trivial drifts as PASS-with-note).
+- **Motivation**: sdk-drift-detector triggered statistically significant positive trend on
+  `heap_bytes` (\|t\|=14.97) at slope 0.07 bytes / million ops — operationally negligible
+  GC oscillation. Controlling signals (Gen1, Gen2) flat. Annotated PASS in-phase but the
+  alarm consumed reviewer attention.
+- **Check logic**:
+  ```
+  For each drift signal that reports FAIL (significant slope):
+    compute total_drift = slope × MMD_seconds × ops_per_sec
+    if total_drift < magnitude_floor (configurable per signal; e.g. 1KB for heap_bytes):
+      reclassify as PASS-WITH-NOTE; do not block.
+  ```
+- **Pass criteria**: N/A (reclassifier).
+- **Fail criteria**: N/A.
+- **Consumer**: `sdk-drift-detector`.
+
+### G-HARNESS-SHAPE — Bench-harness shape sanity (MEDIUM confidence)
+
+- **Phase**: Impl (M3.5 / M7 bench review).
+- **Severity**: WARN.
+- **Motivation**: `bench_try_acquire` measured 7.2 µs because async-release overhead
+  polluted the timed window; counter-mode harness BATCH=128 isolated the actual op (71 ns).
+  Catches harness-shape errors pre-devil-review. Recurring pattern: sdk-dragonfly-s2 also
+  required late-stage bench harness rework.
+- **Check logic**:
+  ```
+  For each bench function in tests/bench/ (Python: pytest-benchmark fixtures; Go: Benchmark*):
+    parse the timed window (the fn body or pytest-benchmark.pedantic loop)
+    if any await/<-chan/synchronous-blocking-IO/release call appears inside the timed window
+      AND the function name contains keywords like "try", "fast", "sync":
+      emit WARN: "potential async-overhead pollution; consider counter-mode harness"
+  ```
+- **Pass criteria**: timed window contains only the operation under measurement.
+- **Fail criteria**: WARN (not BLOCKER); reviewer judges.
+- **Consumer**: `sdk-impl-lead`, `sdk-benchmark-devil`.
+
+### G-SKILLMD-VERSION — SKILL.md frontmatter version present (LOW confidence)
+
+- **Phase**: Intake (I2 §Skills-Manifest validation adjacency).
+- **Severity**: WARN.
+- **Motivation**: `feedback-analysis` SKILL.md missing `version:` frontmatter field (G23
+  WARN this run). skill-index.json had the correct version 1.0.0 so the run proceeded, but
+  the SKILL.md body was the source of truth gap. Defense-in-depth on rule 23.
+- **Check logic**:
+  ```
+  for each .claude/skills/<name>/SKILL.md:
+    head -20 SKILL.md | grep -E "^version:\s*[0-9]+\.[0-9]+\.[0-9]+" || emit WARN
+  ```
+- **Pass criteria**: every SKILL.md has `version: X.Y.Z` in frontmatter.
+- **Fail criteria**: WARN per missing skill (non-blocking).
+- **Consumer**: `sdk-intake-agent` Wave I2.
+
+---
+
+## Cap respected
+
+Per `settings.json § safety_caps.new_guardrails_per_run = 0`, none of the above are created at runtime. All entries are filed here for human PR promotion only.

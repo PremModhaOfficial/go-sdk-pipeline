@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0.0",
   "name": "python",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "language-adapter",
   "description": "Python SDK pipeline adapter. Target: Python 3.12+ async-capable client SDK (motadata-py-sdk or equivalent).",
   "depends": ["shared-core@>=1.0.0"],
@@ -10,11 +10,20 @@
   "agents": [],
   "skills": [
     "asyncio-cancellation-patterns",
+    "nats-python-client-patterns",
+    "pydantic-settings-patterns",
     "pytest-table-tests",
     "python-asyncio-patterns",
-    "python-class-design"
+    "python-class-design",
+    "python-otel-instrumentation"
   ],
-  "guardrails": [],
+  "guardrails": [
+    "G120",
+    "G121",
+    "G122",
+    "G123",
+    "G124"
+  ],
 
   "toolchain": {
     "build": "python -m build",

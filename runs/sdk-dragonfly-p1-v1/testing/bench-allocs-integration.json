@@ -1,0 +1,11 @@
+{
+  "Get": 20,
+  "Set": 22,
+  "GetJSON": 32,
+  "SetJSON": 25,
+  "SAdd": 20,
+  "ZAdd": 21,
+  "Scan": 12406,
+  "_measured_with": "docker.dragonflydb.io/dragonflydb/dragonfly:latest (sha 9148409c3977) via testcontainers-go v0.42.0, 100 iterations, benchmem",
+  "_note": "Real Dragonfly transport (TCP) consistently shows FEWER allocations than miniredis per op — miniredis synthesizes more per-call Go objects than real RESP decode path does. Wall-clock is higher (network RTT). Same bench harness as miniredis suite; build tag //go:build integration."
+}
