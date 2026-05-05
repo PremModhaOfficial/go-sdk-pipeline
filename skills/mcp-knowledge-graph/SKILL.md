@@ -42,7 +42,7 @@ The graph complements — does NOT replace — the per-run `runs/<run-id>/decisi
 | -------- | --------------------------- | --------------------------------------------------- |
 | Run      | `run-<uuid>`                | Created at end of Phase 4 by `metrics-collector`    |
 | Phase    | `<run-id>:<phase-name>`     | One per phase per run                               |
-| Agent    | `<agent-name>`              | Global; name matches `.claude/agents/<name>.md`     |
+| Agent    | `<agent-name>`              | Global; name matches `agents/<name>.md`     |
 | Skill    | `<skill-name>@<version>`    | Version-scoped; new node on bump                    |
 | Pattern  | `pattern-<slug>`            | Created on first occurrence, observations on recur  |
 | Defect   | `defect-<run-id>-<seq>`     | Written by `root-cause-tracer`                      |

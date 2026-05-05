@@ -14,7 +14,7 @@ Always runs — there is no bootstrap phase. A complete `--spec <file>` may redu
 
 - `--spec <path>` or NL request → seeds `runs/<run-id>/tprd.md`
 - `$SDK_TARGET_DIR` tree (read-only)
-- `.claude/skills/skill-index.json` (static, human-curated)
+- `skills/skill-index.json` (static, human-curated)
 - `scripts/guardrails/` directory listing (for guardrail existence check)
 
 ## Waves
@@ -28,7 +28,7 @@ Always runs — there is no bootstrap phase. A complete `--spec <file>` may redu
 ### Wave I2 — §Skills-Manifest Validation (NEW)
 **Agent**: `sdk-intake-agent`
 **Severity**: WARN on miss — pipeline continues; misses filed to `docs/PROPOSED-SKILLS.md`
-**Purpose**: Every skill declared in TPRD §Skills-Manifest should exist in `.claude/skills/skill-index.json` at version ≥ required. Missing / under-versioned skills produce a warning but NEVER halt the run — skill authorship is a human PR concern, not a pipeline blocker.
+**Purpose**: Every skill declared in TPRD §Skills-Manifest should exist in `skills/skill-index.json` at version ≥ required. Missing / under-versioned skills produce a warning but NEVER halt the run — skill authorship is a human PR concern, not a pipeline blocker.
 
 **Check**:
 ```
@@ -101,6 +101,63 @@ Based on §1 Request Type, set `mode: A|B|C` in manifest. Mode B and C gate Phas
 
 **Output**: `runs/<run-id>/context/active-packages.json`, `runs/<run-id>/context/toolchain.md`.
 
+### Wave I-DOC — Documentation Target Resolution (NEW)
+**Agent**: `sdk-intake-agent`
+**Severity**: BLOCKER on unresolved ambiguity at H1 timeout (default Revise).
+**Purpose**: Decide which target paths inside `$SDK_TARGET_DIR` will receive the doc bundle (README / USAGE / ARCHITECTURE / CHANGELOG / MIGRATION) produced by Phase 3.5.
+
+**Resolution algorithm**:
+1. If TPRD declares `§Docs-Manifest` with `targets: [...]` → use as-is.
+2. Else if Mode A → infer `targets = [<new-module-path-from-mode.json>]`. Doc location is the new module dir; no question.
+3. Else (Mode B/C) → consult `mode.json.target_package`. If unambiguous (single dir touched per `extension/api-diff.md` or §1 scope), set targets = that one path; record inference.
+4. Else (Mode B/C, multiple plausible targets, or no clear scope) → emit `AskUserQuestion` at H1 with up to 4 candidate paths derived from impl scope.
+
+**TPRD optional section**:
+
+```markdown
+## §Docs-Manifest
+targets:
+  - src/<sdk>/<module>/
+skip: false                # if true, Phase 3.5 D1 wave is skipped entirely
+examples_allowed: false    # if true, doc-writer may mine an examples/ dir already in scope; never authors new examples
+```
+
+**Output**: `runs/<run-id>/intake/docs-manifest.json`
+```json
+{ "targets": ["..."], "skip": false, "examples_allowed": false, "source": "tprd|inferred|user-confirmed" }
+```
+
+### Wave I-VER — Versioning Decision (NEW)
+**Agent**: `sdk-intake-agent`
+**Severity**: BLOCKER on unconfirmed inference at H1 timeout.
+**Purpose**: Decide the SemVer bump and resulting version that Phase 3.5 V1 will stamp onto the active language pack's version artifacts.
+
+**Resolution algorithm**:
+1. Read current version from the active language pack's primary version artifact (resolved via `context/active-packages.json` → `toolchain.version_artifacts[0]`). Examples: latest `git tag` matching `v*`, `pyproject.toml [project].version`, `package.json version`.
+2. If TPRD declares `§Versioning` with explicit `bump:` and/or `next:` → use as-is, skip inference.
+3. Else infer `bump`:
+   - `MAJOR` if §12 lists any `breaking: true` item OR removes/renames an existing public symbol.
+   - `MINOR` if §1 declares Mode A (new module) OR §7 adds new public symbols without breakage.
+   - `PATCH` otherwise (Mode C refactor, internal-only changes).
+4. Compute `next = increment(current, bump)`.
+5. Always emit `AskUserQuestion` at H1 with the inference + reasoning unless `§Versioning.confirmed: true` is present in TPRD. User options: Confirm / Override (free-form semver) / Set to PATCH / Set to MINOR / Set to MAJOR.
+
+**TPRD optional section**:
+
+```markdown
+## §Versioning
+current: 1.3.0           # optional override; usually inferred from artifact
+bump: MINOR              # PATCH | MINOR | MAJOR (optional; inferred if absent)
+next: 1.4.0              # optional override; usually computed from current + bump
+confirmed: false         # if true, skip H1 confirmation question
+reasoning: "..."         # optional human note attached to changelog entry
+```
+
+**Output**: `runs/<run-id>/intake/version-decision.json`
+```json
+{ "current": "1.3.0", "next": "1.4.0", "bump": "MINOR", "reasoning": "...", "source": "tprd|inferred|user-confirmed", "user_confirmed_at": "<ISO>" }
+```
+
 ### Wave I6 — Completeness Check
 **Agent**: `sdk-intake-agent`
 Runs `spec-completeness-guardrail` (G20 + G21):
@@ -113,10 +170,13 @@ FAIL → back to I4; else → I7.
 
 ### Wave I7 — HITL Gate H1 (TPRD Acceptance)
 **Lead**: `sdk-intake-agent`
-**Artifact**: canonical `runs/<run-id>/tprd.md` + manifest-check reports
+**Artifact**: canonical `runs/<run-id>/tprd.md` + manifest-check reports + `docs-manifest.json` + `version-decision.json`
+**Sub-questions** (only emitted when not pre-resolved):
+- Doc targets — fired by I-DOC step 4 (Mode B/C ambiguity only)
+- Version bump confirmation — fired by I-VER unless `§Versioning.confirmed: true`
 **Options**: Approve / Revise / Cancel
 **Default**: Revise (timeout 24h)
-**Bypass**: `--auto-approve-tprd` (CI only; still requires I2 + I3 PASS)
+**Bypass**: `--auto-approve-tprd` (CI only; still requires I2 + I3 PASS, and forces I-VER inference to `confirmed: true` with a logged warning if no §Versioning declaration is present)
 
 ## Exit artifacts
 
@@ -125,6 +185,8 @@ FAIL → back to I4; else → I7.
 - `runs/<run-id>/intake/guardrails-manifest-check.md` — PASS verdict (FAIL halts pipeline with exit 6)
 - `runs/<run-id>/intake/clarifications.jsonl` — every Q + A (may be empty for detailed TPRDs)
 - `runs/<run-id>/intake/mode.json` — `{ "mode": "A|B|C", "target_package": "...", "new_exports": [...] }`
+- `runs/<run-id>/intake/docs-manifest.json` (NEW) — doc target paths, skip flag, examples policy; consumed by Phase 3.5 D1
+- `runs/<run-id>/intake/version-decision.json` (NEW) — semver bump + next + reasoning; consumed by Phase 3.5 V1
 - `runs/<run-id>/context/active-packages.json` (NEW v0.4.0) — resolved package set for this run; consumed by phase leads + guardrail-validator
 - `runs/<run-id>/context/toolchain.md` (NEW v0.4.0) — language adapter's toolchain digest; informational
 - `runs/<run-id>/state/run-manifest.json` updated with intake completion

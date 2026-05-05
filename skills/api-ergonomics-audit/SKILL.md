@@ -56,7 +56,7 @@ An SDK succeeds or fails on the first ten minutes of a new integrator's experien
 
 ## Audit output format
 
-Per `.claude/agents/sdk-api-ergonomics-devil-go.md` and `.claude/agents/sdk-api-ergonomics-devil-python.md`: re-write the quickstart by hand from the README; if the result is >5 lines OR needs unfamiliar primitives, mark NEEDS-FIX with a finding ID like `IM-401`. Every finding carries a suggested fix. Verdicts land in `runs/<id>/impl/reviews/api-ergonomics-devil-<lang>.md`. Review-fix loop per `review-fix-protocol`.
+Per `agents/sdk-api-ergonomics-devil-go.md` and `agents/sdk-api-ergonomics-devil-python.md`: re-write the quickstart by hand from the README; if the result is >5 lines OR needs unfamiliar primitives, mark NEEDS-FIX with a finding ID like `IM-401`. Every finding carries a suggested fix. Verdicts land in `runs/<id>/impl/reviews/api-ergonomics-devil-<lang>.md`. Review-fix loop per `review-fix-protocol`.
 
 ## Greenfield vs retrofit
 

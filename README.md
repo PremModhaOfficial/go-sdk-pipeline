@@ -52,8 +52,8 @@ export SDK_TARGET_DIR=/path/to/motadata-go-sdk/src/motadatagosdk
 ## Directory Layout
 
 ```
-.claude/agents/         — Agent prompts
-.claude/skills/         — Skill files (versioned)
+agents/         — Agent prompts
+skills/         — Skill files (versioned)
 phases/                 — Phase docs
 commands/               — Slash commands
 runs/<run-id>/          — Per-run state + logs
@@ -67,6 +67,27 @@ docs/                   — Pipeline docs (backlog, architecture notes)
 
 All agents, skills, and guardrails follow `AGENT-CREATION-GUIDE.md` and `SKILL-CREATION-GUIDE.md`. New skills must be versioned (`version:` frontmatter) and authored via human PR — there is no runtime skill synthesis. See `docs/PROPOSED-SKILLS.md` for the human-review backlog.
 
+## Install as a Claude Code plugin (v0.7+)
+
+This repository is a [Claude Code plugin](https://docs.claude.com/en/docs/claude-code/plugins). The plugin manifest is at `.claude-plugin/plugin.json`.
+
+```bash
+# Direct install from a published marketplace entry (replace with the published path):
+claude plugin install <marketplace>/motadata-sdk-pipeline
+
+# Or develop locally inside this repo:
+claude --plugin-dir .
+```
+
+When loaded, the harness picks up:
+
+- **Slash commands** — `commands/run-sdk-addition`, `commands/preflight-tprd`
+- **Subagents** — ~80 entries under `agents/` (devil fleet, phase leads, doc-writer, version-applier, learning-engine, etc.)
+- **Skills** — ~50 entries under `skills/<name>/SKILL.md`
+- **PostToolUse hook** — `hooks/log-bash.sh` (Bash audit trail; appended to `.claude/audit/bash-events.jsonl` locally)
+
+`.mcp.json` is intentionally **not** part of the plugin distribution. MCP servers used by the pipeline (context7, code-graph, neo4j-memory, serena) are configured for this repo's local dev in `.claude/settings.json`. Plugin consumers register their own.
+
 ## License
 
-(Match target SDK license.)
+Apache-2.0 — see [`LICENSE`](LICENSE).

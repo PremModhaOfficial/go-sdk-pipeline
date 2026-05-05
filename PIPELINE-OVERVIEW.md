@@ -3,7 +3,7 @@
 # motadata-sdk-pipeline — Executive Overview
 
 > **Audience**: CXO + Tech Leads
-> **Version**: 0.3.0
+> **Version**: 0.6.0
 > **Date**: 2026-04-24
 > **Status**: Production-ready — MCP-enhanced knowledge graph, perf-confidence regime, compensating-baseline safety net, deterministic-first reviewer gate
 
@@ -104,8 +104,8 @@ Effects materialize in subsequent runs. A pattern observed in Dragonfly + S3 (2-
 | Decision | Who decides | Mechanism |
 |---|---|---|
 | Architecture / API contract | **Human** | TPRD authoring |
-| Skill prescriptions | **Human** | PR-merge into `.claude/skills/` |
-| Agent prompts (initial) | **Human** | PR-merge into `.claude/agents/` |
+| Skill prescriptions | **Human** | PR-merge into `skills/` |
+| Agent prompts (initial) | **Human** | PR-merge into `agents/` |
 | Guardrail scripts | **Human** | PR-merge into `scripts/guardrails/` |
 | Implementation against contract | **Pipeline** | Phase 2 TDD |
 | Devil review verdicts | **Pipeline** (devil agents) | Block / approve per phase |
@@ -123,7 +123,7 @@ Effects materialize in subsequent runs. A pattern observed in Dragonfly + S3 (2-
 |---|---:|---|
 | Phases | **5** | Intake, Design, Impl, Testing, Feedback (+ 0.5 for Mode B/C) |
 | Agents | **38** | 5 leads, 13 devils, 5 perf/drift specialists, 4 Mode B/C helpers, 11 ported feedback-track |
-| Skills | **41** | 20 SDK-native + 21 generic Go/test/meta/observability/mcp (see `.claude/skills/skill-index.json` for the live list) |
+| Skills | **41** | 20 SDK-native + 21 generic Go/test/meta/observability/mcp (see `skills/skill-index.json` for the live list) |
 | Guardrail scripts | **52** | Mechanical pass/fail checks across all phases (catalog IDs G01–G116) |
 | HITL gates | **7** | Explicit human approval at every transition |
 | Slash commands | **2** | `/run-sdk-addition`, `/preflight-tprd` |

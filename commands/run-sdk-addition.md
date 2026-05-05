@@ -14,7 +14,9 @@ Launches the NFR-driven SDK-addition pipeline against `$SDK_TARGET_DIR` (Go SDK 
 |------|---------|-------------|
 | `--target <path>` | `$SDK_TARGET_DIR` env | Target Go SDK dir (must be git repo) |
 | `--spec <file>` | — | Path to pre-written TPRD (recommended; must include §Skills-Manifest + §Guardrails-Manifest) |
-| `--phases <list>` | `intake,design,impl,testing,feedback` | Comma-separated subset to run |
+| `--phases <list>` | `intake,design,impl,testing,docs,feedback` | Comma-separated subset to run |
+| `--skip-docs` | false | Skip Phase 3.5 Documentation entirely (CI escape; runs feedback directly after testing) |
+| `--skip-docs-gate` | false | Run Phase 3.5 but auto-approve H9.5 (CI only; logged) |
 | `--resume <run-id>` | — | Resume a halted run from its last checkpoint in `runs/<run-id>/state/run-manifest.json` |
 | `--dry-run` | false | Don't write to target; produce `preview.md` |
 | `--accept-perf-regression <n>` | — | Override `sdk-benchmark-devil-go` for n% regression |
@@ -58,6 +60,7 @@ Launches the NFR-driven SDK-addition pipeline against `$SDK_TARGET_DIR` (Go SDK 
    - Design
    - Implementation (on `sdk-pipeline/<run-id>` branch)
    - Testing
+   - **Documentation (Phase 3.5)** — runs only on Testing PASS; produces README/USAGE/ARCHITECTURE/CHANGELOG (Keep-a-Changelog format) per target declared in `intake/docs-manifest.json`, MIGRATION.md on MAJOR/breaking; applies semver to per-language version artifacts (`intake/version-decision.json`); proposes optional root-README patch (never auto-applied). Skipped on `--skip-docs` or TPRD `§Docs-Manifest: skip: true`. Failures degrade rather than halt.
    - Feedback (learning-engine patches to existing skills + user notification file for H10 review)
 6. Emit `runs/<run-id>/run-summary.md` with metrics, decisions, branch name, next steps
 7. H10: user decides merge / keep branch / delete branch
@@ -72,7 +75,7 @@ Launches the NFR-driven SDK-addition pipeline against `$SDK_TARGET_DIR` (Go SDK 
 
 ## Delegates to
 
-`sdk-intake-agent` → (if B/C) `sdk-existing-api-analyzer-go` + `sdk-marker-scanner` → `sdk-design-lead` → `sdk-impl-lead` → `sdk-testing-lead` → `learning-engine`
+`sdk-intake-agent` → (if B/C) `sdk-existing-api-analyzer-go` + `sdk-marker-scanner` → `sdk-design-lead` → `sdk-impl-lead` → `sdk-testing-lead` → `sdk-doc-writer` ‖ `sdk-version-applier` → `learning-engine`
 
 Each lead orchestrates its phase per the phase doc in `phases/<PHASE>-PHASE.md`.
 

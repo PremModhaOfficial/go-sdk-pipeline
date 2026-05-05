@@ -17,7 +17,7 @@ The pipeline has two nested feedback loops:
 │  ┌────────────────────────────────────────────────────────┐    │
 │  │  SINGLE-RUN LOOP (one TPRD → one branch)               │    │
 │  │                                                          │    │
-│  │   TPRD → Intake → Design → Impl → Testing → Feedback   │    │
+│  │   TPRD → Intake → Design → Impl → Testing → Docs → Feedback   │
 │  │                ↑                                         │    │
 │  │                └── review-fix sub-loop (per phase)      │    │
 │  │                                                          │    │
@@ -52,7 +52,7 @@ docker --version            # for testcontainers
 jq --version
 
 # 4. Verify skill library + guardrail scripts are intact
-python3 -c "import json; json.load(open('.claude/skills/skill-index.json'))"
+python3 -c "import json; json.load(open('skills/skill-index.json'))"
 ls scripts/guardrails/G*.sh
 ```
 
@@ -110,7 +110,7 @@ Or by hand:
 
 ```bash
 # Are all declared skills in the library at ≥ required version?
-jq -r '.skills[] | .[].name' .claude/skills/skill-index.json | sort > /tmp/have.txt
+jq -r '.skills[] | .[].name' skills/skill-index.json | sort > /tmp/have.txt
 # Extract §Skills-Manifest skill names from your TPRD into /tmp/need.txt
 comm -23 /tmp/need.txt /tmp/have.txt   # any output = WARN (non-blocking; filed to docs/PROPOSED-SKILLS.md)
 
@@ -200,6 +200,20 @@ If anything is missing, **author it via PR first**. The pipeline will not synthe
 │                      ═══ HITL H9 ═══  approve test results               │
 │      │                                                                    │
 │      ▼                                                                    │
+│  Phase 3.5 Docs      D1: sdk-doc-writer  (parallel with V1)               │
+│                          README.md / USAGE.md / ARCHITECTURE.md /         │
+│                          CHANGELOG.md (Keep-a-Changelog) /                │
+│                          MIGRATION.md (only on MAJOR or §12 breaking)     │
+│                      V1: sdk-version-applier (parallel with D1)           │
+│                          per-language artifacts (git tag, pyproject.toml, │
+│                          package.json, Cargo.toml, ...) + module-path     │
+│                          rewrite on Go MAJOR                              │
+│                      D2: cross-ref reconciliation (install snippets)      │
+│                      D3: root README diff proposal (NEVER auto-applied)   │
+│                      ═══ HITL H9.5 ═══  approve docs + version + (opt)   │
+│                                          root README patch               │
+│      │                                                                    │
+│      ▼                                                                    │
 │  Phase 4   Feedback  F1: metrics-collector                                │
 │                      F2: phase-retrospector                               │
 │                      F3: root-cause-tracer                                │
@@ -234,6 +248,7 @@ If anything is missing, **author it via PR first**. The pipeline will not synthe
 | **H7b** | Impl mid | partial diff (long runs only) | Continue / Halt | Continue (48h) |
 | **H7** | Impl | final diff on `sdk-pipeline/<run-id>` | Approve / Revise / Reject | Revise (24h) |
 | **H9** | Testing | `testing/coverage.txt`, `testing/bench-compare.md`, flake report | Approve / Revise / Reject | Revise (24h) |
+| **H9.5** | Docs | `docs/diff.md`, `docs/regen-guard-report.md`, `docs/version-applied.md`, `docs/root-readme-proposal.md` (if any) | Approve all / Approve docs+version, skip root / Revise / Reject | Revise (24h) |
 | **H10** | Feedback | `run-summary.md` + final diff | Merge rec / Keep branch / Delete | Keep branch (72h) |
 
 Each gate emits `AskUserQuestion` with structured options + a link to the review artifacts. You are never asked to read the whole TPRD again — only the delta since the last gate.
@@ -275,6 +290,8 @@ When a devil agent emits `NEEDS-FIX`:
 | Decision log | ≤15 entries per agent per run | rule 11 |
 | Budget caps | soft → warn; hard → user confirm | rule 22 |
 | Intake clarifying-Qs | ≤5 (target 0 with detailed TPRD) | INTAKE-PHASE.md |
+| Doc additive-regen retries | 3 per modified file | DOCUMENTATION-PHASE.md |
+| Doc revision retries (H9.5 Revise) | 3 | DOCUMENTATION-PHASE.md |
 
 ---
 
@@ -301,7 +318,7 @@ Run N completes → Feedback phase:
       ├─ existing-skill body patches (≤3)    → auto-apply IF:
       │                                         - confidence=high
       │                                         - 2+ run recurrence
-      │                                       writes: .claude/skills/<name>/SKILL.md
+      │                                       writes: skills/<name>/SKILL.md
       │                                               bump version MINOR
       │                                               append evolution-log.md
       │                                               append notification line
@@ -360,6 +377,14 @@ runs/<run-id>/
 │   ├── bench-compare.md
 │   ├── leak-report.txt
 │   └── vuln-report.txt
+├── docs/
+│   ├── manifest.json            ← targets + files written + skip reasons
+│   ├── diff.md                  ← per-file doc diff (review artifact)
+│   ├── regen-guard-report.md    ← additive-regen verdict
+│   ├── version-applied.md       ← list of version artifacts touched
+│   ├── version-artifacts.json   ← { tag, artifacts: [...] }
+│   ├── xref-patch.md            ← D2 cross-ref reconciliation
+│   └── root-readme-proposal.md  ← (conditional) D3 root patch diff
 ├── feedback/
 │   ├── metrics.json
 │   ├── retro-<phase>.md × 4
@@ -502,9 +527,14 @@ Your between-run responsibilities:
 | Resume a halted run | `/run-sdk-addition --resume <run-id>` |
 | Check a TPRD before running | `/preflight-tprd --spec runs/my-tprd.md` |
 | Check determinism | `--seed 42` twice, diff outputs |
-| Add a new skill | Write `.claude/skills/<name>/SKILL.md` offline, PR, merge. Then reference it in next TPRD |
+| Add a new skill | Write `skills/<name>/SKILL.md` offline, PR, merge. Then reference it in next TPRD |
 | Patch an existing skill | Let `learning-engine` do it (auto, Phase 4) OR edit + bump version + append evolution-log |
 | Audit what's stale | `/run-sdk-addition --phases feedback` reruns drift + coverage |
+| Skip docs entirely | `--skip-docs` (CI escape; Phase 3.5 not run, no version stamped) |
+| Re-author docs only | `--phases docs` (re-runs sdk-doc-writer + sdk-version-applier from existing intake artifacts) |
+| Override inferred version | Add `§Versioning: { bump, next, confirmed: true }` to TPRD before run |
+| Pin doc target paths | Add `§Docs-Manifest: { targets: [...] }` to TPRD before run |
+| Skip docs for one run | TPRD `§Docs-Manifest: { skip: true }` |
 | Revert a learning-engine patch | Open `runs/<run-id>/feedback/learning-notifications.md`; follow the per-patch revert pointer (git revert or restore from evolution-log.md predecessor) |
 | Emergency halt | Decline any HITL gate → exit 1 |
 

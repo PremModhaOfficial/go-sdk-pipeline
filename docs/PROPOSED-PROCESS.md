@@ -44,11 +44,11 @@ Source: `improvement-planner` Wave F6, derived from Phase 4 backlog + retrospect
 <!-- Run: sdk-resourcepool-py-pilot-v1 | Date: 2026-04-30 | Confidence: MEDIUM -->
 
 - **current**: TOOLCHAIN-CASCADE — sdk-impl-lead correctly tagged each gate INCOMPLETE during run-2 but kept marching, accumulating M3.5/M5/M7/M9 INCOMPLETEs before user re-engagement
-- **proposed**: amend `.claude/agents/sdk-impl-lead.md` (general; not python-specific) — halt policy: when ≥2 INCOMPLETE-by-tooling verdicts accumulate within a single wave, halt and request user re-engagement; do NOT continue to subsequent waves
+- **proposed**: amend `agents/sdk-impl-lead.md` (general; not python-specific) — halt policy: when ≥2 INCOMPLETE-by-tooling verdicts accumulate within a single wave, halt and request user re-engagement; do NOT continue to subsequent waves
 - **justification**: Rule 33 disambiguates verdicts but does not prescribe escalation policy. The cascade was technically correct but cost three sub-runs of pipeline work.
 - **confidence**: MEDIUM (impl-lead is a general agent; per-language overlays may need to add their own halt clauses)
 - **owner**: sdk-impl-lead author (prompt PR)
-- **target files**: `.claude/agents/sdk-impl-lead.md` (new §INCOMPLETE-cascade halt policy section)
+- **target files**: `agents/sdk-impl-lead.md` (new §INCOMPLETE-cascade halt policy section)
 
 ### Generalization-debt items recorded (NOT counted in the 14-item plan total)
 

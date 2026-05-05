@@ -149,7 +149,7 @@ date: "YYYY-MM-DD"
 | <skill-id>                    | 1.0.0 | <FR-id or §-reference> |
 | <skill-id>                    | 1.0.0 | <FR-id or §-reference> |
 
-<!-- G23 (WARN-only): each skill must exist in .claude/skills/skill-index.json at version ≥ declared. Misses auto-file to docs/PROPOSED-SKILLS.md with run-id + reason. Pipeline continues. -->
+<!-- G23 (WARN-only): each skill must exist in skills/skill-index.json at version ≥ declared. Misses auto-file to docs/PROPOSED-SKILLS.md with run-id + reason. Pipeline continues. -->
 
 ## §Guardrails-Manifest
 | Guardrail | Applies to | Enforcement |
@@ -162,6 +162,21 @@ date: "YYYY-MM-DD"
 | <G-id ranges>  | <phase>      | BLOCKER  |
 
 <!-- G24 (BLOCKER): each declared G-id must have an executable script at scripts/guardrails/<G-id>.sh. Missing script → exit 6; entry filed to docs/PROPOSED-GUARDRAILS.md. -->
+
+## §Docs-Manifest
+<!-- OPTIONAL (v0.7+). Consumed by Phase 0 wave I-DOC. Drives Phase 3.5 (Documentation) target paths. If absent on Mode A: targets inferred from new module path. If absent on Mode B/C with ambiguous scope: H1 asks. -->
+targets:
+  - src/<sdk>/<module>/        # one or more directories that should receive README.md / USAGE.md / ARCHITECTURE.md / CHANGELOG.md (and MIGRATION.md on breaking changes)
+skip: false                    # if true, Phase 3.5 D1 wave is skipped entirely (still applies version via V1)
+examples_allowed: false        # if true, sdk-doc-writer may MINE samples from a pre-existing examples/ dir; never authors new examples regardless
+
+## §Versioning
+<!-- OPTIONAL (v0.7+). Consumed by Phase 0 wave I-VER. Drives Phase 3.5 wave V1 (sdk-version-applier). If `confirmed` is false (or absent), H1 emits a sub-question with the inferred bump + reasoning. -->
+current: 1.3.0                 # optional; auto-detected from active language pack's primary version artifact (git tag, pyproject.toml, package.json, Cargo.toml, ...)
+bump: MINOR                    # PATCH | MINOR | MAJOR — inferred from §1 + §12 if absent
+next: 1.4.0                    # optional; computed from current + bump if absent
+confirmed: false               # if true, skip H1 confirmation question (CI-only override)
+reasoning: "Adds new public symbols to module X without removing or renaming existing exports."   # appended to CHANGELOG entry
 ```
 
 ---
@@ -244,6 +259,6 @@ Preflight never modifies the target SDK; it only reads the TPRD and reports.
 - Validators: `scripts/guardrails/G20.sh` (sections), `G21.sh` (Non-Goals ≥3), `G23.sh` (skills-manifest), `G24.sh` (guardrails-manifest).
 - Preflight contract: `commands/preflight-tprd.md`.
 - Intake waves: `phases/INTAKE-PHASE.md` (I1 ingest → I1.5 required-fields → I2 skills → I3 guardrails → I4 clarifications → I5 mode → I5.5 package-resolve → I6 completeness → I7 H1).
-- Required field semantics: `.claude/agents/sdk-intake-agent.md` (§Target-Language).
-- Marker protocol: `.claude/skills/sdk-marker-protocol/SKILL.md`.
+- Required field semantics: `agents/sdk-intake-agent.md` (§Target-Language).
+- Marker protocol: `skills/sdk-marker-protocol/SKILL.md`.
 - Pipeline overview: `PIPELINE-OVERVIEW.md` and `LIFECYCLE.md`.

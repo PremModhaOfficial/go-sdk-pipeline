@@ -39,13 +39,13 @@ Per the migration contract: I do not fix anything outside the agreed extraction 
 
 ### F-007 — `validate-packages.sh` `ls glob | wc -l` empty-dir bug fixed in v0.6.0
 **File:** `scripts/validate-packages.sh` lines 205-207
-**Issue:** v0.5.0 counts on-disk artifacts via `ls "$PIPELINE_ROOT"/.claude/agents/*.md 2>/dev/null | wc -l`. With `shopt -s nullglob` set earlier in the script, an empty glob expands to nothing, ls is invoked with no args, ls then defaults to listing the *current working directory*, and the CWD's entries get falsely counted as v0.6 artifacts. Latent bug — never surfaces in v0.5.0 because the directories are always populated.
+**Issue:** v0.5.0 counts on-disk artifacts via `ls "$PIPELINE_ROOT"/agents/*.md 2>/dev/null | wc -l`. With `shopt -s nullglob` set earlier in the script, an empty glob expands to nothing, ls is invoked with no args, ls then defaults to listing the *current working directory*, and the CWD's entries get falsely counted as v0.6 artifacts. Latent bug — never surfaces in v0.5.0 because the directories are always populated.
 **Decision:** Fixed in v0.6.0 by replacing the `ls | wc -l` triple with `find` calls that return zero correctly on empty dirs. v0.5.0 patch is out of scope (frozen).
 
 ## Batch 2 findings
 
 ### F-008 — `guardrail-validation` GR-XXX deletion REVERTED (initial classification was wrong)
-**File:** `.claude/skills/guardrail-validation/SKILL.md`
+**File:** `skills/guardrail-validation/SKILL.md`
 **Original (incorrect) action:** I deleted the GR-001–GR-024 section (~900 lines) believing it was archive cruft from a different platform pipeline. CLAUDE.md rule 5 ("No multi-tenancy — SDK is a library, tenant context is caller-supplied") had me thinking the multi-tenant guardrails (TenantID, schema-per-tenant, JetStream-only, MsgPack-only, FK bans, JOIN bans, etc.) didn't apply.
 **User correction:** "NO THE SDK IS BEING BUILT FOR THE SAAS MUTITENTE DONT REMOVE THEM AS WE MUST KEEP THAT IN MIND". The SDK is built **for** a multi-tenant SaaS platform. The GR-XXX guardrails check that the SDK plays correctly in that architecture (e.g., the SDK doesn't bake tenant logic in BUT must respect schema-per-tenant invariants when its consumers deploy it). They run on SDK consumers (the SaaS services), not the SDK itself.
 **Restored action (this entry):** v0.5 GR-001–GR-024 content appended back to v0.6 verbatim. Added a clarifying transition section between the G-numbered SDK catalog and the GR-numbered consumer-checking catalog explaining the two scopes. Bumped to v1.3.1 (1.3.0 was the original sanitization rewrite; .1 marks the restoration patch). Frontmatter tag added: `multi-tenant-saas`. CLAUDE.md rule 5 NOT changed yet — the rule says "SDK doesn't bake multi-tenancy in" which is still true; the GR-XXX guardrails are a separate concern (consumer compatibility checks).

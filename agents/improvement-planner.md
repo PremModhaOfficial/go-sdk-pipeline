@@ -191,7 +191,7 @@ Source: BP-003 (tenant isolation gap in UserService boundary definition)
 ```
 
 ### Step 5: Draft Skill Candidates
-For each missing knowledge area, write a candidate **SKILL.md draft** at `evolution/skill-candidates/<skill-name>/SKILL.md` (one directory per candidate; the on-disk format mirrors a real `.claude/skills/<name>/SKILL.md` so a human reviewer can promote the file via PR with minimal massaging — `learning-engine` MUST NOT promote it).
+For each missing knowledge area, write a candidate **SKILL.md draft** at `evolution/skill-candidates/<skill-name>/SKILL.md` (one directory per candidate; the on-disk format mirrors a real `skills/<name>/SKILL.md` so a human reviewer can promote the file via PR with minimal massaging — `learning-engine` MUST NOT promote it).
 
 The candidate frontmatter MUST carry every field below. The `scope` field is mandatory (Step 2.4 classification) — `learning-engine`'s Patch Scope Validation Gate refuses to surface a candidate without it.
 

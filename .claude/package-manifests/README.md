@@ -14,7 +14,7 @@ A manifest is a JSON file that lists which artifacts (agents, skills, guardrails
 
 ## Why manifest-only (not physical packaging)
 
-Claude Code's harness discovers agents at `.claude/agents/*.md` and skills at `.claude/skills/*/SKILL.md`. Moving files into `.claude/packages/<pkg>/agents/` breaks discovery — the agents become uninvokable. Manifest-only keeps the canonical file layout intact and adds the package layer as metadata. See `runs/package-layer-reconciliation.md` for the full decision record and the fate of the earlier `core/` + `packs/` physical-packaging attempt.
+Claude Code's harness discovers agents at `agents/*.md` and skills at `skills/*/SKILL.md`. Moving files into `.claude/packages/<pkg>/agents/` breaks discovery — the agents become uninvokable. Manifest-only keeps the canonical file layout intact and adds the package layer as metadata. See `runs/package-layer-reconciliation.md` for the full decision record and the fate of the earlier `core/` + `packs/` physical-packaging attempt.
 
 ## Directory layout
 
@@ -54,8 +54,8 @@ Several artifacts in `shared-core` have prompts/bodies that reference Go-specifi
 
 Run `bash scripts/validate-packages.sh` to check:
 
-- Every file in `.claude/agents/*.md` is in exactly one manifest
-- Every directory in `.claude/skills/*/` is in exactly one manifest
+- Every file in `agents/*.md` is in exactly one manifest
+- Every directory in `skills/*/` is in exactly one manifest
 - Every file in `scripts/guardrails/G*.sh` is in exactly one manifest
 - No manifest references a non-existent file
 - No duplicate entries across manifests

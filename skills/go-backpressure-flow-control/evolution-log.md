@@ -8,7 +8,7 @@ Primary source files cited:
 - `motadatagosdk/core/pool/workerpool/pool.go` (MaxQueueSize + WithMaxBlockingTasks + ErrQueueFull)
 - `motadatagosdk/core/l2cache/dragonfly/cache.go` (PoolSize + PoolTimeout + ErrPoolExhausted)
 - `motadatagosdk/events/jetstream/` (server-side flow: MaxAckPending, AckWait, MaxDeliver)
-- `.claude/skills/go-concurrency-patterns/SKILL.md` (canonical semaphore pattern)
+- `skills/go-concurrency-patterns/SKILL.md` (canonical semaphore pattern)
 
 Promoted from `draft` to `stable`. Priority upgraded from seed-SHOULD to MUST per TPRD manifest. Author: human PR.
 

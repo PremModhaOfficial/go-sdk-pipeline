@@ -12,7 +12,7 @@ cross_language_ok: true
 - `runs/<run-id>/decision-log.jsonl` (mine for which skills were invoked by which agents)
 - `runs/<run-id>/context/active-packages.json` (resolve `target_language` and the per-pack `file_extensions` for code-grep scope)
 - Generated code on branch (file-extension scope from the active language pack's `file_extensions` field — Go: `.go`; Python: `.py`)
-- Skills from `.claude/skills/<name>/SKILL.md`
+- Skills from `skills/<name>/SKILL.md`
 
 ## Procedure
 

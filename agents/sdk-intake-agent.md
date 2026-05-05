@@ -18,7 +18,7 @@ cross_language_ok: true
 ## Input
 
 - `runs/<run-id>/input.md` (raw NL OR partial TPRD)
-- `.claude/skills/skill-index.json` (to validate TPRD tech references)
+- `skills/skill-index.json` (to validate TPRD tech references)
 - `$SDK_TARGET_DIR/` (read-only, for target-package existence checks)
 
 ## Ownership

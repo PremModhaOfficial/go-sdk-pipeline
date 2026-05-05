@@ -35,7 +35,7 @@ A pipeline agent as defined in `AGENTS.md`. Singleton across runs.
 
 | Property | Type | Notes |
 |---|---|---|
-| `name` | string | e.g. `sdk-intake-agent`. Matches `.claude/agents/<name>.md`. |
+| `name` | string | e.g. `sdk-intake-agent`. Matches `agents/<name>.md`. |
 | `role` | string | `lead` \| `designer` \| `implementor` \| `tester` \| `devil` \| `reviewer` \| `learning` \| `observer` |
 | `phase` | string | Primary phase, or `cross-phase` for multi-phase agents. |
 
@@ -43,7 +43,7 @@ Entity name convention: `Agent:<name>`.
 
 ### 1.3 `Skill`
 
-A skill file under `.claude/skills/<name>/SKILL.md`. Singleton across runs; version is a property, history lives in Observations + `evolution-log.md`.
+A skill file under `skills/<name>/SKILL.md`. Singleton across runs; version is a property, history lives in Observations + `evolution-log.md`.
 
 | Property | Type | Notes |
 |---|---|---|

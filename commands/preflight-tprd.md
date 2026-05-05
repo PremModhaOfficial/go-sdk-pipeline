@@ -20,8 +20,8 @@ Pre-run validation for a TPRD. Runs the same checks the real pipeline would run 
 
 1. **TPRD structure** — all 14 core sections present + §Skills-Manifest + §Guardrails-Manifest non-empty
 2. **§Skills-Manifest** — every declared skill (WARN only; never blocks a run):
-   - Exists under `.claude/skills/<name>/SKILL.md`
-   - Exists in `.claude/skills/skill-index.json`
+   - Exists under `skills/<name>/SKILL.md`
+   - Exists in `skills/skill-index.json`
    - Is at version ≥ the min-version declared in the manifest
    - Any miss is reported as WARN and auto-filed to `docs/PROPOSED-SKILLS.md`; the pipeline (and preflight) exit 0 regardless
 3. **§Guardrails-Manifest** — every declared guardrail (BLOCKER on miss):
@@ -65,9 +65,9 @@ On FAIL (§Guardrails-Manifest miss) or WARN (§Skills-Manifest miss), the repor
 ```markdown
 ## Missing skills (2) — WARN (non-blocking; auto-filed to docs/PROPOSED-SKILLS.md)
 - `redis-streams-patterns` declared ≥1.0.0 — not in skill-index.json
-  ACTION (optional, off-pipeline): author .claude/skills/redis-streams-patterns/SKILL.md and update skill-index.json; pipeline will proceed either way
+  ACTION (optional, off-pipeline): author skills/redis-streams-patterns/SKILL.md and update skill-index.json; pipeline will proceed either way
 - `sdk-eviction-policy` declared ≥1.2.0 — found 1.0.0 (under-versioned)
-  ACTION (optional): edit .claude/skills/sdk-eviction-policy/SKILL.md, bump to ≥1.2.0 (human PR), update skill-index.json
+  ACTION (optional): edit skills/sdk-eviction-policy/SKILL.md, bump to ≥1.2.0 (human PR), update skill-index.json
 
 ## Missing guardrails (1) — BLOCKER (exit 3)
 - G42 — no script at scripts/guardrails/G42.sh
@@ -100,7 +100,7 @@ On FAIL (§Guardrails-Manifest miss) or WARN (§Skills-Manifest miss), the repor
 
 - **Recommended** before `/run-sdk-addition` — surfaces Skills-Manifest WARNs early so you can decide whether to author missing skills, and catches Guardrails-Manifest BLOCKERs that would halt Intake Wave I3
 - After authoring a new skill — confirms the TPRD that needed it now reports PASS instead of WARN
-- After editing `.claude/skills/skill-index.json` — sanity check the catalog + on-disk match
+- After editing `skills/skill-index.json` — sanity check the catalog + on-disk match
 - In CI — optional; a Skills-Manifest miss alone is not grounds to fail a PR, but a Guardrails-Manifest miss is
 
 ## Delegates to

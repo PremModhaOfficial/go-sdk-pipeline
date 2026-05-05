@@ -167,7 +167,7 @@ Markers (`[traces-to:]`, `[constraint:]`, `[stable-since:]`, `[deprecated-in:]`,
 Pipeline supports three request modes: A (new package), B (extension), C (incremental update). Mode C uses marker-aware 3-way merge via `sdk-merge-planner`. Existing tests + bench MUST continue passing post-update (G95).
 
 ### 31. MCP Fallback Policy
-Every MCP integration (`mcp__neo4j-memory__*`, `mcp__serena__*`, `mcp__code-graph__*`, `mcp__context7__*`) is an **enhancement, not a correctness dependency**. Guardrail `G04.sh` runs at phase start, verifies each MCP is reachable, and writes a verdict to `runs/<id>/<phase>/mcp-health.md`. On MCP unavailability: agents degrade to existing JSONL / Grep / text-based fallbacks with a WARN log entry. Pipeline NEVER halts on MCP failure. See `.claude/skills/mcp-knowledge-graph/SKILL.md` for the canonical read/write + fallback pattern. See `docs/MCP-INTEGRATION-PROPOSAL.md` for scope + rollout.
+Every MCP integration (`mcp__neo4j-memory__*`, `mcp__serena__*`, `mcp__code-graph__*`, `mcp__context7__*`) is an **enhancement, not a correctness dependency**. Guardrail `G04.sh` runs at phase start, verifies each MCP is reachable, and writes a verdict to `runs/<id>/<phase>/mcp-health.md`. On MCP unavailability: agents degrade to existing JSONL / Grep / text-based fallbacks with a WARN log entry. Pipeline NEVER halts on MCP failure. See `skills/mcp-knowledge-graph/SKILL.md` for the canonical read/write + fallback pattern. See `docs/MCP-INTEGRATION-PROPOSAL.md` for scope + rollout.
 
 ### 32. Performance-Confidence Regime
 "Best performance" is uncomputable — the space of equivalent programs is infinite. What the pipeline CAN do is build a falsification regime: if a meaningful perf improvement is available, these gates surface it. Confidence = ∪ of failure modes we actively falsify.
@@ -197,7 +197,7 @@ Wherever a gate historically returned "passed so far" on a timeout, it MUST now 
 
 The agent / skill / guardrail set a run is allowed to invoke is **scoped by package manifests**. Manifests are JSON files in `.claude/package-manifests/<name>.json` that list which artifacts belong to one logical package. Three packages ship today: `shared-core` (language-neutral orchestration), `go` (Go SDK language adapter, fully populated), `python` (Phase A scaffold; Phase B authors content). All on-disk artifacts MUST belong to exactly one manifest — `scripts/validate-packages.sh` enforces.
 
-**Manifest-only**: files do NOT move into per-package subdirectories. Agents stay at `.claude/agents/<name>.md`, skills at `.claude/skills/<name>/SKILL.md`, guardrails at `scripts/guardrails/G*.sh`. Claude Code's harness auto-discovers from those canonical paths; physical packaging would break discovery. Manifests are descriptive metadata, not directory structure.
+**Manifest-only**: files do NOT move into per-package subdirectories. Agents stay at `agents/<name>.md`, skills at `skills/<name>/SKILL.md`, guardrails at `scripts/guardrails/G*.sh`. Claude Code's harness auto-discovers from those canonical paths; physical packaging would break discovery. Manifests are descriptive metadata, not directory structure.
 
 **Per-run resolution (v0.5.0+)**: `sdk-intake-agent` Wave I1.5 enforces `§Target-Language` as REQUIRED (BLOCKER if missing — no silent default). Wave I5.5 reads `§Target-Language`, `§Target-Tier` (default `T1`), `§Required-Packages` (default `[shared-core, <lang>]`), resolves the manifest set + dependencies, and writes `runs/<run-id>/context/active-packages.json`. G05 validates the file resolves cleanly. Phase leads dispatch from manifest data: `waves` (per-wave agent contributions, unioned across packs) and `tier_critical` (per-phase × tier required-set). `scripts/run-guardrails.sh` filters guardrails by active-packages union ∩ phase header. `scripts/run-toolchain.sh` resolves `toolchain.<command>` from the active language manifest. Agents NOT in the active set are skipped (logged as `event: agent-not-in-active-packages`); guardrails NOT in the active set are not run.
 
@@ -229,7 +229,7 @@ HITL gates: H0 (target-dir preflight), H1 (TPRD + manifests acceptance), H5 (des
 
 ## Pipeline Versioning
 
-`settings.json` declares `pipeline_version: "0.5.0"` — the **single source of truth**. Every log entry stamps it; every other file that mentions a pipeline version MUST match. Divergence = drift (guardrail G06 enforces at intake). Upgrade path: bump semver in `.claude/settings.json`; propagate to all consumers in the same PR; record changes in `evolution/evolution-reports/pipeline-v<X.Y.Z>.md`.
+`settings.json` declares `pipeline_version: "0.6.0"` — the **single source of truth**. Every log entry stamps it; every other file that mentions a pipeline version MUST match. Divergence = drift (guardrail G06 enforces at intake). Upgrade path: bump semver in `.claude/settings.json`; propagate to all consumers in the same PR; record changes in `evolution/evolution-reports/pipeline-v<X.Y.Z>.md`.
 
 ## Directory Reference
 
@@ -237,8 +237,8 @@ HITL gates: H0 (target-dir preflight), H1 (TPRD + manifests acceptance), H5 (des
 docs/                          — Pipeline docs, missing-skills-backlog
 phases/                        — Phase contracts
 commands/                      — Slash commands
-.claude/agents/                — Agent prompts (canonical, harness-discovered)
-.claude/skills/<n>/SKILL.md    — Skills (versioned, harness-discovered)
+agents/                — Agent prompts (canonical, harness-discovered)
+skills/<n>/SKILL.md    — Skills (versioned, harness-discovered)
 .claude/package-manifests/     — Package metadata (v0.4.0): shared-core.json, go.json, README.md
 scripts/guardrails/G*.sh       — Guardrail scripts (referenced by package manifests)
 scripts/validate-packages.sh   — Manifest ↔ filesystem consistency check

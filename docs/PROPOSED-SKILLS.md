@@ -6,13 +6,13 @@ Entries from pipeline runs are auto-filed here as WARNINGs by `scripts/guardrail
 
 Human-reviewed backlog of proposed new skills. **The pipeline never creates skills at runtime.** Entries appear here from two sources:
 
-1. **TPRD intake** — `sdk-intake-agent` Wave I2 finds a required skill missing from `.claude/skills/skill-index.json` → emits a WARN (non-blocking), files an entry here, and the pipeline continues.
+1. **TPRD intake** — `sdk-intake-agent` Wave I2 finds a required skill missing from `skills/skill-index.json` → emits a WARN (non-blocking), files an entry here, and the pipeline continues.
 2. **Phase 4 learning-engine** — on repeated patterns that lack a backing skill (3+ runs) → files an entry here; never drafts the SKILL.md itself.
 
 ## Workflow
 
 1. Entry lands here with `status: proposed` + motivation + consumer agents
-2. Human author drafts `.claude/skills/<name>/SKILL.md` with `version: 1.0.0` offline (per `SKILL-CREATION-GUIDE.md`)
+2. Human author drafts `skills/<name>/SKILL.md` with `version: 1.0.0` offline (per `SKILL-CREATION-GUIDE.md`)
 3. Human opens PR; reviewers include subject-matter owner + one devil-agent owner
 4. On merge: entry in this file flipped to `status: promoted` with commit SHA + link to `SKILL.md`
 5. `skill-index.json` updated manually in the same PR
@@ -39,7 +39,7 @@ See `evolution/skill-candidates/` — 8 skill drafts from prior Dragonfly-class 
 - `sentinel-error-model-mapping`
 - `testcontainers-dragonfly-recipe`
 
-These are **not auto-promoted**. A human reviewer must (a) audit per `SKILL-CREATION-GUIDE.md`, (b) move to `.claude/skills/<name>/`, (c) update `skill-index.json`, (d) record the promotion in git.
+These are **not auto-promoted**. A human reviewer must (a) audit per `SKILL-CREATION-GUIDE.md`, (b) move to `skills/<name>/`, (c) update `skill-index.json`, (d) record the promotion in git.
 
 ## Meta-skills (observability over skill set)
 
@@ -51,7 +51,7 @@ These are **not auto-promoted**. A human reviewer must (a) audit per `SKILL-CREA
 ## Policy
 
 - **No auto-synthesis.** Pipeline emits entries; does not write `SKILL.md` bodies.
-- **No runtime promotion.** Moving a draft into `.claude/skills/` is a human PR action.
+- **No runtime promotion.** Moving a draft into `skills/` is a human PR action.
 - **Devil-fleet gate on first use.** Newly promoted skills must pass the devil fleet on the next pipeline run before counting as stable (pipeline does not run golden-corpus full-replay regression).
 
 ---
@@ -227,7 +227,7 @@ Source: `improvement-planner` Wave F6, derived from Phase 4 backlog items PA-001
   3. §GOOD examples for each shape (harness fixture + bench function + result-assertion pattern)
   4. §BAD example: pytest-benchmark @benchmark on a sync method called from async context (exhibits the PA-001 INCOMPLETE symptom)
   5. §Cross-reference: `python-pytest-patterns`, `sdk-marker-protocol` (constraint:bench markers)
-- **suggested_path**: `.claude/skills/python-bench-harness-shapes/SKILL.md`
+- **suggested_path**: `skills/python-bench-harness-shapes/SKILL.md`
 
 ### ~~Proposed: python-floor-bound-perf-budget~~ — **WITHDRAWN v0.6.x**
 
@@ -257,7 +257,7 @@ language floor — but that's already covered by `theoretical_floor.derivation` 
   3. §Mitigations: dedicated sampler thread/process (preferred); explicit `await asyncio.sleep(0)` / `runtime.Gosched()` between sample interval batches; subprocess sampler that observes process from outside (py-spy / pprof)
   4. §Per-language overlays: short subsection naming the language-native symptom + concrete cite into language-pack skills (`python-asyncio-patterns`, Go soak skill section X)
   5. §Validation: how to confirm sampler health post-soak — sample-count vs. expected per-second rate, gap detection
-- **suggested_path**: `.claude/skills/soak-sampler-cooperative-yield/SKILL.md`
+- **suggested_path**: `skills/soak-sampler-cooperative-yield/SKILL.md`
 - **note**: explicitly cross-link from existing Go soak skill body and from `python-asyncio-patterns` SKILL.md once authored.
 
 ---

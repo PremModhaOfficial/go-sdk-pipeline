@@ -2,7 +2,7 @@
 
 # Skill Creation Guide (SDK pipeline)
 
-Authoring rules for new skills in `.claude/skills/<name>/SKILL.md`. Every skill must pass the validator checklist at the end of this doc.
+Authoring rules for new skills in `skills/<name>/SKILL.md`. Every skill must pass the validator checklist at the end of this doc.
 
 ## Core rules
 
@@ -29,7 +29,7 @@ tags: [sdk, client, config, constructor]
 
 ### 2. Mandatory `evolution-log.md` sibling
 
-Each `.claude/skills/<name>/` dir MUST contain `evolution-log.md`:
+Each `skills/<name>/` dir MUST contain `evolution-log.md`:
 
 ```
 ## 1.2.0 — run-<id> — 2026-MM-DD
@@ -61,12 +61,12 @@ Examples must cite actual files in the target SDK where possible. Purely synthet
 
 ### 6. Human PR review on every new skill
 
-Skills are human-authored. Before a new skill lands in `.claude/skills/`, the PR must be reviewed by: (a) the subject-matter owner (per `AGENTS.md` ownership matrix), (b) at least one devil-agent owner for the domain. Pipeline-run reviews are not a substitute for human review. Every PR merge logs a `skill-evolution` entry in `evolution/knowledge-base/prompt-evolution-log.jsonl` for provenance.
+Skills are human-authored. Before a new skill lands in `skills/`, the PR must be reviewed by: (a) the subject-matter owner (per `AGENTS.md` ownership matrix), (b) at least one devil-agent owner for the domain. Pipeline-run reviews are not a substitute for human review. Every PR merge logs a `skill-evolution` entry in `evolution/knowledge-base/prompt-evolution-log.jsonl` for provenance.
 
 ## Skill file layout
 
 ```
-.claude/skills/<skill-name>/
+skills/<skill-name>/
 ├── SKILL.md              ← required
 ├── evolution-log.md      ← required, append-only
 ├── reference/            ← optional, longer examples

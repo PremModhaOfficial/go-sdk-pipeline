@@ -27,3 +27,4 @@ scripts/ast-hash/go-backend
 scripts/ast-hash/go-symbols
 packs/*/ast-hash-backend
 packs/*/symbols-backend
+.claude/audit/

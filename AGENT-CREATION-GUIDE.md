@@ -1,6 +1,6 @@
 # Agent Creation Guide (SDK pipeline)
 
-Authoring rules for new agents in `.claude/agents/<name>.md`. Every agent must meet the 9-section template and pass the validator checklist at the end of this doc.
+Authoring rules for new agents in `agents/<name>.md`. Every agent must meet the 9-section template and pass the validator checklist at the end of this doc.
 
 ## Core rules
 
@@ -26,7 +26,7 @@ Any agent whose name ends in `-devil`, `-critic`, or contains `hunter` MUST:
 
 ### 3. Ported agents: wrapper pattern
 
-Ported agents (learning-engine, improvement-planner, etc.) live as thin wrappers in `.claude/agents/<name>.md`. Wrapper format:
+Ported agents (learning-engine, improvement-planner, etc.) live as thin wrappers in `agents/<name>.md`. Wrapper format:
 
 ```markdown
 ---

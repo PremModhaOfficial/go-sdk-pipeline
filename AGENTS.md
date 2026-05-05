@@ -2,7 +2,7 @@
 
 # Agent Roster
 
-This file is the single source of truth for every agent in this pipeline. Canonical per-agent prompt files live in `.claude/agents/<name>.md`.
+This file is the single source of truth for every agent in this pipeline. Canonical per-agent prompt files live in `agents/<name>.md`.
 
 **Multi-language note**: rows tagged `Go` or `Python` belong to a per-language pack and are dispatched only when `runs/<run-id>/context/active-packages.json:target_language` matches. Rows tagged `Shared` are language-neutral orchestrators that run on every pipeline regardless of language.
 
@@ -151,4 +151,4 @@ Every agent whose name contains `devil`, `critic`, `reviewer`, or `validator` is
 
 ## MCP Integration
 
-MCPs listed in the **MCPs used** column are enhancements, not correctness dependencies. All agents fall back to JSONL / Grep / text-based paths on MCP unavailability (WARN-only; pipeline never halts). See `CLAUDE.md` rule 31 for the policy, `docs/MCP-INTEGRATION-PROPOSAL.md` for scope + rollout, and `.claude/skills/mcp-knowledge-graph/SKILL.md` for the canonical read/write + fallback pattern.
+MCPs listed in the **MCPs used** column are enhancements, not correctness dependencies. All agents fall back to JSONL / Grep / text-based paths on MCP unavailability (WARN-only; pipeline never halts). See `CLAUDE.md` rule 31 for the policy, `docs/MCP-INTEGRATION-PROPOSAL.md` for scope + rollout, and `skills/mcp-knowledge-graph/SKILL.md` for the canonical read/write + fallback pattern.

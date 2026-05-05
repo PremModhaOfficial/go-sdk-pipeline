@@ -40,7 +40,7 @@ These are settled — included so a future reader knows what's already implicit.
 
 | # | Decision | Locked because |
 |---|---|---|
-| **L1** | Manifest-only packaging. No physical per-language directories under `.claude/`. | Claude Code harness auto-discovers `.claude/agents/*.md` + `.claude/skills/*/SKILL.md`; physical packaging silently breaks discovery. |
+| **L1** | Manifest-only packaging. No physical per-language directories under `.claude/`. | Claude Code harness auto-discovers `agents/*.md` + `skills/*/SKILL.md`; physical packaging silently breaks discovery. |
 | **L2** | One agent fleet, languages are data. No `<lang>-leak-hunter` forks. | Rule 34 anti-fork armor (G213/G214/G215 proposed but not yet codified). |
 | **L3** | Toolchain inline in manifest for v0.4.0; externalize in v0.5.0. | Premature externalization with one language. |
 | **L4** | Tier model = T1/T2/T3. T1 full-fat, T2 lint+supply-chain only, T3 rejected at intake. | Defaulted; might revisit (see Tier-3 deferred decision Q). |
@@ -193,9 +193,9 @@ So a future reader can mechanically check what's already done:
 - `scripts/validate-packages.sh` — orphan/duplicate/dangling check
 - `scripts/guardrails/G05.sh` — `active-packages.json` validator
 - `phases/INTAKE-PHASE.md` Wave I5.5 — Package Resolution
-- `.claude/agents/sdk-intake-agent.md` — writes `runs/<id>/context/active-packages.json` + `toolchain.md`
-- `.claude/agents/guardrail-validator.md` Delta 6 — package-scoped dispatch
-- `.claude/agents/sdk-{design,impl,testing}-lead.md` — Active Package Awareness blocks
+- `agents/sdk-intake-agent.md` — writes `runs/<id>/context/active-packages.json` + `toolchain.md`
+- `agents/guardrail-validator.md` Delta 6 — package-scoped dispatch
+- `agents/sdk-{design,impl,testing}-lead.md` — Active Package Awareness blocks
 - `CLAUDE.md` rule 34 (Package Layer) + rule 28 (Partitioning contract subsection)
 
 **Baseline partitioning (D1=B, shipped — files moved + consumers updated)**:

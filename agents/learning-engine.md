@@ -168,7 +168,7 @@ This gate composes with the Event-Driven Gate above; both must pass for the patc
 
 **Filing new-skill proposals (NEVER create SKILL.md files):**
 
-Per CLAUDE.md rule 23, learning-engine MUST NOT create new `.claude/skills/<name>/SKILL.md` files. Skill files are human-authored only. Instead:
+Per CLAUDE.md rule 23, learning-engine MUST NOT create new `skills/<name>/SKILL.md` files. Skill files are human-authored only. Instead:
 
 1. Read each candidate from `.feedback/learning/evolution/skill-candidates/<skill-name>.json`.
 2. Verify confidence is "high" and pattern appeared in 2+ runs.

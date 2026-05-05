@@ -15,7 +15,7 @@ A **package** is a JSON manifest in `.claude/package-manifests/<name>.json` that
 - `shared-core` — language-agnostic orchestration, meta-skills, governance.
 - `go` — Go SDK language adapter for `motadatagosdk`.
 
-Manifests are **descriptive metadata**, not directory structure. Files do NOT move into per-package folders. Agents stay at `.claude/agents/<name>.md`, skills at `.claude/skills/<name>/SKILL.md`, guardrails at `scripts/guardrails/G*.sh`. This is a hard invariant: Claude Code's harness auto-discovers from those canonical paths, and physical packaging would silently break discovery.
+Manifests are **descriptive metadata**, not directory structure. Files do NOT move into per-package folders. Agents stay at `agents/<name>.md`, skills at `skills/<name>/SKILL.md`, guardrails at `scripts/guardrails/G*.sh`. This is a hard invariant: Claude Code's harness auto-discovers from those canonical paths, and physical packaging would silently break discovery.
 
 ---
 
@@ -195,10 +195,10 @@ When the same role exists per-language, **agents** get a `-<lang>` suffix and **
 
 ### Why suffix for agents, prefix for skills
 
-- **Flat layout, both forms**: Claude Code's discovery is flat (one glob on `.claude/agents/*.md`, one on `.claude/skills/*/`); `scripts/validate-packages.sh` also assumes flat. Both suffix and prefix need zero infra changes.
+- **Flat layout, both forms**: Claude Code's discovery is flat (one glob on `agents/*.md`, one on `skills/*/`); `scripts/validate-packages.sh` also assumes flat. Both suffix and prefix need zero infra changes.
 - **Agents → suffix**: agent names already start with role qualifiers (`sdk-*`, `code-*`, `documentation-*`). Putting the language at the end (`sdk-design-devil-go`) keeps role-first reading order and groups same-role siblings alphabetically (`sdk-design-devil-go` next to `sdk-design-devil-python`).
 - **Skills → prefix**: language-specific skills already group by language at the start (`go-concurrency-patterns`, `python-asyncio-patterns`). Putting the language at the front matches the existing 25 go-pack skill names, mirrors stdlib library names (`go-`, `py-`, `rs-`), and `<lang>-*` reads naturally as "the language's library of patterns for X."
-- **Subdir** (`.claude/agents/go/<name>.md`, `.claude/skills/go/<name>/`) was considered. Rejected — would silently break harness discovery and require validator rewrite.
+- **Subdir** (`agents/go/<name>.md`, `skills/go/<name>/`) was considered. Rejected — would silently break harness discovery and require validator rewrite.
 
 ### Filesystem and manifest grouping
 
@@ -250,8 +250,8 @@ Use `go.json` as a template. Fill the `toolchain` block:
 
 Each must exist on disk before `scripts/validate-packages.sh` will pass. Author them per the existing canonical patterns:
 
-- Agents: `.claude/agents/<name>.md` with frontmatter (`name`, `description`, `model`, `tools`).
-- Skills: `.claude/skills/<name>/SKILL.md` with frontmatter (`name`, `description`, `version`).
+- Agents: `agents/<name>.md` with frontmatter (`name`, `description`, `model`, `tools`).
+- Skills: `skills/<name>/SKILL.md` with frontmatter (`name`, `description`, `version`).
 - Guardrails: `scripts/guardrails/G<NN>.sh` executable, with `# phases:` and `# severity:` headers.
 
 ### Step 3 — work through `shared-core.json`'s `generalization_debt` list
@@ -343,7 +343,7 @@ For each new Python pack agent:
 
 ### Wave B-3: Python-native skills + guardrails *(pending)*
 
-**Skills (~20)**, all `python-` prefixed, at `.claude/skills/python-<name>/SKILL.md`:
+**Skills (~20)**, all `python-` prefixed, at `skills/python-<name>/SKILL.md`:
 
 ```
 python-asyncio-patterns                    python-pytest-fixtures
@@ -430,8 +430,8 @@ When you MOVE an artifact between manifests (e.g. discovered a `shared-core` ski
 
 `scripts/validate-packages.sh` enforces:
 
-- Every `.claude/agents/*.md` is referenced in exactly one manifest.
-- Every `.claude/skills/*/` directory is referenced in exactly one manifest.
+- Every `agents/*.md` is referenced in exactly one manifest.
+- Every `skills/*/` directory is referenced in exactly one manifest.
 - Every `scripts/guardrails/G*.sh` file is referenced in exactly one manifest.
 - No manifest references a non-existent file (dangling).
 - No artifact appears in two manifests (duplicate).

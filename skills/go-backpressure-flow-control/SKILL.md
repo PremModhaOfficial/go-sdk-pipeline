@@ -48,7 +48,7 @@ if errors.Is(err, ants.ErrPoolOverload) {
 
 ### GOOD 2: Counting semaphore for bounded concurrency (context-aware)
 
-Source: `.claude/skills/go-concurrency-patterns/SKILL.md` cross-reference, canonical pattern. Uses a buffered channel of size `N` as a counting semaphore. Acquire blocks until a slot is free OR the context cancels — the caller's deadline governs wait time. Release is non-blocking.
+Source: `skills/go-concurrency-patterns/SKILL.md` cross-reference, canonical pattern. Uses a buffered channel of size `N` as a counting semaphore. Acquire blocks until a slot is free OR the context cancels — the caller's deadline governs wait time. Release is non-blocking.
 
 ```go
 type Semaphore struct{ ch chan struct{} }
