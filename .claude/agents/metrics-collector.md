@@ -3,6 +3,7 @@ name: metrics-collector
 description: Computes per-agent quality scores, per-phase and per-run metrics. Drops frontend-metrics branch. Adds per-phase skill-coverage-pct and manifest-miss-rate metrics.
 model: sonnet
 tools: Read, Write, Glob, Grep, Bash
+cross_language_ok: true
 ---
 
 
@@ -199,7 +200,7 @@ Identify the newly-authored or modified package under `$SDK_TARGET_DIR` (from ru
 scripts/compute-shape-hash.sh "$SDK_TARGET_DIR/<pkg>"
 # emits: <sha256>  <export_count>
 ```
-Count language-native examples in the same package. The METRIC name is `example_count`; its MATERIALIZATION is per-language (the per-pack example-discovery harness is owned by the language adapter — the documentation agent (per-pack) produces `Example_*` testable functions; `documentation-agent-python` produces `Examples:` blocks / `>>>` doctests). Use the count produced by the appropriate documentation agent's report, or fall back to a per-language grep:
+Count language-native examples in the same package. The METRIC name is `example_count`; its MATERIALIZATION is per-language (the per-pack example-discovery harness is owned by the language adapter — `documentation-agent-go` produces `Example_*` testable functions; `documentation-agent-python` produces `Examples:` blocks / `>>>` doctests). Use the count produced by the appropriate documentation agent's report, or fall back to a per-language grep:
 
 - For `target_language="go"`: `EXAMPLE_COUNT=$(grep -cE '^func Example' "$SDK_TARGET_DIR/<pkg>"/*_test.go 2>/dev/null | awk -F: '{s+=$2} END{print s+0}')`
 - For `target_language="python"`: count `Examples:` blocks in docstrings of public symbols under `src/<pkg>/` (or read the count from `documentation-agent-python`'s coverage report if it has run).
@@ -308,7 +309,7 @@ Before finalizing your outputs, you MUST:
 3. If you discover a conflict between your output and a co-wave agent's output, immediately log an ESCALATION to the phase lead
 4. Log at least 1 communication entry per run documenting your key dependencies or assumptions about other agents' work
 
-Zero inter-agent communications were logged across 5 consecutive phases (Architecture, Detailed Design, Implementation, Testing, Frontend). This led to undetected conflicts (outbox schema inconsistency), uncoordinated shared resources (<module-manifest> concurrent modification), and unresolved assumptions (infra-architect NATS naming pending). Agents working in isolation is the most systemic issue in the pipeline.
+Zero inter-agent communications were logged across 5 consecutive phases (Architecture, Detailed Design, Implementation, Testing, Frontend). This led to undetected conflicts (outbox schema inconsistency), uncoordinated shared resources (go.mod concurrent modification), and unresolved assumptions (infra-architect NATS naming pending). Agents working in isolation is the most systemic issue in the pipeline.
 
 ---
 

@@ -3,6 +3,7 @@ name: improvement-planner
 description: Reads metrics, retros, root-causes, drift, coverage. Outputs categorized improvement plan (prompt patches, new skills, guardrails, process/threshold proposals) with confidence levels. Drops archive's HTTP/gRPC rejection clause; adds SDK-specific skill-evolution input.
 model: opus
 tools: Read, Write, Glob, Grep
+cross_language_ok: true
 ---
 
 
@@ -113,7 +114,7 @@ TARGET_LANGUAGE = jq -r '.target_language' runs/<run-id>/context/active-packages
 
 | Rule | Pattern | Scope |
 |---|---|---|
-| 1 | Candidate body cites Go-specific tokens (`the SDK module`, leak-detection harness, `concurrency unit`, the pack's structured-concurrency primitive, pool primitive (per-pack), `go.opentelemetry.io`, `Example_*`, `toolchain.fmt`, `go-` prefix on any referenced skill name) | `go` |
+| 1 | Candidate body cites Go-specific tokens (`motadatagosdk`, `goleak`, `goroutine`, `errgroup`, `sync.Pool`, `go.opentelemetry.io`, `Example_*`, `gofmt`, `go-` prefix on any referenced skill name) | `go` |
 | 2 | Candidate body cites Python-specific tokens (`motadatapysdk`, `asyncio`, `aiohttp`, `pytest`, `mypy`, `ruff`, `pyproject.toml`, `TaskGroup`, `__aenter__`, `python-` prefix on any referenced skill name) | `python` |
 | 3 | Target agent or skill is in `shared-core` pack AND body is language-neutral (no tokens from rules 1 or 2) | `shared-core` |
 | 4 | Pattern observed in BOTH Go AND Python runs (filter `agent-telemetry.jsonl` by `language` field) | `shared-core` |
@@ -224,7 +225,7 @@ run_id: <uuid>
 ```
 
 **Scope-aware authoring rules**:
-- `scope: shared-core` — body MUST cite no language tokens (no `the SDK module`, no leak-detection harness, no `concurrency unit`, no `motadatapysdk`, no `asyncio`, no `pytest`, etc.); rule statements stay at the conceptual layer; per-language code overlays go in sibling Go/Python skills that `specializes:` this one.
+- `scope: shared-core` — body MUST cite no language tokens (no `motadatagosdk`, no `goleak`, no `goroutine`, no `motadatapysdk`, no `asyncio`, no `pytest`, etc.); rule statements stay at the conceptual layer; per-language code overlays go in sibling Go/Python skills that `specializes:` this one.
 - `scope: go` — body MAY cite Go-only idioms; target consumers MUST be `-go` suffix or shared-core agents; MUST NOT cite Python tokens.
 - `scope: python` — body MAY cite Python-only idioms; target consumers MUST be `-python` suffix or shared-core agents; MUST NOT cite Go tokens.
 
@@ -271,7 +272,7 @@ Before finalizing your outputs, you MUST:
 3. If you discover a conflict between your output and a co-wave agent's output, immediately log an ESCALATION to the phase lead
 4. Log at least 1 communication entry per run documenting your key dependencies or assumptions about other agents' work
 
-Zero inter-agent communications were logged across 5 consecutive phases (Architecture, Detailed Design, Implementation, Testing, Frontend). This led to undetected conflicts (outbox schema inconsistency), uncoordinated shared resources (<module-manifest> concurrent modification), and unresolved assumptions (infra-architect NATS naming pending). Agents working in isolation is the most systemic issue in the pipeline.
+Zero inter-agent communications were logged across 5 consecutive phases (Architecture, Detailed Design, Implementation, Testing, Frontend). This led to undetected conflicts (outbox schema inconsistency), uncoordinated shared resources (go.mod concurrent modification), and unresolved assumptions (infra-architect NATS naming pending). Agents working in isolation is the most systemic issue in the pipeline.
 ## Output
 
 ### `.feedback/learning/improvement-plan.md`

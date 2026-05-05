@@ -11,7 +11,7 @@ description: >
   Triggers: doctest, Examples:, >>>, +SKIP, +ELLIPSIS, +NORMALIZE_WHITESPACE, --doctest-modules, --doctest-glob, BLANKLINE, IGNORE_EXCEPTION_DETAIL.
 ---
 
-# python-doctest-patterns (v1.1.0)
+# python-doctest-patterns (v1.1.1)
 
 ## Rationale
 
@@ -91,6 +91,21 @@ Async examples cannot be run inline by `--doctest-modules` — pytest's doctest 
 
 Once `--doctest-modules` is wired, Rule 2's `+SKIP` directive becomes non-decorative — without `--doctest-modules`, `+SKIP` was meaningless because nothing was running anyway.
 
+### Per-module enforcement note (added v1.1.1)
+
+Rule 1 ("Every public symbol gets at least one Examples block") applies **per-module**, not per-package. Coverage of doctest examples should be uniform across every module in `src/<pkg>/`, not concentrated in one or two foundation modules (e.g., `utils.py` and `core.py`).
+
+**Evidence from `motadata-nats-v1`**: that run landed 28 doctest examples across `src/motadata_nats/` but distribution was lopsided — `__init__.py` had 2, `utils.py` had 13, `core.py` had 12, `corenats.py` had 1, `jetstream.py` had 0, `stores.py` had 0. The TWO modules consumers most-often invoke directly (`jetstream` for Stream/Publisher/Consumer, `stores` for KVStore/ObjectStore) had ZERO runnable examples. Documentation-quality regressed sharply once a consumer left the foundation modules.
+
+**Concrete prescription for documentation-agent-python at M6**:
+
+1. Walk `pkgutil.iter_modules(<pkg>)` to enumerate every public module.
+2. For each module, walk `inspect.getmembers(<mod>, predicate=inspect.isclass | inspect.isfunction)` and filter to public (non-`_`-prefixed) members.
+3. Cross-reference with each member's `__doc__` for an `Examples:` block. Members lacking an `Examples:` block in a module that's part of the public API surface (i.e. listed in `__all__`) are M6 work-items. Per-module floor: if a module exports ≥3 public symbols, it MUST have ≥1 doctest example, even if some symbols are I/O-bound and need `+SKIP`.
+4. Phase 4 `sdk-skill-coverage-reporter` SHOULD include a `coverage_per_module_doctests` table cross-referenced against `coverage-baselines.json::modules`.
+
+**Caveat**: I/O-bound modules (corenats, jetstream, stores in this run's case) typically need `+SKIP` examples for any method that opens a connection. That's fine — `+SKIP`-marked examples still render for humans and still demonstrate the public API's typical shape. The point is to populate the `Examples:` block at all.
+
 ## Activation signals
 
 - Authoring a docstring for any public function, method, or class.
@@ -98,6 +113,7 @@ Once `--doctest-modules` is wired, Rule 2's `+SKIP` directive becomes non-decora
 - README has code blocks that aren't tested.
 - Documentation agent is M6-running and needs to populate doctest examples.
 - A code change broke an Examples block — what's the right fix?
+- A documentation review found ≥1 module in `src/<pkg>/` with zero `Examples:` blocks (added v1.1.1).
 
 ## Core rules
 

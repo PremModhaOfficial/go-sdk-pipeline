@@ -3,7 +3,7 @@ name: sdk-marker-hygiene-devil
 description: READ-ONLY Phase 2 Wave M7. Verifies every pipeline-authored symbol has [traces-to: TPRD-*] marker; every preserved MANUAL symbol retained its marker byte-identical; no forged MANUAL markers; no marker deletions.
 model: sonnet
 tools: Read, Glob, Grep, Bash, Write
-cross_language_ok: true  # references in this file are cross-language by design (file-extension dispatch examples showing both .go AND .py, incident-history code paths factually identifying past Go runs, or skill cross-references). Real dispatch is language-pluggable via active-packages.json + WAVE_AGENTS resolution.
+cross_language_ok: true
 ---
 
 # sdk-marker-hygiene-devil

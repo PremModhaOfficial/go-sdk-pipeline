@@ -13,7 +13,7 @@ description: >
   Triggers: Mock, MagicMock, AsyncMock, spec=, patch, fake, Protocol, respx, freezegun, monkeypatch.setattr, create_autospec, pytest-mock.
 ---
 
-# python-mock-strategy (v1.0.0)
+# python-mock-strategy (v1.1.0)
 
 ## Rationale
 
@@ -326,6 +326,59 @@ mocker.patch("motadatapysdk.client.time", lambda: 123)
 Patches replace the symbol at the IMPORT path, not the source. If `client.py` did `from time import time`, the symbol now lives at `motadatapysdk.client.time` — patch THAT path.
 
 This is the most common Mock confusion. Prefer the seam pattern (Rule 1) so you never need import-path patching.
+
+## Rule 11.5 — Strict-signature mocking when wrapping a real library API (added v1.1.0)
+
+**Added in v1.1.0** in response to the `motadata-nats-v1` run's B-series root cause: FakeNats / FakeJs / FakeKVStore / FakeObjectStore substrates accepted `**kwargs` to remain forward-compatible with future nats-py releases. The `**kwargs` pattern silently swallowed the kwarg-shape drift between `nats-py 2.7` (TPRD-cited floor) and `nats-py 2.14` (env-installed actual). Unit tests passing `replicas=N` on a FakeJs StreamConfig PASSed; the same call against real nats-py 2.14 FAILed at integration-test time (T2).
+
+The lesson: when your Fake wraps a class from a real external library and unit tests are intended to also catch kwarg-name typos / kwarg-rename drift, **bind the Fake's accepted signature to the real class's signature via `inspect.signature`**, not via permissive `**kwargs`.
+
+```python
+# BAD — overly permissive; hides kwarg-rename drift
+class FakeJsStreamConfig:
+    def __init__(self, *, name, subjects, **kwargs):  # ← swallows everything
+        self.name = name
+        self.subjects = subjects
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+```
+
+```python
+# GOOD — bind to the real class's signature; fail fast on kwarg drift
+import inspect
+from nats.js.api import StreamConfig as _RealStreamConfig
+
+_REAL_STREAM_SIG = inspect.signature(_RealStreamConfig)
+
+class FakeJsStreamConfig:
+    """In-memory analogue of nats.js.api.StreamConfig.
+
+    Accepts ONLY the kwargs the real class accepts AT THE CURRENT INSTALLED
+    nats-py minor. Calling with a kwarg the real class would reject (typo,
+    rename, removed) raises TypeError at test time — same failure mode as
+    integration tests would, just without spinning up testcontainers.
+    """
+
+    def __init__(self, **kwargs: object) -> None:
+        bound = _REAL_STREAM_SIG.bind(**kwargs)  # raises TypeError on unknown kwarg
+        bound.apply_defaults()
+        for k, v in bound.arguments.items():
+            setattr(self, k, v)
+```
+
+The `inspect.signature(real_class).bind(**caller_kwargs)` call introspects the real class's `__init__` and raises `TypeError` if the caller passes a kwarg the real class doesn't accept. The Fake's behavior remains in-memory (no I/O), but its kwarg-acceptance surface is now coupled to the real library's kwarg-acceptance surface at the installed version. A `pip install -U <lib>` in CI that introduces a kwarg rename will instantly fail unit tests at the affected mock site, the same way integration tests would fail — just without the 10-second testcontainers spin-up cost.
+
+**Caveats**:
+
+- Cost: `inspect.signature` is reflection-heavy if called per test; cache the `Signature` object at module level (`_REAL_STREAM_SIG = inspect.signature(...)`).
+- Forward-compat: this BINDS to the installed minor. A test that has to assert behavior under a kwarg the SDK uses but the real lib doesn't expose yet (a TPRD invariant) needs a different strategy — usually a per-version conditional `inspect.signature(real_class).parameters` check + `pytest.skip` on incompatible installs.
+- Interaction with `python-dependency-vetting` v1.1.0: dep-vet skill's V-12 check catches kwarg-rename at design time (H6) before the SDK code is ever generated. This Rule 11.5 is the SECOND line of defense — catches at unit test time if dep-vet was bypassed or if the dep was upgraded between dep-vet and the test run.
+
+**When NOT to use strict-signature mocking**:
+
+- The Fake is asserting behavior the real library doesn't even attempt (a TPRD-invariant policy layer like tenant-prefix scoping).
+- The Fake is for a Protocol-typed seam where there's no real library class to bind against.
+- Unit-test budget is dominated by reflection cost (rarely the case; strongly prefer correctness).
 
 ## Rule 11 — Async fixtures that return AsyncMock
 

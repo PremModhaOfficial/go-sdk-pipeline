@@ -442,4 +442,34 @@ For a hot-path async method `motadatapysdk.cache.Cache.get(key: str) -> bytes | 
       - gc_count_gen2
 ```
 
+## Learned Patterns
+
+<!-- Applied by learning-engine (F5) on run motadata-nats-v1 @ 2026-05-04 | pipeline 0.6.0 | patch-id PP-feedback-3 -->
+
+### Pattern: Pair declared budget with measurement methodology (added v0.6.0)
+
+**Rule**: When declaring a per-symbol latency budget in `design/perf-budget.md`, the `methodology` field MUST specify which measurement scope the budget targets — sync-bridge (`pytest-benchmark` runs the symbol via `loop.run_until_complete(...)`), async-native (`pytest-benchmark` with `aiobenchmark` extension), or operation-isolated (direct call into a coroutine without scheduling). A budget without a stated methodology is uncalibrated by construction; benchmark-devil cannot render a meaningful PASS/FAIL.
+
+**Evidence from `motadata-nats-v1`**: budgets for `corenats.Subscriber.callback_dispatch ≤ 30 µs` and `jetstream.Publisher.publish_async ≤ 25 µs` were declared targeting "dispatch-only cost" / "task allocation only" scope. The actual benchmark harness used `pytest-benchmark`'s sync runner via `loop.run_until_complete(_round())`, which bridges through the event loop — the wallclock includes publish + nc framing + cb fire (Subscriber) and the loop-step that schedules the task (publish_async). Measured 140 µs and 102 µs respectively. Both were correctly classified `CALIBRATION-WARN` by `python-benchmark-devil` learned pattern, but BOTH could have been avoided at design time if the budget had specified the measurement scope.
+
+**How to declare (D1)**:
+
+For every per-symbol budget entry in `perf-budget.md`, add a `measurement_methodology` field with one of three values:
+
+| Methodology | Bench harness shape | What it measures |
+|---|---|---|
+| `sync-bridge` | `pytest-benchmark` runs sync wrapper that calls `loop.run_until_complete(<symbol>(...))` | Full publish→callback wallclock incl. event-loop overhead |
+| `async-native` | `pytest-benchmark` with async support (or pytest-asyncio benchmark fixture) | Coroutine wallclock without sync-bridge overhead |
+| `operation-isolated` | Direct call into the underlying private method (e.g. `_wrap_handler(msg)`) | Cost of one operation; no I/O; no event-loop scheduling |
+
+For Subscriber.callback_dispatch in this run, the correct declaration would have been `methodology: operation-isolated` with `bench_harness_invocation` documenting that the bench MUST call `_wrap_handler(msg)` directly, not `loop.run_until_complete(round-trip)`.
+
+**Cost**: ~2-3 minutes per budgeted symbol at D1. Saves the calibration-miss feedback loop that would otherwise surface as CALIBRATION-WARN at T5 (or, worse, masquerade as a regression).
+
+### Pattern: Soak wallclock budget pre-flight (added v0.6.0)
+
+**Rule**: At D1, sum the declared MMD seconds across all soak symbols. If the sum exceeds 50% of the testing-phase wallclock budget (per `.claude/settings.json::phase_budgets.testing.wall_clock_sec`), surface this as a NOTE in `perf-budget.md` and pre-emptively suggest either (a) tier downgrade for one of the soak symbols (e.g., 600s → 300s with documented MMD reduction rationale), or (b) phase-budget-extension request to user at H5.
+
+**Evidence from `motadata-nats-v1`**: `corenats.Subscriber` MMD 600s + `jetstream.Consumer.start` MMD 300s = 900s = 25% of the default 3600s phase budget. Single soak fits; running both back-to-back occupied 25% of phase wallclock. Subscriber 600s soak ended up INCOMPLETE-truncated because cumulative phase wallclock at T5.5 entry was already past 50% (T2 reverify + T3 + T4 + T5 + Consumer 300s soak). A pre-flight at D1 would have surfaced the option to either downgrade Subscriber MMD to 300s or request a wallclock extension at H5 — turning an INCOMPLETE-truncated verdict into a PASS verdict. INCOMPLETE-truncated is correct per rule 33 but is avoidable.
+
 This is the bar. If a §7 entry has less than this, it's not done.

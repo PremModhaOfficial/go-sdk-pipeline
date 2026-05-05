@@ -1,3 +1,5 @@
+<!-- cross_language_ok: true — top-level pipeline doc references per-pack tooling and the multi-tenant SaaS platform context (per F-008 in migration-findings.md). Authoritative project description: SDK is built FOR multi-tenant SaaS consumers; multi-tenant guardrails (TenantID, JetStream, MsgPack, schema-per-tenant) are in-scope. -->
+
 # Skill Creation Guide (SDK pipeline)
 
 Authoring rules for new skills in `.claude/skills/<name>/SKILL.md`. Every skill must pass the validator checklist at the end of this doc.
@@ -49,7 +51,7 @@ Every skill whose domain touches target SDK structure (package layout, construct
 ```
 ## Target SDK Convention
 
-Current convention in the active SDK module: <what the SDK does today>
+Current convention in motadatagosdk: <what the SDK does today>
 If TPRD requests divergence: <decision procedure>
 ```
 
@@ -82,5 +84,5 @@ The archive's 16-check validator + these SDK-mode checks:
 19. Target SDK Convention section present if domain touches SDK structure
 20. ≥3 GOOD/BAD examples, ≥1 sourced from target SDK (when applicable)
 21. Human PR review ACCEPT from subject-matter owner + domain devil-agent owner (recorded in commit trailers + evolution-log.md)
-22. No prescription requires JSON serialization for internal patterns (SDK prefers MsgPack for NATS-adjacent code)
+22. No prescription requires `encoding/json` for internal patterns (SDK prefers MsgPack for NATS-adjacent code)
 23. No tenant_id column / schema-per-tenant artifacts proposed

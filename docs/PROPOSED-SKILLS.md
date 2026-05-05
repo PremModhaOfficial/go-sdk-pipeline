@@ -268,3 +268,16 @@ Source: `improvement-planner` Wave F6, derived from Phase 4 backlog items PA-001
   5. §Validation: how to confirm sampler health post-soak — sample-count vs. expected per-second rate, gap detection
 - **suggested_path**: `.claude/skills/soak-sampler-cooperative-yield/SKILL.md`
 - **note**: explicitly cross-link from existing Go soak skill body and from `python-asyncio-patterns` SKILL.md once authored.
+
+---
+
+## Auto-filed from run `motadata-nats-v1` on 2026-05-04
+
+- **MISSING** `asyncio-cancellation-patterns` (≥1.0.0) — source run `motadata-nats-v1`
+- **MISSING** `python-class-design` (alias for `python-sdk-config-pattern`)` (≥1.0.0) — source run `motadata-nats-v1`
+- **MISSING** `pytest-table-tests` (≥1.0.0) — source run `motadata-nats-v1`
+- **MISSING** `python-tdd-patterns` (≥1.0.0) — source run `motadata-nats-v1`
+- **MISSING** `python-idempotent-retry-patterns` (≥1.0.0) — source run `motadata-nats-v1`
+- **MISSING** `python-api-ergonomics-patterns` (≥1.0.0) — source run `motadata-nats-v1`
+- [ ] `python-library-api-shape-verification` — scope: python — confidence: medium — runs: 1 — first seen: motadata-nats-v1 — rationale: stand-alone skill prescribing the V-12 library-API-shape verification protocol (reflection patterns, multi-version testing matrix, cibuildwheel/tox version-matrix integration). Cited by sdk-impl-lead at M3.5 and sdk-dep-vet-devil-python at H6. Existing `python-dependency-vetting` v1.1.0 patch covers v0.1 of the use case; this skill would elevate to first-class.
+- [ ] `python-m3-5-smoke-integration` — scope: python — confidence: low — runs: 1 — first seen: motadata-nats-v1 — rationale: skill prescribing the M3.5 30-second smoke-integration test for wrapped external libraries (between H7b and H7). Catches library-API-shape drift in impl phase rather than testing phase. Could alternatively live as a `sdk-impl-lead` Learned Pattern (already applied in this run's PP-feedback-2 patch) — promote to skill if pattern recurs across 3+ runs and authors find the embedded form too easy to skip.

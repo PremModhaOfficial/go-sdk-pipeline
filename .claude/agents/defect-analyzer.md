@@ -3,6 +3,7 @@ name: defect-analyzer
 description: Classifies test failures by severity + category; logs to defect-log.jsonl with regression risk assessment.
 model: sonnet
 tools: Read, Write, Glob, Grep
+cross_language_ok: true
 ---
 
 
@@ -96,7 +97,7 @@ For EACH test failure, create a defect entry with the following schema:
 - **Performance**: Timeout failures, slow queries, memory leaks, resource exhaustion
 - **Security**: Auth bypass, injection vulnerability, tenant isolation breach, OWASP violation
 - **Data**: Schema mismatch, data corruption, migration failure, schema-per-tenant isolation gap
-- **Concurrency**: Race condition, deadlock, concurrency unit leak, channel misuse
+- **Concurrency**: Race condition, deadlock, goroutine leak, channel misuse
 - **Integration**: Service-to-service contract violation, NATS event mismatch, API incompatibility
 
 #### NATS-Specific Defect Classification (NON-NEGOTIABLE)
@@ -219,14 +220,14 @@ Before finalizing your outputs, you MUST:
 3. If you discover a conflict between your output and a co-wave agent's output, immediately log an ESCALATION to the phase lead
 4. Log at least 1 communication entry per run documenting your key dependencies or assumptions about other agents' work
 
-Zero inter-agent communications were logged across 5 consecutive phases (Architecture, Detailed Design, Implementation, Testing, Frontend). This led to undetected conflicts (outbox schema inconsistency), uncoordinated shared resources (<module-manifest> concurrent modification), and unresolved assumptions (infra-architect NATS naming pending). Agents working in isolation is the most systemic issue in the pipeline.
+Zero inter-agent communications were logged across 5 consecutive phases (Architecture, Detailed Design, Implementation, Testing, Frontend). This led to undetected conflicts (outbox schema inconsistency), uncoordinated shared resources (go.mod concurrent modification), and unresolved assumptions (infra-architect NATS naming pending). Agents working in isolation is the most systemic issue in the pipeline.
 
 ### Go Package Scope Awareness (from feedback-run-2)
 When classifying duplicate symbol declarations in Go code:
 1. **Verify both declarations are in the same Go package path**, not just under the same directory tree. In Go, `internal/identity-service/adapters/postgres/` and `internal/notification-service/adapters/postgres/` are separate packages even though both are named `postgres`
 2. Use the `package` declaration at the top of each file as the primary evidence, not file path proximity
 3. Functions with the same name in different packages (e.g., `encodeCursor` in identity-service/postgres and notification-service/postgres) are NOT duplicates -- they are independent implementations
-4. If `toolchain.vet` or compiler output is unavailable, state the classification as "PENDING VERIFICATION" rather than assigning CRITICAL severity
+4. If `go vet` or compiler output is unavailable, state the classification as "PENDING VERIFICATION" rather than assigning CRITICAL severity
 
 DEF-001 was classified as CRITICAL but was a false positive -- `encodeCursor`/`decodeCursor` existed in separate service packages that compile independently. Testing-lead had to triage and downgrade post-hoc. This methodology error wastes lead time and distorts defect metrics.
 

@@ -3,6 +3,7 @@ name: sdk-testing-lead
 description: Orchestrator for Phase 3 Testing. Runs unit-coverage audit, integration (testcontainers), bench vs. baseline, leak hunt, fuzz (conditional), supply-chain scans. Gates HITL H8 on benchmark regression.
 model: opus
 tools: Read, Write, Edit, Glob, Grep, Bash, Agent, SendMessage, TaskCreate, TaskUpdate
+cross_language_ok: true
 ---
 
 # sdk-testing-lead
@@ -36,8 +37,8 @@ TIER_CRITICAL    = sort -u over .packages[].tier_critical.testing[TARGET_TIER]
 
 **Wave dispatch rule**: for every wave-id W this lead schedules below:
 
-- If `WAVE_AGENTS[W]` is non-empty → spawn each agent in parallel (wave semantics). T5_5 waves use `Bash run_in_background` per the soak runner (per-pack)'s spec.
-- If `WAVE_AGENTS[W]` is empty → log `{type: "event", severity: "info", category: "skip", title: "wave <W> has no active agents", outcome: "skipped"}`. Verdict-bearing positions emit `INCOMPLETE` per CLAUDE.md rule 33. Examples: empty `T5_bench_complexity` → INCOMPLETE for G65/G107/G108; empty `T5_5_soak` → INCOMPLETE for G105/G106; empty `T6_leak` → INCOMPLETE for leak-detection harness gate.
+- If `WAVE_AGENTS[W]` is non-empty → spawn each agent in parallel (wave semantics). T5_5 waves use `Bash run_in_background` per `sdk-soak-runner-go`'s spec.
+- If `WAVE_AGENTS[W]` is empty → log `{type: "event", severity: "info", category: "skip", title: "wave <W> has no active agents", outcome: "skipped"}`. Verdict-bearing positions emit `INCOMPLETE` per CLAUDE.md rule 33. Examples: empty `T5_bench_complexity` → INCOMPLETE for G65/G107/G108; empty `T5_5_soak` → INCOMPLETE for G105/G106; empty `T6_leak` → INCOMPLETE for goleak gate.
 
 **Tier-critical preflight**: before spawning any wave, verify every name in `TIER_CRITICAL` is present in `ACTIVE_AGENTS`. If any is missing, halt with `BLOCKER: tier=<TARGET_TIER> requires <agent>; not in active packages. Fix package manifests (.claude/package-manifests/*.json:tier_critical.testing.<TARGET_TIER>) OR change §Target-Tier in TPRD`.
 
@@ -65,11 +66,11 @@ Wave-id → manifest field mapping (canonical: `.claude/package-manifests/*.json
 
 1. **Wave T1 Coverage audit (`waves.T1_coverage`)** — spawn `WAVE_AGENTS[T1_coverage]` if non-empty; otherwise this lead runs `bash scripts/run-toolchain.sh coverage` directly (Step 4 wiring) and authors gap-filling tests per `coverage_min_pct` from active-packages toolchain (today: 90).
 2. **Wave T2 Integration (`waves.T2_integration`)** — spawn `WAVE_AGENTS[T2_integration]` if non-empty; otherwise this lead invokes testcontainers harness per TPRD §11 directly via `bash scripts/run-toolchain.sh test`.
-3. **Wave T3 Flake hunt (`waves.T3_flake_hunt`)** — spawn `WAVE_AGENTS[T3_flake_hunt]` (typically the integration flake hunter (per-pack)).
+3. **Wave T3 Flake hunt (`waves.T3_flake_hunt`)** — spawn `WAVE_AGENTS[T3_flake_hunt]` (typically `sdk-integration-flake-hunter-go`).
 4. **Wave T4 Benchmarks (`waves.T4_benchmarks`)** — spawn `WAVE_AGENTS[T4_benchmarks]` if non-empty; otherwise this lead runs `bash scripts/run-toolchain.sh bench`.
-5. **Wave T5 Benchmark + complexity (`waves.T5_bench_complexity`)** — spawn `WAVE_AGENTS[T5_bench_complexity]` in parallel. Complexity runs FIRST when present (a scaling-shape mismatch makes regression gating meaningless). Active set typically: benchmark-devil (benchmark-comparison tool vs. baseline + oracle margin → G108; allocs/op → G104; H8 on regression) AND complexity-devil (scaling sweep at N ∈ {10, 100, 1k, 10k} → G107). Empty wave → INCOMPLETE for G65/G104/G107/G108.
+5. **Wave T5 Benchmark + complexity (`waves.T5_bench_complexity`)** — spawn `WAVE_AGENTS[T5_bench_complexity]` in parallel. Complexity runs FIRST when present (a scaling-shape mismatch makes regression gating meaningless). Active set typically: benchmark-devil (benchstat vs. baseline + oracle margin → G108; allocs/op → G104; H8 on regression) AND complexity-devil (scaling sweep at N ∈ {10, 100, 1k, 10k} → G107). Empty wave → INCOMPLETE for G65/G104/G107/G108.
 6. **Wave T5.5 Soak + Drift (`waves.T5_5_soak` ∪ `waves.T5_5_drift`)** — for every symbol in `design/perf-budget.md` with `soak.enabled: true`: spawn `WAVE_AGENTS[T5_5_soak]` agents via `Bash run_in_background` (decouples from tool-call window), then spawn `WAVE_AGENTS[T5_5_drift]` to observe state files on a poll ladder (30s, 2m, 5m, 15m, 30m, 60m, 2h, 4h, 6h). Fast-fails on statistically significant positive slope (G106); enforces MMD (G105). Emits verdict ∈ {PASS, FAIL, INCOMPLETE} per rule 33. Empty either wave → INCOMPLETE.
-7. **Wave T6 Leak hunt (`waves.T6_leak`)** — spawn `WAVE_AGENTS[T6_leak]` (typically the leak hunter (per-pack)); language-specific harness via toolchain `leak_check`.
+7. **Wave T6 Leak hunt (`waves.T6_leak`)** — spawn `WAVE_AGENTS[T6_leak]` (typically `sdk-leak-hunter-go`); language-specific harness via toolchain `leak_check`.
 8. **Wave T7 Fuzz (`waves.T7_fuzz`, conditional on TPRD §11)** — if TPRD §11 lists fuzz targets, spawn `WAVE_AGENTS[T7_fuzz]` if non-empty; otherwise this lead runs language-native fuzz harness directly.
 9. **Wave T8 Supply chain (`waves.T8_supply_chain`)** — spawn `WAVE_AGENTS[T8_supply_chain]` (typically `guardrail-validator`); runs the supply-chain guardrails (today: G32, G33, G34) filtered to active packages, with toolchain commands from `toolchain.supply_chain`.
 10. **Wave T9 Observability tests (conditional)** — verify spans/metrics emit per TPRD §8. No dispatch — currently a checkpoint within T2.
@@ -81,7 +82,7 @@ Wave-id → manifest field mapping (canonical: `.claude/package-manifests/*.json
 - `runs/<run-id>/testing/coverage.txt`
 - `runs/<run-id>/testing/bench-raw.txt`
 - `runs/<run-id>/testing/bench-compare.md`
-- `runs/<run-id>/testing/vulnerability scanner.txt`
+- `runs/<run-id>/testing/govulncheck.txt`
 - `runs/<run-id>/testing/osv-scan.txt`
 - `runs/<run-id>/testing/testing-summary.md`
 - `runs/<run-id>/testing/context/sdk-testing-lead-summary.md`
@@ -140,3 +141,34 @@ If the active set is missing a skill that the testing wave's evidence makes nece
 **Rule**: At T2 integration-test start, scan TPRD §11.1 for a `not-covered-by-fake-client:` list. If absent, log an ESCALATION to phase-retrospector recommending TPRD §11.1 amendment with explicit fake-client coverage exclusions. In the meantime, any SKIP caused by a fake-client limitation MUST be accompanied by a `//` comment that cites the specific command and the fake-client's lack of support, plus an `integration/` counterpart test gated on `//go:build integration`.
 
 **Evidence from sdk-dragonfly-s2**: `miniredis/v2` does not implement the Redis 7.4 HPExpire-family commands (`HPEXPIRE`, `HEXPIREAT`, `HTTL`, `HPERSIST`). TestHash_HExpireFamily has a partial `t.Skip` with a comment; the integration test `TestIntegration_HExpire` covers the live case. TPRD §11.1 did not document this known gap, so the skip looked surprising during T2. A single line in TPRD §11.1 ("miniredis v2.37 does NOT support HEXPIRE family — covered by integration") would have set the expectation.
+
+<!-- Applied by learning-engine (F5) on run motadata-nats-v1 @ 2026-05-04 | pipeline 0.6.0 | patch-id PP-feedback-4 -->
+
+### Pattern: Soak wallclock budget gating at H8/H9 (added v0.6.0)
+
+**Rule**: Before launching the T5.5 soak wave, compute `cumulative_wallclock_consumed_so_far + sum(declared_mmd_seconds_for_remaining_soaks)`. If this projected total exceeds 90% of `phase_budgets.testing.wall_clock_sec`, the testing-lead MUST pre-emptively log an `event: soak-wallclock-projected-truncation` decision-log entry AND surface the option at H8/H9 to either:
+
+(a) downgrade one of the remaining soak symbols' MMD to a shorter duration the budget admits (e.g., 600s → 300s) — recorded as a one-line waiver in `perf-budget.md` with the rationale, OR
+(b) request a phase-budget-extension via the run prompt before launching.
+
+NEVER silently launch a soak that the budget cannot accommodate to MMD. Per rule 33, a truncated soak emits INCOMPLETE; routinely INCOMPLETE-truncated verdicts erode the user's trust in the soak signal.
+
+**Evidence from `motadata-nats-v1`**: T5.5 entered with `corenats.Subscriber` MMD 600s + `jetstream.Consumer.start` MMD 300s declared. Cumulative wallclock at T5.5 entry was already past 25 minutes (1500s of a 3600s budget); launching both soaks back-to-back would have totalled 2400s = 67% of phase budget, leaving 1200s for everything-else. Consumer soak ran (300.48s wallclock, MMD met, PASS). Subscriber soak was DEFERRED because the remaining 1100s could not fit a 600s MMD plus result-write + integration of bench results into report. The Subscriber 600s emerged as INCOMPLETE-truncated at H9. A pre-flight check at T5.5 entry would have surfaced this BEFORE Consumer was launched, allowing the user to choose whether to (a) downgrade Subscriber MMD to 300s + run both, OR (b) skip Consumer + run full Subscriber 600s, OR (c) extend wallclock budget at H8.
+
+**Pre-flight ladder (T5.5 entry)**:
+
+```
+remaining_budget_s = phase_budget_s - elapsed_s
+projected_soak_total_s = sum(declared_mmd_seconds for not-yet-launched soak symbols)
+overhead_s = 60  # conservative report-writing + idle time
+
+if projected_soak_total_s + overhead_s > remaining_budget_s:
+    log(event: soak-wallclock-projected-truncation, projected: <total>, available: <remaining>)
+    surface H8/H9 option-set; do not launch soaks until user decides OR auto-mode pre-authorization explicitly handles this case
+elif projected_soak_total_s + overhead_s > 0.9 * remaining_budget_s:
+    log(event: soak-wallclock-tight-budget, ...)  # WARN; launch but flag at H9
+else:
+    launch normally
+```
+
+**Cross-reference**: paired with `sdk-perf-architect-python` learned pattern "Soak wallclock budget pre-flight" — that pattern catches the budget-overrun at D1 (design phase), this pattern catches it at T5.5 (testing phase) if it slipped past D1.

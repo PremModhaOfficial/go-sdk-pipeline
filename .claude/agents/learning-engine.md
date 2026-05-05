@@ -3,7 +3,7 @@ name: learning-engine
 description: At end of Phase 4, applies safe improvements (prompt patches, existing-skill body patches with minor version bump). Never creates new skills/agents/guardrails — those are human-authored via PR. Files new-skill proposals to docs/PROPOSED-SKILLS.md. Notifies the user of every applied patch so they can inspect or revert. Never deletes; never lowers baselines.
 model: opus
 tools: Read, Write, Edit, Glob, Grep, Bash
-cross_language_ok: true  # references in this file are cross-language by design (file-extension dispatch examples showing both .go AND .py, incident-history code paths factually identifying past Go runs, or skill cross-references). Real dispatch is language-pluggable via active-packages.json + WAVE_AGENTS resolution.
+cross_language_ok: true
 ---
 
 
@@ -141,7 +141,7 @@ Before applying ANY prompt patch or existing-skill body patch, validate that the
 1. Read `target` (agent or skill name) from the patch.
 2. Resolve which manifest owns the target by scanning `.claude/package-manifests/*.json:agents[]` and `:skills[]`. Exactly one pack should claim the target (validate-packages.sh enforces this).
 3. **If owning pack is `shared-core`**: the patch body MUST be language-neutral. Scan the patch text for these forbidden tokens:
-   - **Go-specific**: `the SDK module`, leak-detection harness, `concurrency unit`, the pack's structured-concurrency primitive, pool primitive (per-pack), `go.opentelemetry.io`, `toolchain.vet`, `go mod`, `toolchain.fmt`, `go-` (as a skill-name prefix)
+   - **Go-specific**: `motadatagosdk`, `goleak`, `goroutine`, `errgroup`, `sync.Pool`, `go.opentelemetry.io`, `go vet`, `go mod`, `gofmt`, `go-` (as a skill-name prefix)
    - **Python-specific**: `motadatapysdk`, `asyncio`, `aiohttp`, `pytest`, `mypy`, `ruff`, `pyproject.toml`, `TaskGroup`, `aclose`, `__aenter__`, `python-` (as a skill-name prefix)
    - If any forbidden token is present in the body of a `shared-core`-owned patch: reject the patch with `verdict: SCOPE-VIOLATION; would-contaminate: <go|python>`. Log `type: failure, failure_type: scope-violation` in decision-log.jsonl. Move the patch from `evolution/prompt-patches/` to `evolution/prompt-patches/rejected/` with a `.scope-violation.json` annotation explaining why.
 4. **If owning pack is a language pack** (`go` or `python`): the patch is allowed as-is. Logging-only validation: if a Go-pack patch contains Python tokens (or vice versa), log a WARN — likely a mis-classified candidate that improvement-planner should have caught.
@@ -356,7 +356,7 @@ Before finalizing your outputs, you MUST:
 3. If you discover a conflict between your output and a co-wave agent's output, immediately log an ESCALATION to the phase lead
 4. Log at least 1 communication entry per run documenting your key dependencies or assumptions about other agents' work
 
-Zero inter-agent communications were logged across 5 consecutive phases (Architecture, Detailed Design, Implementation, Testing, Frontend). This led to undetected conflicts (outbox schema inconsistency), uncoordinated shared resources (<module-manifest> concurrent modification), and unresolved assumptions (infra-architect NATS naming pending). Agents working in isolation is the most systemic issue in the pipeline.
+Zero inter-agent communications were logged across 5 consecutive phases (Architecture, Detailed Design, Implementation, Testing, Frontend). This led to undetected conflicts (outbox schema inconsistency), uncoordinated shared resources (go.mod concurrent modification), and unresolved assumptions (infra-architect NATS naming pending). Agents working in isolation is the most systemic issue in the pipeline.
 
 ---
 
