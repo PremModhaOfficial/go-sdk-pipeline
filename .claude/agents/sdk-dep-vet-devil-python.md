@@ -286,3 +286,22 @@ Per-dep findings are sorted by verdict (REJECT → INCOMPLETE → CONDITIONAL �
 - **One dep INCOMPLETE, rest clean**: aggregate is `INCOMPLETE` (rule 33 — `INCOMPLETE` never silently promoted to `ACCEPT`).
 
 INCOMPLETE never auto-promotes to PASS. The user surfaces it at H6.
+
+## Learned Patterns
+
+<!-- Applied by learning-engine (F5) on run motadata-nats-v1 @ 2026-05-04 | pipeline 0.6.0 | patch-id PP-feedback-1 -->
+<!-- Confidence: HIGH. Pairs with python-dependency-vetting v1.1.0 V-12 check. -->
+
+### Pattern: Library-API-shape verification at H6 (added v0.6.0)
+
+**Rule**: Before rendering aggregate ACCEPT on any runtime dep whose API surface is referenced by `design/api-stub.py`, the dep-vet devil MUST run the `python-dependency-vetting` skill v1.1.0+ V-12 check. The check materializes a scratch venv at the highest-pinnable minor of the declared range and reflects via `inspect.signature` over each SDK-cited class/function. Any kwarg the SDK passes that is absent from the resolved-minor's signature surfaces as **CONDITIONAL — kwarg-rename-required** (or **kwarg-removed-required**), NEVER silently ACCEPTed.
+
+**Evidence from `motadata-nats-v1`**: `nats-py>=2.7.0,<3` was vetted clean on V-1..V-11 (license, CVE, size, age, transitives, adoption, maintenance, Sigstore, typosquat, native code, version compat). The dep-vet devil rendered ACCEPT. The TPRD-cited floor was 2.7; the env had 2.14. Between 2.7 and 2.14 nats-py renamed `replicas` → `num_replicas`, `allow_rollup` → `allow_rollup_hdrs`, and dropped the `compression` kwarg from `KeyValueConfig` and `ObjectStoreConfig`. The SDK code coded against 2.7-style kwargs; tests failed at T2 integration (B1-B4 BLOCKER, 7 commits to remediate). All four defects would have surfaced at H6 if V-12 had been run.
+
+**How to invoke at H6**:
+1. After V-1..V-11 render their per-dep verdicts, for each dep with a non-empty `api-stub` reference list (compute by grepping `from <pkg>` and `import <pkg>` in `design/api-stub.py`):
+   - Run V-12 protocol from `python-dependency-vetting` skill v1.1.0+.
+   - If V-12 returns CONDITIONAL with kwarg-rename hints, append those hints to the per-dep verdict in `dep-vet-verdict.md`.
+2. Aggregate verdict promotion: V-12 CONDITIONAL flips the per-dep aggregate from ACCEPT to CONDITIONAL. Multi-dep aggregate follows the existing CONDITIONAL/REJECT/INCOMPLETE rules.
+
+**Cost**: ~30 seconds per dep with API-surface references. Catches an entire class of bug at design time, eliminating the impl→test→re-impl loop. Cost amortized: a 30-min remediation loop saved per detected drift.

@@ -1,3 +1,5 @@
+<!-- cross_language_ok: true — phase contract orchestrates language-specific waves; references per-pack toolchain (Go: go test/build/vet/govulncheck/goleak; Python: pytest/mypy/ruff/pip-audit) in narrative wave descriptions. The phase invariants themselves are language-neutral and resolve through active-packages.json + toolchain. Multi-tenant SaaS context preserved per F-008. -->
+
 # Phase 3: Testing
 
 ## Purpose
@@ -14,7 +16,7 @@ Exhaustive verification beyond the TDD tests written in Phase 2. Adds integratio
 
 ### Wave T1 — Unit Coverage Audit
 **Agent**: `unit-test-agent`
-- Run `toolchain.coverage`
+- Run `go test -cover ./<pkg>/...`
 - Report per-package branch coverage
 - Fill gaps with new table-driven tests (error paths, edge cases, boundary values, nil inputs, concurrent access)
 - Target: ≥90% per new package; zero delta on existing (Mode B/C)
@@ -27,41 +29,41 @@ Exhaustive verification beyond the TDD tests written in Phase 2. Adds integratio
 - Tenant isolation NOT applicable (SDK is a library)
 
 ### Wave T3 — Flake Hunt
-**Agent**: Integration Flake Hunter (per-pack, resolved from `waves.T3_flake_hunt`)
+**Agent**: `sdk-integration-flake-hunter-go`
 - Run integration tests `-count=3`
 - Any failure = flaky; BLOCKER until investigated + fixed
 
 ### Wave T4 — Benchmarks
 **Agent**: `performance-test-agent`
 - Write `*_benchmark_test.go` for every hot path declared in TPRD §5 NFR
-- Run `toolchain.bench`
+- Run `go test -bench=. -benchmem -count=5 ./<pkg>/...`
 - Capture output to `runs/<run-id>/testing/bench-raw.txt`
 
 ### Wave T5 — Benchmark Devil
-**Agent**: Benchmark Devil (per-pack, resolved from `waves.T5_bench_complexity`)
+**Agent**: `sdk-benchmark-devil-go`
 - Compare raw output against `baselines/go/performance-baselines.json` for shared packages
 - For new package: capture baseline (first run = baseline)
-- benchmark-comparison tool (per-pack) compare; verdict PASS / REGRESS / ACCEPT-WITH-WAIVER
+- `benchstat` compare; verdict PASS / REGRESS / ACCEPT-WITH-WAIVER
 - Regression gate (from settings.json): hot path +5%, shared +10%
 - FAIL = BLOCKER unless `--accept-perf-regression <n>`
 
 ### Wave T6 — Leak Hunt
-**Agent**: leak hunter (per-pack, resolved from `waves.T6_leak`)
-- Ensure the pack's leak-detection harness (`toolchain.leak_check`) in new package's TestMain
-- Run `toolchain.test` (with race detection if supported)
+**Agent**: `sdk-leak-hunter-go`
+- Ensure `goleak.VerifyTestMain` in new package's TestMain
+- Run `go test -race -count=5 ./<pkg>/...`
 - Any leak = BLOCKER
 
 ### Wave T7 — Fuzz (conditional)
 **Agent**: `fuzz-agent` (new, minimal)
 - If TPRD §11 lists fuzz targets, write `FuzzXxx` functions
 - Seed corpus from happy path + edge cases
-- Run fuzz harness (per-pack)
+- Run `go test -fuzz=FuzzXxx -fuzztime=30s`
 - Record crashes
 
 ### Wave T8 — Supply Chain
 **Agent**: `guardrail-validator`
-- the pack's vulnerability scanner (`toolchain.supply_chain[0]`) — zero HIGH/CRITICAL
-- the pack's lockfile vulnerability scanner (`toolchain.supply_chain[1]`) — zero HIGH/CRITICAL
+- `govulncheck ./...` — zero HIGH/CRITICAL
+- `osv-scanner ./go.mod` — zero HIGH/CRITICAL
 
 ### Wave T9 — Observability Tests (conditional)
 **Agent**: `observability-test-agent`
@@ -86,13 +88,13 @@ Exhaustive verification beyond the TDD tests written in Phase 2. Adds integratio
 - `runs/<run-id>/testing/coverage.txt`
 - `runs/<run-id>/testing/bench-raw.txt`
 - `runs/<run-id>/testing/bench-compare.md`
-- `runs/<run-id>/testing/supply-chain.txt`
+- `runs/<run-id>/testing/govulncheck.txt`
 - `runs/<run-id>/testing/osv-scan.txt`
 - `runs/<run-id>/testing/testing-summary.md`
 
 ## Guardrails (exit gate)
 
-G60 (all tests pass (with race detection if supported)), G61 (coverage ≥90%), G62 (leak harness wired in test entrypoint), G63 (no flakes under repeat-count=3), G64 (benchmark produces numeric results), G65 (bench within gate), G66 (integration test exclusion tag), G67 (runnable examples per area, per pack — `Example_*` in Go, doctest in Python), G68 (traces-to in tests), G69 (no hardcoded creds).
+G60 (all tests pass -race), G61 (coverage ≥90%), G62 (goleak in TestMain), G63 (no flakes under -count=3), G64 (bench produces numbers), G65 (bench within gate), G66 (integration build-tag), G67 (Example_* per area), G68 (traces-to in tests), G69 (no hardcoded creds).
 
 ## Metrics
 

@@ -3,7 +3,7 @@ name: sdk-security-devil
 description: READ-ONLY. PARANOID. Reviews design + impl for TLS defaults, credential handling, log-PII, input validation, SSRF, timing attacks. Assumes every input is malicious.
 model: opus
 tools: Read, Glob, Grep, Bash, Write
-cross_language_ok: true  # references in this file are cross-language by design (file-extension dispatch examples showing both .go AND .py, incident-history code paths factually identifying past Go runs, or skill cross-references). Real dispatch is language-pluggable via active-packages.json + WAVE_AGENTS resolution.
+cross_language_ok: true
 ---
 
 # sdk-security-devil

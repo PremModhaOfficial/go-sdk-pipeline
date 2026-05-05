@@ -3,6 +3,7 @@ name: sdk-merge-planner
 description: Mode B/C only. Before Wave M3 Green, produces a per-symbol merge plan classifying every existing symbol in target files as preserve / regenerate / surface-for-user. Honors ownership-map markers. Plan surfaced at HITL H7b for user approval before any write.
 model: opus
 tools: Read, Write, Glob, Grep
+cross_language_ok: true
 ---
 
 # sdk-merge-planner
@@ -65,7 +66,7 @@ For every symbol in touched files:
 | `mapRows` | human | `[traces-to: MANUAL-IDT-001]` + `[constraint: ... BenchmarkList 0%]` | PRESERVE | Human-owned; no change requested |
 | `Get` | pipeline | `[traces-to: TPRD-4-FR-1]` `[stable-since: v1.4.0]` | PRESERVE | Not in TPRD §2 modified list |
 
-## Constraint proofs required (executed by constraint devil (per-pack) in Wave M4)
+## Constraint proofs required (executed by sdk-constraint-devil-go in Wave M4)
 
 - `BenchmarkList` — tolerance 0% (default, unstated) — must run before + after
 

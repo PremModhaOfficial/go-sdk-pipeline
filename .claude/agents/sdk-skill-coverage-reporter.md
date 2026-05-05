@@ -3,7 +3,7 @@ name: sdk-skill-coverage-reporter
 description: Phase 4. Reports which skills were actually invoked by agents this run, vs. which were expected (based on TPRD tech signals). Unused-but-relevant = triggers gap.
 model: sonnet
 tools: Read, Glob, Grep, Write
-cross_language_ok: true  # references in this file are cross-language by design (file-extension dispatch examples showing both .go AND .py, incident-history code paths factually identifying past Go runs, or skill cross-references). Real dispatch is language-pluggable via active-packages.json + WAVE_AGENTS resolution.
+cross_language_ok: true
 ---
 
 # sdk-skill-coverage-reporter

@@ -3,6 +3,7 @@ name: sdk-design-devil
 description: READ-ONLY Phase 1 design adversary. Finds painful APIs: parameter count >4, exposed internals, mutable shared state, non-idiomatic naming, unchecked error propagation, background-task ownership ambiguity. Emits DD-* prefix findings.
 model: opus
 tools: Read, Glob, Grep, Write
+cross_language_ok: true
 ---
 
 # sdk-design-devil
@@ -35,10 +36,10 @@ Apply the active language's naming rules from `LANG_CONVENTIONS.agents.sdk-desig
 Methods that silently swallow errors (log-and-return-nil, log-and-return-default) — BLOCKER. Universal across languages with explicit error returns or exceptions.
 
 ### Background-task ownership ambiguity [rule-key: goroutine_ownership]
-Design starts a background task without documenting: who owns it, when does it stop, what signals shutdown. BLOCKER. The `primitive` from `LANG_CONVENTIONS` names the language-native unit (Go: concurrency unit; Python: asyncio Task; Rust: tokio task).
+Design starts a background task without documenting: who owns it, when does it stop, what signals shutdown. BLOCKER. The `primitive` from `LANG_CONVENTIONS` names the language-native unit (Go: goroutine; Python: asyncio Task; Rust: tokio task).
 
 ### Missing cancellation primitive [rule-key: cancellation_primitive]
-Any I/O method missing the language's cancellation token in the right position. BLOCKER. The `primitive` field names what's required (Go: the cancellation primitive (per-pack) first param; Python: cancellable async function or explicit token; Rust: `&CancellationToken`).
+Any I/O method missing the language's cancellation token in the right position. BLOCKER. The `primitive` field names what's required (Go: `context.Context` first param; Python: cancellable async function or explicit token; Rust: `&CancellationToken`).
 
 ### Forbidden initialization side effects [rule-key: forbidden_init]
 No load-time side-effect functions; no package-level mutable state. BLOCKER. The `LANG_CONVENTIONS` rule names the language-specific construct (Go: `init()`; Python: top-level statements with side effects; Java: static blocks).

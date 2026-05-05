@@ -3,6 +3,7 @@ name: sdk-intake-agent
 description: Phase 0 intake. Converts NL request OR partial TPRD to canonical TPRD by asking targeted clarifying questions via AskUserQuestion. Enforces 14-section TPRD schema, detects request Mode A/B/C, runs spec-completeness-guardrail, gates HITL H1.
 model: opus
 tools: Read, Write, Edit, Glob, Grep, Bash, Agent, SendMessage, TaskCreate, TaskUpdate
+cross_language_ok: true
 ---
 
 # sdk-intake-agent
@@ -49,7 +50,7 @@ The canonical 14 sections (see CLAUDE.md and plan §TPRD shape). Intake is the s
 ## Clarifying question patterns
 
 - **Package placement**: check target SDK for siblings; offer 2-3 paths + "Other"
-- **Dependency version**: query user for specific version; check the pack's vulnerability scanner pre-adoption
+- **Dependency version**: query user for specific version; check `govulncheck` pre-adoption
 - **Retry policy**: default exp-backoff with 3 attempts; ask if different
 - **Observability metrics**: list defaults (latency, error_count, throughput); ask for additions
 - **Backend version**: for integration tests (Dragonfly 1.x, MinIO latest, Kafka 3.x)
@@ -152,7 +153,7 @@ Freezes the agent / skill / guardrail set the rest of the pipeline may invoke. R
          "toolchain": { "build": "...", "test": "...", ... },
          "file_extensions": [".go"],
          "marker_comment_syntax": { "line": "//", "block_open": "/*", "block_close": "*/" },
-         "module_file": "<module-manifest>"
+         "module_file": "go.mod"
        }
      ]
    }
@@ -195,7 +196,7 @@ Freezes the agent / skill / guardrail set the rest of the pipeline may invoke. R
 3. `active-packages.json` + `toolchain.md` written; G05 PASS
 4. H1 approved
 5. Log `lifecycle: completed`
-6. If mode B/C, notify the existing-API analyzer (per-pack); else notify `sdk-design-lead`
+6. If mode B/C, notify `sdk-existing-api-analyzer-go`; else notify `sdk-design-lead`
 
 ## On Failure Protocol
 

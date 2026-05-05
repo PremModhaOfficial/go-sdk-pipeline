@@ -57,13 +57,11 @@
     "G31-py", "G32-py", "G34-py",
     "G40-py", "G41-py", "G42-py", "G43-py",
     "G60-py", "G61-py", "G63-py",
-    "G200-py",
-    "G104-py", "G107-py", "G109-py"
+    "G104-py", "G105-py", "G106-py", "G107-py", "G108-py", "G109-py", "G110-py",
+    "G200-py"
   ],
 
-  "aspirational_guardrails": {
-    "G110-py": "Perf-exception marker pairing. Owner: sdk-marker-hygiene-devil. Phases: Impl M7 + M9. Script not yet authored — defer until first [perf-exception:] marker ships in source. Shareable as single shared-core script when authored."
-  },
+  "aspirational_guardrails": {},
 
   "waves": {
     "I3_existing_api":    ["sdk-existing-api-analyzer-python"],
@@ -101,9 +99,9 @@
   "toolchain": {
     "build": "python -m build",
     "test": "pytest -x --no-header",
-    "lint": "ruff check",
-    "vet": "mypy --strict",
-    "fmt": "ruff format --check",
+    "lint": "ruff check src tests",
+    "vet": "mypy --strict src tests",
+    "fmt": "ruff format --check src tests",
     "coverage": "pytest --cov --cov-report=json",
     "coverage_min_pct": 90,
     "bench": "pytest --benchmark-only --benchmark-json=bench.json",

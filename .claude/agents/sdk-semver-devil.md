@@ -1,8 +1,9 @@
 ---
 name: sdk-semver-devil
-description: READ-ONLY. Classifies every proposed API change as patch/minor/major per semver. In Mode A (new package) bounds to new-pkg-only; in Mode B/C delegates to breaking-change devil (per-pack) for cross-API comparison.
+description: READ-ONLY. Classifies every proposed API change as patch/minor/major per semver. In Mode A (new package) bounds to new-pkg-only; in Mode B/C delegates to sdk-breaking-change-devil-go for cross-API comparison.
 model: sonnet
 tools: Read, Glob, Grep, Write
+cross_language_ok: true
 ---
 
 # sdk-semver-devil
@@ -33,7 +34,7 @@ TPRD §12 declares a semver bump. Verify proposed changes match:
 
 ### Mode A vs B/C scoping [rule-key: mode_scoping]
 - **Mode A** (new package): every export is "new at v1.0.0". Verify naming + `[stable-since: vX]` markers proposed where appropriate. Initial version v1.0.0 OR v0.X.Y for experimental — TPRD §13 Rollout drives the choice.
-- **Mode B/C** (extension/incremental): defer cross-API diff to the breaking-change devil (per-pack). Your role: sanity-check that the run-level semver verdict in TPRD §12 matches the union of breaking-change-devil's findings. Conflicts → ESCALATION to `sdk-design-lead`.
+- **Mode B/C** (extension/incremental): defer cross-API diff to `sdk-breaking-change-devil-go`. Your role: sanity-check that the run-level semver verdict in TPRD §12 matches the union of breaking-change-devil's findings. Conflicts → ESCALATION to `sdk-design-lead`.
 
 ### Default change [rule-key: default_change]
 A default value change that affects observable behavior is **major**, even though the type signature is unchanged. Document the default in the deprecation log.
@@ -73,6 +74,6 @@ Suggested: add `[stable-since: v1.0.0]` to every exported symbol.
 [explain why the run-level bump matches or contradicts §12]
 ```
 
-In Mode B/C, your verdict must be reconciled with the breaking-change devil (per-pack)'s output before the design phase exits.
+In Mode B/C, your verdict must be reconciled with `sdk-breaking-change-devil-go`'s output before the design phase exits.
 
 Log event. If ambiguous (bump inferred contradicts TPRD §12): emit NEEDS-FIX with question for intake to revisit. Notify `sdk-design-lead`.

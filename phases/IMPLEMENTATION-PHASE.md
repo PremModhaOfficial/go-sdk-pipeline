@@ -1,3 +1,5 @@
+<!-- cross_language_ok: true — phase contract orchestrates language-specific waves; references per-pack toolchain (Go: go test/build/vet/govulncheck/goleak; Python: pytest/mypy/ruff/pip-audit) in narrative wave descriptions. The phase invariants themselves are language-neutral and resolve through active-packages.json + toolchain. Multi-tenant SaaS context preserved per F-008. -->
+
 # Phase 2: Implementation
 
 ## Purpose
@@ -27,7 +29,7 @@ For each symbol in TPRD §7 API:
 - Write `<pkg>/<sym>_test.go` with failing table-driven tests encoding TPRD §4 FRs
 - Add `// [traces-to: TPRD-4-FR-<n>]` marker on each test case
 - Commit to branch with message `test: red for TPRD-4-FR-<n>`
-**Exit**: `toolchain.test` compiles; all tests FAIL as expected.
+**Exit**: `go test ./<pkg>/...` compiles; all tests FAIL as expected.
 
 ### Wave M2 — Merge Planning (Mode B/C only)
 **Agent**: `sdk-merge-planner`
@@ -45,28 +47,28 @@ For each failing test:
 - Write minimum code to pass
 - Respect merge plan (Mode B/C)
 - Add `// [traces-to: TPRD-<section>-<id>]` marker on each new symbol
-- Wire OTel via the SDK's OTel wrapper module (per-pack)
+- Wire OTel via `motadatagosdk/otel`
 - Wire circuit breaker + pool where designed
 - Commit: `feat: green for TPRD-<n>`
-**Exit per file**: `toolchain.build` + `toolchain.test` pass.
+**Exit per file**: `go build ./...` + `go test ./<pkg>/... -race -count=1` pass.
 
 ### Wave M4 — Constraint Proof (Mode B/C only)
-**Agent**: Constraint Devil (per-pack)
+**Agent**: `sdk-constraint-devil-go`
 For each `[constraint]` with named bench in touched files:
 - Run bench BEFORE changes (from `bench-baseline.txt`)
 - Run bench AFTER changes
-- benchmark-comparison tool (per-pack) compare; stated-tolerance check (default 0% if unstated)
+- `benchstat` compare; stated-tolerance check (default 0% if unstated)
 - FAIL = BLOCKER; halt, surface to user
 
 ### Wave M5 — Refactor
-**Agent**: refactoring agent (per-pack)
+**Agent**: `refactoring-agent-go`
 - Remove duplication
 - Apply `simplify` skill patterns
 - Maintain test green
 
 ### Wave M6 — Docs
-**Agent**: documentation agent (per-pack)
-- Doc-comment on every exported symbol (first word = symbol name)
+**Agent**: `documentation-agent-go`
+- Godoc on every exported symbol (first word = symbol name)
 - Add `Example_*` functions where applicable
 - Write / update `<pkg>/README.md`
 
@@ -74,21 +76,21 @@ For each `[constraint]` with named bench in touched files:
 
 | Agent | Role |
 |-------|------|
-| API Ergonomics Devil (per-pack) | SDK-consumer POV: boilerplate, surprising defaults, missing examples |
-| leak hunter (per-pack, resolved from `waves.T6_leak`) | Run `toolchain.test` (with race detection if supported) + the pack's leak-detection harness (`toolchain.leak_check`); report leaks as BLOCKER |
+| `sdk-api-ergonomics-devil-go` | SDK-consumer POV: boilerplate, surprising defaults, missing examples |
+| `sdk-leak-hunter-go` | Run `go test -race -count=5` + `goleak.VerifyTestMain`; report leaks as BLOCKER |
 | `sdk-overengineering-critic` | Reject unused options, speculative interfaces, dead abstractions |
 | `sdk-marker-hygiene-devil` | Every pipeline-authored symbol has `[traces-to: TPRD-*]`; every preserved MANUAL symbol retained its marker byte-identical; no forged MANUAL markers |
-| code reviewer (per-pack) | Go idioms, error wrapping, naming, package structure |
+| `code-reviewer-go` | Go idioms, error wrapping, naming, package structure |
 
 ### Wave M8 — Review-Fix Loop
 Same protocol as Design. Route fixes to implementer; re-run devils after each batch.
 
 ### Wave M9 — Mechanical Checks
-- `toolchain.build`
-- `toolchain.vet`
-- `toolchain.fmt --check` returns empty
+- `go build ./...`
+- `go vet ./...`
+- `gofmt -l` returns empty
 - `staticcheck ./...` (if installed)
-- `toolchain.test` (with race detection if supported by the language)
+- `go test ./... -race -count=1`
 - Per-symbol completeness: grep `[traces-to: TPRD-*]` for every new export
 
 ### Wave M10 — HITL Gate H7 (Diff Review)
@@ -109,7 +111,7 @@ Same protocol as Design. Route fixes to implementer; re-run devils after each ba
 
 ## Guardrails (exit gate)
 
-G40 (no not-implemented sentinel left + no `TODO`), G41 (build), G42 (vet), G43 (fmt), G44 (staticcheck), G45 (doc-comment on exported), G47 (MsgPack-only for inter-service NATS payloads — consumer-side check per F-008), G48 (no init), G49 (no global mut state), G50 (cancellation primitive first — ctx in Go, async-context-manager scope in Python), G51 (no unbounded concurrency units / leak-prevention), G52 (Close drains), G95 (extension tests still green), G96 (MANUAL hash match), G97 (constraint proofs), G98 (no marker deletion), G99 (traces-to on every new export), G100 (do-not-regenerate hash), G101 (stable-since signatures), G102 (deprecated-in not removed early), G103 (no forged MANUAL markers).
+G40 (no `ErrNotImplemented`/`TODO`), G41 (build), G42 (vet), G43 (fmt), G44 (staticcheck), G45 (godoc), G47 (no encoding/json internal), G48 (no init), G49 (no global mut state), G50 (ctx first), G51 (no unbounded goroutines), G52 (Close drains), G95 (extension tests still green), G96 (MANUAL hash match), G97 (constraint proofs), G98 (no marker deletion), G99 (traces-to on every new export), G100 (do-not-regenerate hash), G101 (stable-since signatures), G102 (deprecated-in not removed early), G103 (no forged MANUAL markers).
 
 ## Metrics
 

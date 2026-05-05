@@ -55,7 +55,7 @@ Parallel:
 Writes drift + coverage observations to neo4j-memory via `mcp-knowledge-graph` skill when available; falls back to markdown artifacts if MCP is down.
 
 ### Wave F5 — (retired)
-Previously: golden-corpus regression replay. Removed because the full-pipeline replay was the single largest Phase 4 token consumer and caught almost nothing the devil fleet (api-ergonomics-devil, leak-hunter, overengineering-critic, marker-hygiene-devil, code-reviewer, constraint-devil, semver-devil, benchmark-devil, security-devil, convention-devil) was not already catching on the live run. Safety net is now: append-only patches + minor-bump versioning + `learning-notifications.md` (user reviews at H10, reverts individual patches if needed).
+Previously: golden-corpus regression replay. Removed because the full-pipeline replay was the single largest Phase 4 token consumer and caught almost nothing the devil fleet (api-ergonomics-devil, leak-hunter, overengineering-critic, marker-hygiene-devil, code-reviewer-go, constraint-devil, semver-devil, benchmark-devil, security-devil, convention-devil) was not already catching on the live run. Safety net is now: append-only patches + minor-bump versioning + `learning-notifications.md` (user reviews at H10, reverts individual patches if needed).
 
 ### Wave F6 — Improvement Planning
 **Agent**: `improvement-planner`

@@ -13,7 +13,7 @@ description: >
 cross_language_ok: true
 ---
 
-# python-dependency-vetting (v1.0.0)
+# python-dependency-vetting (v1.1.0)
 
 ## Rationale
 
@@ -224,6 +224,50 @@ If only sdist ships and the package contains a C extension: REJECT unless build 
 - `requires-python` floor must be `<= 3.12` (the SDK's floor).
 - If the dep declares an upper bound (`<3.13`), confirm the SDK's intended max Python is supported.
 - ABI tags: pure-Python (`py3-none-any`) preferred; ABI3-stable (`cp312-abi3-...`) acceptable; per-minor wheels (`cp312-cp312-...`) acceptable but require a regenerate cadence.
+
+### V-12. Library-API-shape verification (added v1.1.0)
+
+**Added in v1.1.0** in response to the `motadata-nats-v1` run's B1-B4 root cause: `nats-py>=2.7.0,<3` was vetted clean on V-1..V-11 but the kwargs/API surface drifted between 2.7 (TPRD-cited floor) and 2.14 (env-installed actual). The SDK code targeted 2.7-style kwargs (`replicas`, `allow_rollup`, `compression=...`) which fail at runtime against 2.14 (`num_replicas`, `allow_rollup_hdrs`, no `compression` kwarg). License/CVE checks all PASS — but the API SHAPE is not part of those checks.
+
+**The check**: for each runtime dep with a declared version range, materialize a venv pinning the **highest pinnable minor in the range** (i.e. the minor a fresh `pip install` would resolve to). For each class/function the SDK code references via the design's `api-stub`, verify via reflection that the kwargs the SDK passes are accepted by that class's `__init__` / function signature.
+
+```bash
+# Resolve the actual minor the dep range would install
+HIGHEST=$(python -c "
+import json, urllib.request, packaging.specifiers as ps, packaging.version as pv
+url = 'https://pypi.org/pypi/<pkg>/json'
+data = json.loads(urllib.request.urlopen(url).read())
+spec = ps.SpecifierSet('<range-from-pyproject.toml>')
+versions = sorted([pv.parse(v) for v in data['releases'] if spec.contains(v)], reverse=True)
+print(versions[0])
+")
+
+# Materialize a scratch venv at that pin
+python -m venv /tmp/dep-vet-shape && /tmp/dep-vet-shape/bin/pip install "<pkg>==$HIGHEST"
+
+# For each cited class/function in design/api-stub, reflect:
+/tmp/dep-vet-shape/bin/python -c "
+import inspect
+from <pkg>.<module> import <cited_class>
+sig = inspect.signature(<cited_class>.__init__)
+print(list(sig.parameters.keys()))
+" > /tmp/dep-vet-shape/<cited_class>-sig.txt
+```
+
+Compare the reflected kwarg list against the SDK's call sites in design `api-stub.py` (or design's `algorithms.md` referenced kwargs). Any kwarg the SDK passes that does NOT appear in the resolved-minor's signature: surface as **CONDITIONAL — kwarg-rename-required** with a hint specifying the SDK location and the resolved-minor's actual kwarg name (look for the closest match in the resolved signature).
+
+| Outcome | Verdict | Action |
+|---|---|---|
+| All SDK call-site kwargs match resolved-minor signature | ACCEPT | nothing further |
+| 1+ kwarg missing in resolved-minor; close-match available | CONDITIONAL — kwarg-rename-required | suggest renames in dep-vet report; design lead must update api-stub OR pin TPRD range tighter |
+| 1+ kwarg missing; no close-match (kwarg removed entirely) | CONDITIONAL — kwarg-removed-required | impl must drop the kwarg; field can stay on the SDK's own dataclass for forward-compat, just not threaded into the call |
+| `pip install` cannot resolve the range | INCOMPLETE | network or yank issue; never auto-PROMOTE to ACCEPT |
+
+**Integration into D-DEP wave**: this check is REQUIRED at H6 for any dep whose runtime API surface is referenced from `design/api-stub.py`. Skip ONLY for tooling-only deps (pytest, ruff, mypy, build) where the SDK's own code never imports the lib.
+
+**Cost**: ~30 seconds per dep (venv create + pip install + 1-3 reflect calls). Catches an entire class of "library-evolved-since-TPRD-was-authored" bug at design-time, eliminating the impl→test→re-impl loop.
+
+**Cross-reference**: paired with `python-mock-strategy` v1.1.0 strict-signature-mocking guidance — the dep-vet skill is the FIRST line of defense (catches at design); the mock-strategy skill is the SECOND line (catches at unit test if dep-vet was skipped).
 
 ## Aggregate verdict logic
 
