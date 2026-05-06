@@ -753,6 +753,8 @@ These items were surfaced by a fact-based audit on 2026-05-06 — independent of
 
 ## U15 — Performance-baseline schema canonicalization (Gap C)
 
+**Status**: ✅ **CLOSED 2026-05-06** — commits `a21841f..00f5b6b` on branch `v6`. All 7 phases complete; G87 guardrail wired; existing on-disk Go and Python baselines validated as canonical reference.
+
 **Why this exists**: an audit found four different schemas describing the same file `baselines/<lang>/performance-baselines.json`:
 
 | # | Source | Shape |
