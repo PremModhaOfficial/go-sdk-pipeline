@@ -142,34 +142,29 @@ Append all changes to `baselines/shared/baseline-history.jsonl`:
 
 ### `performance-baselines.json`
 
-Top-level wrapper carries language + units to prevent cross-language unit mixing:
+**Authoritative spec**: `docs/PERFORMANCE-BASELINE-SCHEMA.md` (single source of truth, schema_version 1.0). Read it before authoring any code that writes or reads this file. The summary below is a quick reference; the canonical doc takes precedence on every disagreement.
+
+**Shared envelope** (Go and Python both):
 
 ```json
 {
   "schema_version": "1.0",
-  "language": "go",
-  "units": {
-    "latency": "ns/op",
-    "allocs": "allocs/op",
-    "memory": "B/op",
-    "throughput": "ops/sec"
-  },
-  "entries": [
-    {
-      "endpoint": "<bench-name or method+path>",
-      "baseline_p99_ns": 145000,
-      "baseline_run": "<run_id>",
-      "last_updated": "<ISO-8601>",
-      "history": [
-        {"run_id": "<uuid>", "p99_ns": 160000},
-        {"run_id": "<uuid>", "p99_ns": 145000}
-      ]
-    }
-  ]
+  "language": "go" | "python",
+  "scope": "per-language",
+  "packages": { "<pkg-key>": { /* per-language extension */ } }
 }
 ```
 
-The `language` field MUST match `runs/<run-id>/context/active-packages.json:target_language` for the run that wrote the baseline. Cross-language baseline comparison is REJECTED at this layer (per CLAUDE.md rule 32, perf is intrinsically per-language). For Python: `units.latency: "seconds"` or `"cycles"`, `units.memory: "bytes"`, `units.allocs` may not apply (Python doesn't expose alloc count per call without instrumentation; `units.allocs` may be `null`).
+The `language` field MUST match `runs/<run-id>/context/active-packages.json:target_language` for the run that wrote the baseline. Cross-language baseline comparison is REJECTED at this layer (per CLAUDE.md rule 32, perf is intrinsically per-language).
+
+**Per-language extension shapes** (intentionally divergent — locked 2026-05-06 per U15 Option A):
+
+- **Go**: flat current-state snapshot. `packages.<pkg>: {generated, run_id, package, scope, language, symbols.<bench>: {ns_per_op_median, bytes_per_op_median, allocs_per_op_median, samples}}`. No history list — Go file holds latest snapshot only.
+- **Python**: time-series with full per-run verdict trail. `packages.<pkg>: {first_seen_run, first_seen_at, history[].{run_id, recorded_at, symbols.<sym>.{p50_us, rounds, iterations, [budget_p50_us, budget_status, headroom, oracle_*]}}}`. Optional history-entry siblings: `complexity_sweep_g107`, `alloc_audit_g104`. Optional envelope-level fields: `description`, `host_load_class`, `policy`.
+
+You ARE the sole writer of this file. The benchmark devils (`sdk-benchmark-devil-{go,python}`) write proposals to `runs/<id>/testing/proposed-baseline-{lang}.json`; you merge those into the canonical file after HITL gate H8 acceptance. Verdict-typed fields use the rule 33 base taxonomy plus optional composite modifiers (e.g. `INCOMPLETE-first-seed`, `FAIL-INCOMPLETE-aspirational`) — see [Verdict enums in PERFORMANCE-BASELINE-SCHEMA.md](../docs/PERFORMANCE-BASELINE-SCHEMA.md#verdict-enums).
+
+**G87 validation guardrail** (to be authored, U15 Phase 6): validates envelope + per-language extension at Phase 3 (Testing) exit. BLOCKER on schema drift.
 
 ## Regression Report
 
