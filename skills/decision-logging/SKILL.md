@@ -9,7 +9,16 @@ description: >
   Triggers: decision-log, JSONL, schema, entry cap, skill-evolution, budget, lifecycle, communication, refactor, failure.
 ---
 
-# decision-logging (SDK-mode, v1.2.0)
+# decision-logging (SDK-mode, v1.4.0)
+
+
+## Delta (v1.3.0 → v1.4.0)
+
+Removed the cross-LLM ensemble telemetry layer introduced in v1.3.0. The `cross-llm-devil` MCP server and its sibling devils (`sdk-overengineering-critic-gemini`, `sdk-security-devil-gemini`) were removed from the pipeline; consequently the `cross-llm-call` / `cross-llm-agreement` / `cross-llm-conflict` event categories and the `model_id` / `transcript_path` / `ensemble_role` optional fields are no longer documented or emitted.
+
+**Backward compat**: pre-existing decision-log entries that still carry these fields remain readable — readers ignore unknown categories/fields. No retroactive scrub of historical run data is required.
+
+---
 
 
 ## Delta (v1.1.0 → v1.2.0)
@@ -51,7 +60,7 @@ Emitted by `learning-engine` OR `sdk-bootstrap-lead` when a skill is created / b
 ```json
 {
   "run_id": "<uuid>",
-  "pipeline_version": "sdk-pipeline@0.5.0",
+  "pipeline_version": "sdk-pipeline@0.7.0",
   "skill_version_snapshot": {"<skill>": "<version>", ...},
   "timestamp": "2026-04-17T...",
   "type": "skill-evolution",
@@ -73,7 +82,7 @@ Emitted by every agent to track per-phase token + wall-clock consumption.
 ```json
 {
   "run_id": "<uuid>",
-  "pipeline_version": "sdk-pipeline@0.5.0",
+  "pipeline_version": "sdk-pipeline@0.7.0",
   "skill_version_snapshot": {...},
   "timestamp": "2026-04-17T...",
   "type": "budget",
@@ -301,9 +310,9 @@ Captures major and minor happenings during agent work:
 | `workaround` | Applying a workaround for a known issue |
 
 ### Severity Guidelines
-- **major**: Events that change the agent's approach or affect downstream agents (e.g., "compilation failed, switching strategy")
-- **minor**: Routine progress events that confirm expected behavior (e.g., "read service-map.md successfully")
-- **info**: Context-only events useful for debugging (e.g., "found 5 services in decomposition")
+- **major**: Events that change the agent's approach or affect downstream agents (e.g., "compilation failed, switching strategy").
+- **minor**: Routine progress events that confirm expected behavior (e.g., "read service-map.md successfully").
+- **info**: Context-only events useful for debugging (e.g., "found 5 services in decomposition").
 
 ## Failure Entry Schema
 

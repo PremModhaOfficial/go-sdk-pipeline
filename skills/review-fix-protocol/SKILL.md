@@ -65,6 +65,8 @@ Every review agent MUST produce a `.findings.json` file alongside their markdown
 | Implementation | `IM` | `IM-001` |
 | Testing | `TS` | `TS-001` |
 | Frontend | `FE` | `FE-001` |
+| Cross-LLM Gemini sibling | `<phase-prefix>-G` | `IM-G-001`, `SD-G-001` |
+| Cross-LLM contradiction (synthesized) | `XL-CONFLICT` | `XL-CONFLICT-001` |
 
 ### Severity Definitions
 
