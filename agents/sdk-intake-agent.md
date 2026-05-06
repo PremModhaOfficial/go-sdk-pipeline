@@ -62,7 +62,7 @@ The canonical 14 sections (see CLAUDE.md and plan §TPRD shape). Intake is the s
 - `runs/<run-id>/intake/required-fields-check.md` (NEW v0.5.0) — I1.5 verdict; lists which required TPRD fields were declared vs missing
 - `runs/<run-id>/state/run-manifest.json` — initial creation; MUST carry top-level `language` field (sourced from validated §Target-Language) so phase leads and consumers can read run-language without re-resolving active-packages.json. Schema:
   ```json
-  { "schema_version": "1.0", "run_id": "<uuid>", "pipeline_version": "0.5.0",
+  { "schema_version": "1.0", "run_id": "<uuid>", "pipeline_version": "0.7.0",
     "language": "go", "tier": "T1", "mode": "A|B|C", "phases": {...} }
   ```
 - `runs/<run-id>/intake/skills-manifest-check.md` — I2 verdict (PASS or WARN; never halts the pipeline; misses auto-filed to `docs/PROPOSED-SKILLS.md`)

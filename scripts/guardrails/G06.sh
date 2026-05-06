@@ -39,6 +39,7 @@ EXCLUDES=(
   --exclude-dir=knowledge-base
   --exclude=improvement-plan-sdk-dragonfly-s2.md
   --exclude=G06.sh
+  --exclude=migration-log.jsonl
   --exclude=multi-lang-plan.md
   --exclude=multi-lang-pipeline-strategy.md
   --exclude=multi-lang-remaining.md

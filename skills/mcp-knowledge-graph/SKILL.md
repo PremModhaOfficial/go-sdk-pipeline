@@ -56,7 +56,7 @@ The graph complements — does NOT replace — the per-run `runs/<run-id>/decisi
 ```
 create_entities([
   {name: "run-f47ac10b", entityType: "Run", observations: [
-    "pipeline_version: sdk-pipeline@0.5.0",
+    "pipeline_version: sdk-pipeline@0.7.0",
     "started: 2026-04-18T09:00:00Z",
     "ended: 2026-04-18T09:47:00Z",
     "pipeline_quality: 0.87",

@@ -272,3 +272,16 @@ language floor — but that's already covered by `theoretical_floor.derivation` 
 - **MISSING** `python-api-ergonomics-patterns` (≥1.0.0) — source run `motadata-nats-v1`
 - [ ] `python-library-api-shape-verification` — scope: python — confidence: medium — runs: 1 — first seen: motadata-nats-v1 — rationale: stand-alone skill prescribing the V-12 library-API-shape verification protocol (reflection patterns, multi-version testing matrix, cibuildwheel/tox version-matrix integration). Cited by sdk-impl-lead at M3.5 and sdk-dep-vet-devil-python at H6. Existing `python-dependency-vetting` v1.1.0 patch covers v0.1 of the use case; this skill would elevate to first-class.
 - [ ] `python-m3-5-smoke-integration` — scope: python — confidence: low — runs: 1 — first seen: motadata-nats-v1 — rationale: skill prescribing the M3.5 30-second smoke-integration test for wrapped external libraries (between H7b and H7). Catches library-API-shape drift in impl phase rather than testing phase. Could alternatively live as a `sdk-impl-lead` Learned Pattern (already applied in this run's PP-feedback-2 patch) — promote to skill if pattern recurs across 3+ runs and authors find the embedded form too easy to skip.
+
+---
+
+## Auto-filed from run `l2cache-dragonfly-go-pilot-v1` on 2026-05-04
+
+- **MISSING** `redis-pipeline-tx-patterns` (≥1.0.0) — source run `l2cache-dragonfly-go-pilot-v1`
+- **MISSING** `hash-field-ttl-hexpire` (≥1.0.0) — source run `l2cache-dragonfly-go-pilot-v1`
+- **MISSING** `pubsub-lifecycle` (≥1.0.0) — source run `l2cache-dragonfly-go-pilot-v1`
+- **MISSING** `miniredis-testing-patterns` (≥1.0.0) — source run `l2cache-dragonfly-go-pilot-v1`
+- **MISSING** `lua-script-safety` (≥1.0.0) — source run `l2cache-dragonfly-go-pilot-v1`
+- **MISSING** `testcontainers-dragonfly-recipe` (≥1.0.0) — source run `l2cache-dragonfly-go-pilot-v1`
+- **MISSING** `k8s-secret-file-credential-loader` (≥1.0.0) — source run `l2cache-dragonfly-go-pilot-v1`
+- **MISSING** `sentinel-error-model-mapping` (≥1.0.0) — source run `l2cache-dragonfly-go-pilot-v1`

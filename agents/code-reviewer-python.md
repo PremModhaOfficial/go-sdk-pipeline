@@ -357,3 +357,94 @@ def add_user(name: str, history: list[str] | None = None) -> None:
 ### `print()` debugging left in source
 
 `print(...)` in production source code (not tests, not CLI entrypoints) is HIGH. Use `logging.getLogger(__name__).debug(...)` and let the consumer configure log level. Cite `conventions.sdk-overengineering-critic` family.
+
+### 13. Static AST antipattern catalog (added pipeline_version 0.7.0)
+
+These five rules are deterministic AST-checkable antipatterns added after the `motadata-nats-v1` postmortem identified them as recurring blind spots (factor-by-factor analysis grades C and B−). They complement, not replace, the existing rules in §5 (exception design) and §6 (asyncio safety). Each must be checked via `Bash` + `python3 -c "import ast; ..."` against every Python source file under `$SDK_TARGET_DIR/src/`.
+
+#### 13.1 `cancellation_safety` — BLOCKER
+
+`except BaseException` (or `except Exception` with no narrower pre-handler) where the FIRST statement of the handler body is NOT `raise` of `asyncio.CancelledError` is BLOCKER. Cancellation must propagate; collecting it into a per-message error list, logging-and-swallowing, or wrapping it in a `MultiError` all break structured concurrency.
+
+**Detection (AST)**:
+```python
+import ast
+for node in ast.walk(tree):
+    if isinstance(node, ast.ExceptHandler):
+        is_basex = (isinstance(node.type, ast.Name) and node.type.id == "BaseException")
+        if not is_basex:
+            continue
+        body = node.body
+        first = body[0] if body else None
+        # Acceptable patterns:
+        #   raise   (bare re-raise; lets CancelledError propagate)
+        #   if isinstance(<bound>, asyncio.CancelledError): raise
+        ok = (
+            isinstance(first, ast.Raise) and first.exc is None
+        ) or (
+            isinstance(first, ast.If)
+            and isinstance(first.test, ast.Call)
+            and isinstance(first.test.func, ast.Name)
+            and first.test.func.id == "isinstance"
+            and any(isinstance(s, ast.Raise) for s in first.body)
+        )
+        if not ok:
+            yield (node.lineno, "cancellation_safety")
+```
+
+**Reference pattern (the one site that does it right in the motadata-nats run)**: `jetstream.py:643-651`. Cite that location in the recommendation.
+
+**Fix**: prepend
+```python
+if isinstance(e, asyncio.CancelledError):
+    raise
+```
+as the first statement of every `except BaseException as e:` block. Or narrow the catch to a domain-specific exception family.
+
+#### 13.2 `discarded_task` — BLOCKER
+
+`asyncio.create_task(...)`, `loop.create_task(...)`, or `asyncio.ensure_future(...)` whose return value is NOT stored as an attribute (`self._inflight.add(task)`), assigned to a named local consumed in the same scope (`task = ...; await task`), or passed into a `TaskGroup` is BLOCKER. The discarded task may be GC'd while running, with a `Task was destroyed but it is pending` warning.
+
+**Detection (AST)**: look for `Expr(value=Call(func=Attribute(attr='create_task', ...) | Name('create_task')))` — i.e., the call's result is consumed only as an expression statement, not assigned or stored.
+
+**Fix**: store the task in a `set[asyncio.Task]` attribute on the owning class; add a `done_callback` to discard from the set on completion; await/cancel the set in the owner's `aclose()` / `close()`.
+
+#### 13.3 `lock_across_await` — HIGH
+
+`await <expr>` inside `async with self._lock:` (or any `asyncio.Lock` / `asyncio.Condition` context) where `<expr>` calls a user-supplied hook, performs network I/O, or invokes any method that itself awaits is HIGH. Holding a lock across an await serializes every other acquirer through the slow path. The Go pool has equivalent semantics, but in asyncio it produces unintended cooperative-blocking — a 100ms `on_create` makes 4 concurrent first-acquires take ~400ms instead of ~100ms.
+
+**Detection (AST)**: walk into `AsyncWith(items=[withitem(context_expr=...lock-like...)])` body; find any `Await` whose expression resolves to a non-trivial call (not a no-op like `await asyncio.sleep(0)`).
+
+**Allowed exception**: the writer documents the choice with a `# perf-acceptable: lock-across-await for <reason>` comment AND a `[perf-exception:]` marker (per CLAUDE.md rule 29). Without both, flag.
+
+**Fix**: release the lock around the user-supplied hook:
+```python
+async with self._lock:
+    self._reserve_slot()
+hook_result = await self._invoke_hook()
+async with self._lock:
+    self._record_hook_result(hook_result)
+```
+
+#### 13.4 `suppress_exception_overbroad` — HIGH
+
+`contextlib.suppress(Exception)` (or `suppress(BaseException)`) without a narrower argument is HIGH. The narrower `suppress(SpecificError, ...)` form with named subclasses is allowed. The overbroad form silently masks every error including programming bugs, and unlike a bare `except Exception`, it doesn't even produce a stack frame the debugger can break on.
+
+**Detection (grep + AST)**:
+```bash
+grep -nE "contextlib\.suppress\(Exception\)|^[[:space:]]*suppress\(Exception\)|contextlib\.suppress\(BaseException\)" $SDK_TARGET_DIR/src/
+```
+
+**Fix**: replace with `suppress(SpecificError1, SpecificError2)` naming the exact exceptions you intend to silence, OR replace with a `try` / `except SpecificError:` block that calls `_log.debug("...", exc_info=True)` so an operator can opt in to seeing the suppressed errors.
+
+#### 13.5 `narrow_return_type` — MEDIUM
+
+A public function annotated `-> Awaitable[X]` (or `-> Coroutine[..., X]`, `-> Generator[..., X]`) whose body returns an `asyncio.Task[X]` is MEDIUM. Mypy passes (Task IS an Awaitable), but the annotation under-specifies — callers lose `.cancel()`, `.add_done_callback`, `.done()`. Either narrow the return type to `asyncio.Task[X]`, or wrap the actual return in something that hides the Task identity (e.g., `await task` and return the result).
+
+**Detection (AST)**: parse the return annotation; walk the function body for `return asyncio.create_task(...)` / `return loop.create_task(...)` / `return asyncio.ensure_future(...)`. If annotation is `Awaitable[X]` / `Coroutine[..., X]` and any return is a Task-producing call, flag.
+
+**Fix**: change `-> Awaitable[X]` to `-> asyncio.Task[X]` to match the actual contract. The existing `python-mypy-strict-typing` skill's "narrowest type" rule applies here.
+
+### When to invoke
+
+These five rules SHOULD run on every Python M7 review. Where the new `skill-conformance-auditor` (added v0.7.0) overlaps your finding, follow the cross-reference protocol in §Mandatory inter-agent communication: log a `communication` entry citing the duplicate and demote your finding to `informational` rather than double-blocking.

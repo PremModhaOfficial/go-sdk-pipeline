@@ -217,6 +217,61 @@ Public APIs should not require the consumer to understand `typing.Generic`, `Pro
 
 - NEEDS-FIX: the `Examples:` block produces output that doesn't match what the actual code produces. Run `pytest --doctest-modules` against the docstring to verify.
 
+### E-16: Subclass-override consistency (added pipeline_version 0.7.0)
+
+When a class is a transparent overlay/wrapper of another (typical pattern: `Tenant<X>` decorating `<X>`, `Logging<Y>` decorating `<Y>`), every public method override MUST apply the SAME pre/post-transform pattern as its sibling overrides. Mixed-mode overrides — one method applies the transform, another forwards the underlying call unchanged — are a Liskov-substitution violation that produces silent correctness bugs (e.g., `TenantObjectStore.put` does not prefix the tenant ID while `TenantObjectStore.put_bytes` does, so any caller passing a `meta` carrying an unprefixed name silently writes to a global-namespace key — breaking tenant isolation).
+
+**Detection heuristic** (read the source manually; this is too subtle for grep):
+
+1. Identify the overlay class (subclass with `tenant_id`, `logger`, or similar transform parameter on `__init__`).
+2. Enumerate its public methods that override a parent method.
+3. For each override, identify the transform applied to inputs and outputs (call-site analysis: does it call `_qualify(name)`? does it wrap the result in a `_TenantBound` envelope?).
+4. If overrides disagree on transform application, flag as **NEEDS-FIX** (or **BLOCKER** when the inconsistency has security implications like tenant isolation, ACL scope, or audit logging).
+
+**Recommended fix**: either (a) apply the transform uniformly across all sibling overrides, OR (b) drop the inconsistent override from the overlay (delegate to parent) AND document the asymmetry in the docstring with a `Note: <method> is intentionally NOT tenant-scoped because ...` block. Half-measures (override one but not its siblings) are forbidden.
+
+**Cite** the related universal rule from shared-core's `api-ergonomics-audit` skill if the rule is added there in a future bump; today, cite this catalog entry directly: `E-16 subclass_consistency`.
+
+### E-17: Boilerplate proximity — cleanup-token without context-manager pair (added pipeline_version 0.7.0)
+
+When a public method returns a "cleanup token" — anything the caller is expected to pass back to a paired cleanup function (the `contextvars.Token` from `var.set()`, the file-handle from `open()`-style helpers, the lock-handle from a manual `acquire()`) — the package MUST also provide a sibling `*_scope()` `@contextmanager` (or `@asynccontextmanager`) wrapper, unless the TPRD §15 explicitly excludes it. Without the wrapper, every caller writes the same `try` / `finally` ladder and gets it wrong eventually.
+
+**Pattern (the bad shape)**:
+```python
+# core.py — every caller writes try/finally to clean up
+token = with_tenant_id("alice")  # returns contextvars.Token
+try:
+    do_work()
+finally:
+    var.reset(token)
+```
+
+**Pattern (the required additional sugar)**:
+```python
+# core.py — sibling helper using contextlib
+@contextlib.contextmanager
+def tenant_scope(tenant_id: str) -> Iterator[None]:
+    token = with_tenant_id(tenant_id)
+    try:
+        yield
+    finally:
+        var.reset(token)
+
+# caller:
+with tenant_scope("alice"):
+    do_work()
+```
+
+**Detection heuristic**:
+
+1. Find every public method whose return type is `contextvars.Token`, `Token`, or whose docstring mentions "caller must call `<X>.reset(...)`", "caller must call `<X>()` to release", or "must be paired with".
+2. For each, look for a sibling `<name>_scope(...)` or `with_<name>(...) -> <ContextManager>` in the same module.
+3. If absent, flag as **NEEDS-FIX**, severity HIGH if the cleanup is silent-on-omission (e.g., contextvars stays leaked across coroutines), MEDIUM otherwise.
+
+**Allowed exception**: the TPRD §15 (or wherever the package's "design constraints" live) explicitly says "do not provide a context-manager wrapper for `<X>` because <reason>". Without that exclusion, flag.
+
+**Cite** as `E-17 boilerplate_proximity`.
+
 ## Output
 
 Write to `runs/<run-id>/impl/reviews/api-ergonomics-devil-python-report.md`.

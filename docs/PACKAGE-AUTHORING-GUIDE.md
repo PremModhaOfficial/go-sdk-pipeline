@@ -459,7 +459,7 @@ Every baseline file (under `baselines/`) declares a `scope` field. Every languag
 ```json
 {
   "schema_version": "1.0.0",
-  "pipeline_version": "sdk-pipeline@0.5.0",
+  "pipeline_version": "sdk-pipeline@0.7.0",
   "scope": "per-language",
   "language": "go",
   "scope_note": "<reason this is per-language; what units are stored>",
